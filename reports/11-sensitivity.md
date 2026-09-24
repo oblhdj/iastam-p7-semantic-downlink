@@ -25,6 +25,30 @@
 >
 > **3. The cloud band is unchanged and still dominates** — see § below, now stated as a band.
 
+## The one-at-a-time caveat is now closed: cloud and `thumb_value` DO interact
+
+`../code/scripts/wp10b_interaction.py` sweeps the full grid instead of a cross
+(`wp10b_interaction.csv|.png`). At 40k nothing binds and `thumb_value` does nothing at any cloud
+level. At 160k, "ours ≥ fair baseline" by cloud × `thumb_value`:
+
+| cloud \ thumb_value | 0.001 | 0.010 | 0.050 | 0.100 |
+|---|---|---|---|---|
+| **0%** | +0.037 | +0.037 | +0.016 | **−0.004** |
+| 15% | +0.041 | +0.041 | +0.018 | +0.004 |
+| 30% | +0.044 | +0.044 | +0.020 | +0.010 |
+| 50% | +0.035 | +0.035 | +0.026 | +0.026 |
+
+* **They interact.** The cost of raising `thumb_value` 0.01 → 0.10 ranges from **−0.041 recall at
+  0% cloud to −0.009 at 50%** — a spread of 0.032, far above the ±0.005 seed noise. A
+  one-at-a-time sweep cannot see this.
+* **The mechanism is competition.** Clear skies mean more surviving ships competing for the link,
+  so thumbnails crowd out ship chips harder. Cloud removes the competition.
+* **The binding case is clear skies, not the baseline.** The single failure of
+  "ours ≥ fair baseline" now sits at **cloud 0% with `thumb_value` 0.1**, not at the baseline
+  cloud fraction — adopting `conf_high` 0.670 pushed the 15% case back into the black (+0.004).
+* The constraint to state in the paper is unchanged in spirit but sharper: **`thumb_value` must
+  stay below ~0.05, and the worst case to check it against is 0% cloud.** Baseline 0.01 keeps 5× margin.
+
 ## ⚠ The cloud fraction is an assumption, and it sets the headline
 
 Every recall figure in this project is quoted at an **assumed 15% cloud fraction**. It is the

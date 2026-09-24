@@ -1,0 +1,43 @@
+{
+  "gate_threshold": 0.126,
+  "tiles_called_empty": {
+    "classic": 177,
+    "learned_gate": 513
+  },
+  "ships_at_risk": {
+    "classic": 15,
+    "learned_gate": 100
+  },
+  "by_load": {
+    "40000": {
+      "classic": {
+        "ship_recall": 0.6850504239541705,
+        "MB_offered": 107.95158428477528,
+        "latency_med_h": 4.378581440253082
+      },
+      "learned_gate": {
+        "ship_recall": 0.6850504239541705,
+        "MB_offered": 103.93825095144196,
+        "latency_med_h": 4.378581440253082
+      },
+      "delta_recall": 0.0,
+      "delta_MB": -4.013333333333321,
+      "bytes_saved_pct": 3.717716011231653
+    },
+    "160000": {
+      "classic": {
+        "ship_recall": 0.6630885721967128,
+        "MB_offered": 427.652231884051,
+        "latency_med_h": 4.891282055509217
+      },
+      "learned_gate": {
+        "ship_recall": 0.6630885721967128,
+        "MB_offered": 411.310231884051,
+        "latency_med_h": 4.891282055509217
+      },
+      "delta_recall": 0.0,
+      "delta_MB": -16.341999999999985,
+      "bytes_saved_pct": 3.8213292908595875
+    }
+  }
+}

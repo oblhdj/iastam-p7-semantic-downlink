@@ -1,0 +1,23 @@
+=== WP13: 400 real coastal tiles, qualities [60, 40, 30, 20], device 0 ===
+
+  50/400 tiles
+  100/400 tiles
+  150/400 tiles
+  200/400 tiles
+  250/400 tiles
+  300/400 tiles
+  350/400 tiles
+  400/400 tiles
+
+748 ships on 400 coastal tiles. Reference recall (original file): 0.6711
+
+  quality   kB/tile   vs q60   PSNR dB   recall  d recall    small   medium    large
+ original     222.5     2.72       nan   0.6711   +0.0000   0.4759   0.8462   0.9906
+      q60      81.9     1.00      36.0   0.6551   -0.0160   0.4456   0.8502   0.9811
+      q40      65.5     0.80      34.0   0.6310   -0.0401   0.3975   0.8502   0.9906
+      q30      56.6     0.69      32.8   0.6176   -0.0535   0.3924   0.8178   0.9906
+      q20      43.3     0.53      31.0   0.5642   -0.1070   0.2886   0.8300   0.9717
+
+q30 vs the current q40: +13.6% bytes, -1.34 pts recall  ->  KEEP q40
+
+Saved wp13_recompress.json|.csv|.png in C:\Users\Mega-PC\Desktop\IASTAM_Problem7\code\results

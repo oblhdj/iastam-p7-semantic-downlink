@@ -1,0 +1,58 @@
+  load  40,000 cloud 0.00 thumb 0.001  -> recall 0.8189  vs baseline +0.0733
+  load  40,000 cloud 0.00 thumb 0.01   -> recall 0.8189  vs baseline +0.0733
+  load  40,000 cloud 0.00 thumb 0.05   -> recall 0.8189  vs baseline +0.0733
+  load  40,000 cloud 0.00 thumb 0.1    -> recall 0.8189  vs baseline +0.0733
+  load  40,000 cloud 0.15 thumb 0.001  -> recall 0.6799  vs baseline +0.0633
+  load  40,000 cloud 0.15 thumb 0.01   -> recall 0.6799  vs baseline +0.0633
+  load  40,000 cloud 0.15 thumb 0.05   -> recall 0.6799  vs baseline +0.0633
+  load  40,000 cloud 0.15 thumb 0.1    -> recall 0.6799  vs baseline +0.0633
+  load  40,000 cloud 0.30 thumb 0.001  -> recall 0.5624  vs baseline +0.0454
+  load  40,000 cloud 0.30 thumb 0.01   -> recall 0.5624  vs baseline +0.0454
+  load  40,000 cloud 0.30 thumb 0.05   -> recall 0.5624  vs baseline +0.0454
+  load  40,000 cloud 0.30 thumb 0.1    -> recall 0.5624  vs baseline +0.0454
+  load  40,000 cloud 0.50 thumb 0.001  -> recall 0.3958  vs baseline +0.0350
+  load  40,000 cloud 0.50 thumb 0.01   -> recall 0.3958  vs baseline +0.0350
+  load  40,000 cloud 0.50 thumb 0.05   -> recall 0.3958  vs baseline +0.0350
+  load  40,000 cloud 0.50 thumb 0.1    -> recall 0.3958  vs baseline +0.0350
+  load 160,000 cloud 0.00 thumb 0.001  -> recall 0.7745  vs baseline +0.0371
+  load 160,000 cloud 0.00 thumb 0.01   -> recall 0.7745  vs baseline +0.0371
+  load 160,000 cloud 0.00 thumb 0.05   -> recall 0.7538  vs baseline +0.0164
+  load 160,000 cloud 0.00 thumb 0.1    -> recall 0.7338  vs baseline -0.0037
+  load 160,000 cloud 0.15 thumb 0.001  -> recall 0.6622  vs baseline +0.0411
+  load 160,000 cloud 0.15 thumb 0.01   -> recall 0.6622  vs baseline +0.0411
+  load 160,000 cloud 0.15 thumb 0.05   -> recall 0.6389  vs baseline +0.0178
+  load 160,000 cloud 0.15 thumb 0.1    -> recall 0.6249  vs baseline +0.0037
+  load 160,000 cloud 0.30 thumb 0.001  -> recall 0.5516  vs baseline +0.0437
+  load 160,000 cloud 0.30 thumb 0.01   -> recall 0.5516  vs baseline +0.0437
+  load 160,000 cloud 0.30 thumb 0.05   -> recall 0.5280  vs baseline +0.0201
+  load 160,000 cloud 0.30 thumb 0.1    -> recall 0.5181  vs baseline +0.0102
+  load 160,000 cloud 0.50 thumb 0.001  -> recall 0.3918  vs baseline +0.0345
+  load 160,000 cloud 0.50 thumb 0.01   -> recall 0.3918  vs baseline +0.0345
+  load 160,000 cloud 0.50 thumb 0.05   -> recall 0.3834  vs baseline +0.0261
+  load 160,000 cloud 0.50 thumb 0.1    -> recall 0.3833  vs baseline +0.0259
+
+'ours - fair baseline', by cloud x thumb_value (negative = we lose):
+
+  load 40,000
+thumb_value   0.001   0.010   0.050   0.100
+cloud                                      
+0.00         0.0733  0.0733  0.0733  0.0733
+0.15         0.0633  0.0633  0.0633  0.0633
+0.30         0.0454  0.0454  0.0454  0.0454
+0.50         0.0350  0.0350  0.0350  0.0350
+  -> holds everywhere on this grid
+
+  load 160,000
+thumb_value   0.001   0.010   0.050   0.100
+cloud                                      
+0.00         0.0371  0.0371  0.0164 -0.0037
+0.15         0.0411  0.0411  0.0178  0.0037
+0.30         0.0437  0.0437  0.0201  0.0102
+0.50         0.0345  0.0345  0.0261  0.0259
+  -> LOSES at: cloud 0.00/thumb 0.1
+
+Interaction check (does the thumb_value penalty depend on cloud?):
+  load 40,000: thumb_value 0.01->0.10 costs +0.0000 to +0.0000 recall across cloud; spread 0.0000 (additive, no real interaction)
+  load 160,000: thumb_value 0.01->0.10 costs -0.0407 to -0.0085 recall across cloud; spread 0.0322 (INTERACTS)
+
+Saved wp10b_interaction.csv|.png in C:\Users\Mega-PC\Desktop\IASTAM_Problem7\code\results

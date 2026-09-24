@@ -33,6 +33,11 @@ from .scheduler import Ship, SizeModel, Workload, WorkloadConfig
 
 CONTEXTS = ("cloud", "ships", "coast", "empty")
 
+# WP3: the learned gate's operating threshold, chosen on the val split (never on test) at the
+# 99% ship-recall target. Below this the gate says "nothing here". Used by _gate_says_empty
+# when the catalogue carries a gate_score column.
+GATE_EMPTY_THR = 0.126
+
 
 @dataclass
 class RealWorkloadConfig:
@@ -167,12 +172,21 @@ def _gate_says_empty(tiles: pd.DataFrame, ships: pd.DataFrame, det_thr: float,
     of the truly empty tiles and puts 5 of the 1,134 missed ships at risk, which is the
     honest price of the saving; the classic filter's high false-candidate rate (WP3) is
     what keeps the number this low, so a learned gate would raise it.
+
+    WP3 trained a learned gate that reaches 0.988 ship recall where the classic filter reaches
+    0.645, at 1/365th of the cost. When the catalogue carries a ``gate_score`` column (written by
+    ``scripts/wp3_score_tiles.py``) it replaces the ``context == "empty_sea"`` test, using the
+    threshold picked on **val** in WP3. The classic test is kept as the fallback so results
+    without the column are unchanged and the two can be compared.
     """
     if "context" not in tiles.columns:      # catalogue built before WP7: gate nothing
         return np.zeros(len(tiles), bool)
     fired = ships[ships.conf >= det_thr].groupby("image").size()
     n_fired = tiles.image.map(fired).fillna(0).to_numpy()
-    return (tiles.context.to_numpy() == "empty_sea") & (n_fired == 0) & (np.asarray(fps) == 0)
+    nothing_fired = (n_fired == 0) & (np.asarray(fps) == 0)
+    if "gate_score" in tiles.columns:
+        return (tiles.gate_score.to_numpy() < GATE_EMPTY_THR) & nothing_fired
+    return (tiles.context.to_numpy() == "empty_sea") & nothing_fired
 
 
 def _unconfirmed_candidates(tiles: pd.DataFrame, ships: pd.DataFrame, det_thr: float) -> np.ndarray:

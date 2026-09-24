@@ -1,5 +1,16 @@
 # WP7 -- Spending the byte budget where it buys ships
 
+> ### ⚠ CORRECTION 24 Sept — "q60 → q40, no recall cost" is wrong
+> That claim was measured inside the scheduler simulation, where each ship's recall comes from a
+> confidence computed on the **original** file — so recompression could not possibly show up in
+> it. [Report 14](14-coastal-recompression.md) re-runs the **detector** on recompressed tiles:
+> **q40 costs 4.0 points of ship recall on coastal tiles**, essentially all of it on small ships
+> (0.476 → 0.398). The byte saving is real; the "no cost" was an artefact of the measurement.
+> Say it as a trade. q30 is rejected there too, on measurement rather than caution.
+>
+> Thumbnail gating has also been re-keyed onto the learned gate: **−3.8% of total bytes at zero
+> measured recall cost** — see [report 15](15-gate-signal-rekey.md).
+
 > **REFRESHED 24 Sept 15:30 (post-WP9).** Byte-budget tables re-run with the decoupled
 > dark-vessel encoder; see `wp7_budget_sweep.csv` for current values.
 > ⚠ The **"421x to 517x"** data-reduction figure in §below is superseded: the current

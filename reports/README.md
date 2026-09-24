@@ -24,6 +24,8 @@ the `.csv` is always authoritative.
 | 11 | [Sensitivity](11-sensitivity.md) | every invented constant swept; conclusions hold in 69 of 70 settings, and **cloud fraction dominates everything** |
 | 12 | [End-to-end integration](12-end-to-end-integration.md) | real JPEGs through the real chain reproduce the simulation to four decimals — and 52% of reported ship loss turns out to rest on 21 real tiles |
 | 13 | [Tile seams and SAHI](13-tile-seams-and-sahi.md) | on a real 10k swath a 380 px ship is cut 74.5% of the time, but **a cut ship is usually still detected** — so blanket SAHI is a poor trade |
+| 14 | [Coastal recompression](14-coastal-recompression.md) | the q40 coastal setting we adopted as "no recall cost" **actually costs 4.0 points**, all on small ships — and q30 is rejected on measurement |
+| 15 | [Gate signal re-key](15-gate-signal-rekey.md) | moving thumbnail gating onto the learned gate returns **3.8% of the whole downlink at zero measured recall cost** |
 
 ## If you only read three
 
