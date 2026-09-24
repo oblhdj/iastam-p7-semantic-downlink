@@ -262,6 +262,6 @@ def build(out: Path) -> None:
 
 
 if __name__ == "__main__":
-    target = PROJECT / "report" / "IASTAM_P7_Project_Overview.pdf"
+    target = PROJECT / "paper" / "IASTAM_P7_Project_Overview.pdf"
     build(target)
     print(target)

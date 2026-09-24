@@ -730,6 +730,6 @@ def build(out: Path) -> None:
 
 
 if __name__ == "__main__":
-    target = PROJECT / "report" / "IASTAM_P7_Technical_Report.pdf"
+    target = PROJECT / "paper" / "IASTAM_P7_Technical_Report.pdf"
     build(target)
     print(target)

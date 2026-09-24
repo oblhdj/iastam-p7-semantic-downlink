@@ -2,7 +2,7 @@
 
 Closes the must-have "Detector metrics on the test split, FP32 and INT8". It had never been
 measured: `wp1_metrics.json` carries `"onnx": {"error": "No module named 'onnx'"}` because the
-3.12 environment had no pip. Script: `scripts/wp1_export_int8.py`. Data: `results/wp1_export.json`,
+3.12 environment had no pip. Script: `../code/scripts/wp1_export_int8.py`. Data: `results/wp1_export.json`,
 log `results/wp1_export_run.log`. All figures REAL (600 test tiles, paired; latency 25 tiles).
 
 INT8 here is **onnxruntime dynamic quantization** (`quantize_dynamic`, QInt8 weights).

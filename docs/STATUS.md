@@ -19,7 +19,7 @@ See **NEXT STEP** for what is actually left.
    `.md` files carry a REFRESHED banner with the new figures, but their inner tables still show
    the old numbers; the `.csv` files are authoritative.
 
-2. ~~Finish the INT8 run~~ — **DONE 24 Sept 15:47.** Write-up: `code/results/wp1_int8_report.md`.
+2. ~~Finish the INT8 run~~ — **DONE 24 Sept 15:47.** Write-up: `../code/results/wp1_int8_report.md`.
    Corrected numbers (the old 593 vs 82 ms was measured under CPU contention):
    **INT8 is 8.5× SLOWER on CPU** (328.8 vs 38.6 ms/tile) for 3.6× less storage.
    ⚠ **It is NOT lossless** — the 40-tile pilot was underpowered. Paired on 970 ships:
@@ -27,7 +27,7 @@ See **NEXT STEP** for what is actually left.
    The FMEA row "INT8 degradation → small ships lost" is **CONFIRMED**, monotone in smallness.
    **ONNX FP32 is the onboard build**: bit-identical recall to pytorch and 1.21× faster on CPU
    (38.6 vs 46.6 ms/tile). Drop dynamic INT8; the "1.5–3.3× faster" [LIT] is TensorRT/static QDQ.
-3. ~~WP3 learned gate~~ — **DONE 24 Sept 15:53.** Write-up: `code/results/wp3_gate_report.md`.
+3. ~~WP3 learned gate~~ — **DONE 24 Sept 15:53.** Write-up: `../code/results/wp3_gate_report.md`.
    ⚠ **It does NOT need Kaggle and the 45–85 min estimate was wrong: it trains in 2m21s**
    (30–46 s/epoch). The estimate assumed a cold JPEG cache; warm, the loader does ~1,400 tiles/s.
    47k parameters. Threshold picked on **val**, quoted on **test** (gap −0.23 pts):
@@ -41,7 +41,7 @@ See **NEXT STEP** for what is actually left.
    in this ship-centric dataset. That is a floor, not the operational figure; a real swath is
    mostly empty ocean. The 1-epoch verification output is parked as `wp3_gate*_SMOKETEST_ONLY_1epoch.*`
    (it showed the gate dropping 0.4% of empties — do not cite it).
-4. ~~WP2 calibration~~ — **DONE 24 Sept 15:50.** Write-up: `code/results/wp2_calibration_report.md`.
+4. ~~WP2 calibration~~ — **DONE 24 Sept 15:50.** Write-up: `../code/results/wp2_calibration_report.md`.
    Val dumped first (17,201 boxes, 8,173 ships, recall 0.871; verified **0 images overlapping test**).
    The detector is **underconfident**: says 0.352, right 0.408 of the time. **Isotonic cuts ECE
    8.9×** (0.0878 → 0.0099), Platt 6.1×; same Brier, so it is pure calibration — a monotone map
@@ -88,7 +88,7 @@ Satellite sends *information about ships*, not pictures: (1) **confidence-aware 
 
 ## WP6 done (24 Sept) — real detections now drive the scheduler
 `scripts/wp6_build_catalogue.py` → `wp6_fit_size_model.py` → `wp6_simulate_real.py`.
-Full write-up with every number: **`code/results/wp6_report.md`**. What the real data changed:
+Full write-up with every number: **`../code/results/wp6_report.md`**. What the real data changed:
 
 * **The downlink is no longer the bottleneck.** At 40k tiles/day we deliver 100% of what the onboard
   software still knows; the gap from 1.0 to 0.685 is the detector + cloud gate. Scheduling only pays
@@ -105,7 +105,7 @@ Full write-up with every number: **`code/results/wp6_report.md`**. What the real
 * Ablations: conclusions hold with WP4 medians instead of the power law; 3 resampled days spread
   [0.680, 0.690].
 
-## WP7 done (24 Sept) — the byte budget. Full write-up: `code/results/wp7_report.md`
+## WP7 done (24 Sept) — the byte budget. Full write-up: `../code/results/wp7_report.md`
 `scripts/wp7_measure_cheap_products.py` → `wp7_budget_sweep.py`.
 
 * **86% of our "semantic downlink" was not semantic**: coastal tiles 62%, thumbnails 24%, ship
@@ -129,7 +129,7 @@ variants are reported). The fair baseline gets **0.622**, not 0.518. So our adva
 **+6.3 points of recall for ~7× the bytes**, not +16.7. Say it this way; a reviewer will check.
 
 ## WP8 done (24 Sept) — the encoder and the scheduler became one loop
-`scripts/wp8_queue_aware.py`. Write-up: **`code/results/wp8_report.md`**.
+`scripts/wp8_queue_aware.py`. Write-up: **`../code/results/wp8_report.md`**.
 
 * `simulate_online` encodes each tile *knowing the current buffer*, the way the satellite
   actually works (`encode_lod` and it share one `encode_tile`; a test pins them identical when
@@ -146,7 +146,7 @@ variants are reported). The fair baseline gets **0.622**, not 0.518. So our adva
   **robustness** result, not a higher peak. Say it that way.
 
 ## WP5 optimality gap done (24 Sept) — a promised deliverable that didn't exist
-`scripts/wp5_optimality_gap.py` + `sat7/optimum.py`. Write-up: **`code/results/wp5_optimality_gap_report.md`**.
+`scripts/wp5_optimality_gap.py` + `sat7/optimum.py`. Write-up: **`../code/results/wp5_optimality_gap_report.md`**.
 The plan ticks "optimality gap on small passes" under *must have*; there was no solver, only prose.
 
 * Exact DP for the knapsack-with-concave-divisible-class, **verified against brute-force
@@ -163,7 +163,7 @@ The plan ticks "optimality gap on small passes" under *must have*; there was no 
   cancels the tolerance, flagging 1e-16 rounding as violations.
 
 ## WP5b joint/whole-day bound done (24 Sept) — the hardest open item
-`scripts/wp5_joint_bound.py` + `sat7/optimum.py`. Write-up: **`code/results/wp5_joint_bound_report.md`**.
+`scripts/wp5_joint_bound.py` + `sat7/optimum.py`. Write-up: **`../code/results/wp5_joint_bound_report.md`**.
 Closes the limitation WP5 flagged itself ("the per-window gap does not bound the end-to-end
 loss") and the plan's unstarted nice-to-have "offline LP upper bound".
 
@@ -181,7 +181,7 @@ loss") and the plan's unstarted nice-to-have "offline LP upper bound".
   (it could previously earn several times it). Slack 59% → 29% on mixed instances, 0% on whole.
 
 ## WP9 done (24 Sept) — the FMEA table is now executable, and it failed in places
-`tests/test_failure_modes.py` (14 fault-injection tests). Write-up: **`code/results/wp9_failure_modes_report.md`**.
+`tests/test_failure_modes.py` (14 fault-injection tests). Write-up: **`../code/results/wp9_failure_modes_report.md`**.
 The report's 8 failure modes were all prose; none of our tests injected a fault. Now they do.
 
 * **⚠ "AIS gap = priority, not accusation" was FALSE for large vessels — now FIXED.**
@@ -205,7 +205,7 @@ The report's 8 failure modes were all prose; none of our tests injected a fault.
   value-per-byte, dark vessels survive), lost pass recovered by the next one when buffering.
 
 ## WP10 done (24 Sept) — sensitivity of every invented constant
-`scripts/wp10_sensitivity.py`. Write-up: **`code/results/wp10_sensitivity_report.md`**.
+`scripts/wp10_sensitivity.py`. Write-up: **`../code/results/wp10_sensitivity_report.md`**.
 Seven unmeasured constants swept one at a time, at 40k (nothing binds) and 160k (link binds).
 
 * **Conclusions hold in 69 of 70 settings.** "value-greedy ≥ FIFO" never fails. "ours ≥ fair
@@ -280,7 +280,7 @@ Updated 24 Sept ~17:00. The three "cheap wins" are **done and measured**, not ju
   + `scripts/` + **86 tests** (optimum DP + whole-day bounds vs brute force, calibration maths,
   14 FMEA fault-injection tests)
 * `code/data/yolo_ships/` — leakage-free dataset (split.csv, images, labels)
-* `code/results/` — all measurements + charts; `code/runs/ships/weights/best.pt` — detector
+* `../code/results/` — all measurements + charts; `code/runs/ships/weights/best.pt` — detector
 * WP6 outputs: `wp6_report.md`, `wp6_tiles.csv`, `wp6_ships.csv`, `wp6_pred_flags.csv`,
   `wp6_catalogue.json`, `wp6_size_model.json/.png`, `wp6_real_table.csv`, `wp6_real_recall.png`,
   `wp6_real_sweep.png`, `wp6_thr_and_compare.png` (variants tagged `*_datasetmix`, `*_nosizemodel`)

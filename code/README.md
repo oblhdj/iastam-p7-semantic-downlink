@@ -1,6 +1,6 @@
 # IASTAM 6.0 — Problem 7: Transmitting Information Rather Than Raw Data
 
-> ### ⚠ STALE (18 Sept) — read `../HANDOFF.md` instead
+> ### ⚠ STALE (18 Sept) — read `../docs/STATUS.md` instead
 > Every performance number below is from the **synthetic** Beta(5,2) workload and is superseded.
 > "LoD + value-greedy **93.0% / 97.6%**" became **0.685** on real detections (WP6); the
 > pre-filter section was re-measured on Airbus and the classic filter **failed as a gate**

@@ -29,7 +29,7 @@ Per contact window:
     subject to sum s_i x_i + sum s_j f_j  <=  capacity
 
 A knapsack with a concave-divisible class, so greedy is not optimal in general.
-`sat7/optimum.py` solves it exactly by dynamic programming over byte buckets, with each
+`../code/sat7/optimum.py` solves it exactly by dynamic programming over byte buckets, with each
 progressive item discretised into truncation steps.
 
 **Three things keep this honest:**

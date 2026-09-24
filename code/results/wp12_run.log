@@ -1,0 +1,23 @@
+=== WP12 seams: 200 real tiles with ships, device 0 ===
+
+slices per frame: grid 4, sahi@20% 9, whole 1  ->  SAHI costs 2.25x the grid
+
+  50/200 tiles
+  100/200 tiles
+  150/200 tiles
+  200/200 tiles
+
+373 ground-truth ships, 56 of them (15.0%) straddle a 2x2 seam
+
+policy     recall   on seam  off seam  slices/frame  compute
+whole      0.8016    0.9643    0.7729          1.00    0.25x
+grid       0.6917    0.6786    0.6940          4.00    1.00x
+sahi       0.7802    0.8750    0.7634          9.00    2.25x
+edge       0.7265    0.8750    0.7003          5.51    1.38x
+
+What this says:
+  cutting a tile costs +11.0 pts of recall overall, +28.6 pts on ships that straddle the cut
+  SAHI recovers +19.6 pts on seam ships for 2.25x compute
+  edge-triggered recovers +19.6 pts for 1.38x compute
+
+Saved wp12_seams.json|.csv|.png in C:\Users\Mega-PC\Desktop\IASTAM_Problem7\code\results

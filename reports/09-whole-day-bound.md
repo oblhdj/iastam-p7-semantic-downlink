@@ -6,7 +6,7 @@
 > strengthen again — **do not build arrival prediction.** See `wp5_joint_bound.csv`.
 
 
-The per-window gap (`wp5_optimality_gap_report.md`) measured how much value greedy leaves
+The per-window gap (`08-optimality-gap.md`) measured how much value greedy leaves
 behind *inside* one contact window, and said plainly that it does **not** bound the
 end-to-end loss: it never questions the choices that produced the queue in the first place.
 This closes that hole. It also closes the plan's unstarted nice-to-have, "offline LP upper

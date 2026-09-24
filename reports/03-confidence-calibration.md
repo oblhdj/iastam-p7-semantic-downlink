@@ -71,7 +71,7 @@ threshold: `LoDConfig(conf_low=args.det_thr)` with `det_thr = 0.25`, in `wp6_sim
 `wp7_budget_sweep.py`, `wp8_queue_aware.py`, `wp10_sensitivity.py` and `wp11_integration_demo.py`
 alike. So production already runs at **0.25**, which is *more* permissive than 0.329 — moving to
 0.329 would **tighten** the bottom rung and lose ships, not gain them. The 0.4 default is dead
-code; it is now commented as such in `sat7/scheduler.py`.
+code; it is now commented as such in `../code/sat7/scheduler.py`.
 
 The real structure is that **`conf_low` and `det_thr` are the same knob doing two jobs**: what
 the detector is willing to report, and what the encoder bothers to send. `wp6_simulate_real.py`

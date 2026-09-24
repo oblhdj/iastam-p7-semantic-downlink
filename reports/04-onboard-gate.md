@@ -2,8 +2,8 @@
 
 Replaces WP3's negative result. The classic CV pre-filter was measured unusable as a gate
 (recall 0.645 while dropping 17.7% of empty tiles). A 47k-parameter CNN replaces it.
-Script `scripts/wp3_train_gate.py` (3 bugs fixed 24 Sept; had never been run). Data:
-`wp3_gate.json`, `wp3_gate_tradeoff.csv|.png`, weights `models/gate.pt`. All figures REAL,
+Script `../code/scripts/wp3_train_gate.py` (3 bugs fixed 24 Sept; had never been run). Data:
+`wp3_gate.json`, `wp3_gate_tradeoff.csv|.png`, weights `../code/models/gate.pt`. All figures REAL,
 test split, 5,320 tiles / 8,173 ships. 4 epochs, 128 px input, loss 0.2100 -> 0.1458.
 
 ## 1. It dominates the classic filter at every operating point — by 35 to 64 points
@@ -23,7 +23,7 @@ At **99.5%** recall it still drops 18.4%. The classic filter never reaches eithe
 `wp3_train_gate.py` timed the whole eval loop — 768x768 JPEG decode, resize, transfer, forward —
 and wrote it out as `infer_ms_per_tile` = **4.65 ms**. That is dataloader-bound and is **not**
 comparable with the detector's 10.71 ms/tile of pure GPU inference. Re-measured against the
-saved `models/gate.pt`, forward pass only, batch already on the device (median of 50):
+saved `../code/models/gate.pt`, forward pass only, batch already on the device (median of 50):
 
 | device | batch 1 | batch 32 | batch 128 |
 |---|---|---|---|

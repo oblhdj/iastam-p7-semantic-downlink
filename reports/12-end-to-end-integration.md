@@ -1,7 +1,7 @@
 # WP11 — end-to-end integration: real image bytes through the real chain (24 Sept 2026)
 
-Closes ARCHITECTURE.md §E item 1, the largest "never started" gap: *"nothing runs tile →
-prefilter → detector → LoD → scheduler → ground"*. Script: `scripts/wp11_integration_demo.py`.
+Closes ../docs/ARCHITECTURE.md §E item 1, the largest "never started" gap: *"nothing runs tile →
+prefilter → detector → LoD → scheduler → ground"*. Script: `../code/scripts/wp11_integration_demo.py`.
 Data: `wp11_integration.json`, `wp11_per_tile.csv`, `wp11_funnel.png`, log `wp11_run.log`.
 All figures REAL — the **full 5,320-tile held-out test split**, actual JPEGs, actual models,
 on the PC (RTX 5060).

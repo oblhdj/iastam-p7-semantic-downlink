@@ -2,7 +2,7 @@
 
 The technical report carries a "Failure modes and mitigations" table with eight entries.
 Every one of them was prose: of 72 tests, none injected a fault. These now exist as
-`tests/test_failure_modes.py` (14 tests), which inject each fault and check whether the
+`../code/tests/test_failure_modes.py` (14 tests), which inject each fault and check whether the
 claimed mitigation actually holds.
 
 Where a mitigation does not hold, the test pins the **real** behaviour and says so in its

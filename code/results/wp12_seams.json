@@ -1,0 +1,37 @@
+{
+  "tiles": 200,
+  "ships": 373,
+  "straddling_ships": 56,
+  "straddling_share": 0.15013404825737264,
+  "policies": {
+    "whole": {
+      "recall": 0.8016085790884718,
+      "recall_on_seam": 0.9642857142857143,
+      "recall_off_seam": 0.7728706624605678,
+      "slices_per_frame": 1.0,
+      "compute_vs_grid": 0.25
+    },
+    "grid": {
+      "recall": 0.6916890080428955,
+      "recall_on_seam": 0.6785714285714286,
+      "recall_off_seam": 0.694006309148265,
+      "slices_per_frame": 4.0,
+      "compute_vs_grid": 1.0
+    },
+    "sahi": {
+      "recall": 0.7801608579088471,
+      "recall_on_seam": 0.875,
+      "recall_off_seam": 0.7634069400630915,
+      "slices_per_frame": 9.0,
+      "compute_vs_grid": 2.25
+    },
+    "edge": {
+      "recall": 0.7265415549597856,
+      "recall_on_seam": 0.875,
+      "recall_off_seam": 0.7003154574132492,
+      "slices_per_frame": 5.51,
+      "compute_vs_grid": 1.3775
+    }
+  },
+  "elapsed_s": 92.39847940008622
+}

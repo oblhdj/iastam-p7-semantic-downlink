@@ -13,7 +13,7 @@ Outputs
     <out>/data.yaml                         for `yolo detect train data=...`
     <out>/split.csv                         ImageId, group, split, n_ships
     <out>/duplicates.csv                    every duplicate pair with its evidence
-    results/wp0_report.md                   numbers for the paper
+    ../reports/01-data-integrity.md         numbers for the paper
     results/wp0_groups.png                  group-size histogram + split composition
     results/wp0_duplicates.jpg              example duplicate pairs (for the slides)
 """
@@ -267,7 +267,7 @@ def main() -> None:
     }
     (args.results / "wp0_stats.json").write_text(json.dumps(stats, indent=2))
     pct = 100 * stats["tiles_in_duplicate_groups"] / max(1, len(ids))
-    (args.results / "wp0_report.md").write_text(f"""# WP0 -- Data integrity report
+    (ROOT.parent / "reports" / "01-data-integrity.md").write_text(f"""# WP0 -- Data integrity report
 
 Source: `{args.zip.name}` ({stats['zip_images']} training tiles in the zip).
 

@@ -148,10 +148,9 @@ def main() -> None:
         # --- edge-triggered: extra slice on a seam only if a classic blob touches a grid border
         half, margin = TILE // 2, 24
         need_v = need_h = False
-        for b in pre.boxes:
-            bx, by, bw, bh = (b[0], b[1], b[2], b[3]) if len(b) == 4 else (b[0], b[1], 0, 0)
-            need_v |= abs(bx - half) < margin or abs(bx + bw - half) < margin
-            need_h |= abs(by - half) < margin or abs(by + bh - half) < margin
+        for b in pre.boxes:                       # sat7.rle.Box: top-left x, y + w, h
+            need_v |= b.x - margin < half < b.x + b.w + margin
+            need_h |= b.y - margin < half < b.y + b.h + margin
         extra = []
         if need_v:
             extra.append((half // 2, 0, half, TILE - 1) if False else (half - half // 2, 0, half, half))
