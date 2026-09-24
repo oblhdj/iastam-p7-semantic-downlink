@@ -95,6 +95,8 @@ This mattered more than any single result, so it is stated plainly:
   invented constant; conclusions hold in 69 of 70 settings, and the one failure is named.
 - **The thing we are least sure of is the loudest.** 52% of all reported ship loss traces to
   cloud, which rests on **21 real tiles**. That is why recall is quoted as a band.
+- **Tooling is disclosed.** Development was assisted by Claude (Anthropic). Every experiment,
+  number and conclusion in this repository was specified, run and reviewed by the team.
 
 ## Limitations, stated up front
 
