@@ -226,34 +226,32 @@ Seven unmeasured constants swept one at a time, at 40k (nothing binds) and 160k 
   dark_wake_value 0.011 ≫ aging 0.0002 > dark_weight 0.00007.
 
 ## NEXT STEP (highest value)
-Updated 24 Sept ~17:00. The three "cheap wins" are **done and measured**, not just recommended.
+Updated 24 Sept ~21:00. **The engineering backlog is empty.** Everything that was "recommended
+but unrun" is now measured, and the repo is on git (3 commits) and restructured for publication.
 
-**Done today (beyond WP1 INT8 / WP2 / WP3 / WP11):**
-* **`conf_high` 0.9 → 0.670 ADOPTED** as the `LoDConfig` default. Full re-run of WP6/7/8/5/5b/10/11
-  (`results/rerun_conf_high_670.log`). At 40k: recall unchanged **0.685**, bytes **117.9 → 108.0 MB
-  (−8.4%)**, data reduction **511× → 557×**. At 160k: **+1.5 pts** recall, margin over the fair
-  baseline **+2.6 → +4.1 pts**. Honest cost: the optimality gap grew (0.069% → 0.251% at scale)
-  because the cheap rung makes items lumpier, and the FIFO ratio slipped 2.4× → 2.26× because
-  cheaper encoding helps FIFO too.
-* **`conf_low` swept for the first time — it is the 2nd most influential constant** (range 0.157).
-  ⚠ **WP2's "lower it to 0.329" advice was WRONG and is withdrawn**: every script ties `conf_low`
-  to the 0.25 detection threshold, not the 0.4 dataclass default, so 0.329 is *stricter* and
-  measured at **−3.2 points** of recall. Read the call site, not the dataclass.
-* **Cloud stated as a band**: 0.68 at the assumed 15%, **0.40–0.82 across 0–50%**. Never quote bare.
-* **Gate test added** (`tests/test_gate.py`, 10 tests) — the last untested artefact. Torch tests
-  skip cleanly in `.venv` and run in `.venv312` (pytest installed there).
-* **Gate scores for all 5,320 tiles** (`wp3_gate_scores_test.csv`), ready to re-key WP7/WP8.
+**Closed since the last update:** `conf_high` 0.670 adopted (557× reduction, −8.4% bytes);
+`conf_low` swept and WP2's recommendation withdrawn as wrong; cloud stated as a band 0.40–0.82;
+gate tested (10 tests); full-split end-to-end run reproducing WP6 to 1e-4; tile seams and SAHI
+measured; q30 rejected on measurement; thumbnail gating re-keyed onto the learned gate
+(−3.8% bytes, free); cloud × thumb_value interaction measured; LICENSE and README written.
 
-**Left, in order:**
-1. ⚠ **The paper and the video — the only hard deadline (26 Sept).** Now 14 result documents,
-   none in the paper. This is the binding constraint; the engineering backlog is not.
-2. **Re-key WP7 thumbnail gating and WP8's control law on the learned gate** — both still use the
-   classic filter's 0.645-recall signal; the gate is 0.988 and 80× cheaper. Scores are ready.
-3. **q30 coastal tiles** — needs the detector-on-recompressed-tiles check. −18% of coastal bytes.
-4. **2-D sensitivity** (`scripts/wp10b_interaction.py`, written, not yet run): cloud × thumb_value.
-5. ARCHITECTURE §E leftovers: SAHI/seams, **flight hardware** (all timings are a laptop RTX 5060),
+**What is actually left:**
+
+1. ⚠ **The paper and the 2-minute video — the only hard deadline (26 Sept).**
+   ⚠ **Rebuilding the PDFs will not fix them.** `build_report.py` reads only `wp0_stats.json`;
+   it never touches the WP6–WP15 results, and its scheduler section is written around the
+   synthetic workload (it lists "all scheduler results use a synthetic workload" as a known
+   limitation). Making the PDF current means **rewriting its content**, not re-running it.
+   The 15 reports in `reports/` are the current account and are ready to be drawn from.
+2. **WP8's escalation signal** still keys on the classic pre-filter, because the gate is a
+   whole-tile classifier and cannot localise. A small localising head would let the classic
+   stage be dropped entirely — worth 56 ms/tile. Phase 3.
+3. **Edge-triggered re-inference for tile seams** — measured to match SAHI at 61% of the cost
+   (report 13). Implement when the system moves to wide swaths. Phase 3.
+4. ARCHITECTURE §E leftovers: **flight hardware** (every timing is a laptop RTX 5060),
    multi-station, bursty arrivals.
-6. Then small-ship recall — still the largest single loss, and INT8 made it worse.
+5. Then small-ship recall — still the largest single loss, and now implicated three times over:
+   INT8, coastal recompression and tile seams all take their toll there first.
 
 ## Environment — FIXED 24 Sept (the old notes here were wrong)
 * **`.venv312` is not corrupted.** It runs torch/ultralytics directly, CUDA and all. The

@@ -51,7 +51,7 @@ catalogue-driven simulation to four decimal places — see
 
 | path | what is in it |
 |---|---|
-| **[`reports/`](reports/)** | **Start here.** 12 narrative write-ups, one per work package |
+| **[`reports/`](reports/)** | **Start here.** 15 narrative write-ups, one per work package |
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | what is built, what is missing, ranked and audited |
 | [`docs/STATUS.md`](docs/STATUS.md) | current state, open items, environment notes |
 | [`docs/GLOSSARY.md`](docs/GLOSSARY.md) | every term and symbol used in the reports |
@@ -83,7 +83,11 @@ This mattered more than any single result, so it is stated plainly:
 - **Every figure is labelled REAL / SIM / LIT / TARGET.** No simulated number is quoted as measured.
 - **We report our own negative results.** The classic pre-filter failed as a gate (0.645 recall);
   INT8 quantisation is 8.5× *slower* on CPU and costs 2.2 points on small ships; `aging_per_hour`
-  provably does nothing. All three are in the reports.
+  provably does nothing; blanket SAHI is not worth its compute. All four are in the reports.
+- **When a later check contradicted an earlier claim, the later check won.** We had adopted a
+  coastal JPEG setting as "no recall cost"; re-running the *detector* on recompressed tiles showed
+  it costs 4.0 points on small ships ([report 14](reports/14-coastal-recompression.md)). The
+  original measurement could not have seen it, and we say so rather than quietly restating it.
 - **We corrected our own claims rather than defending them.** The Phi-sat-2 baseline was unfair by
   construction, so our advantage is +6.3 points, not +16.7. A dark-vessel rule did the opposite of
   what we claimed on 13.6% of ships until [report 10](reports/10-failure-modes.md) caught it.
@@ -98,9 +102,15 @@ Timings are a laptop RTX 5060, not flight hardware — "runs onboard" is **not**
 The Airbus set is 0.4% cloud, so the cloud assumption cannot be settled from this data. Tiles are
 resampled i.i.d. rather than as orbital strips. A single ground station is modelled. Tile seams
 are measured ([report 13](reports/13-tile-seams-and-sahi.md)) but SAHI is not implemented.
+The three PDFs in `paper/` predate reports 05–15 and still describe a synthetic workload — the
+reports, not the PDFs, are the current account of this project.
 
 ## Licence and data
 
-Code is ours. The imagery is the
-[Airbus Ship Detection Challenge](https://www.kaggle.com/c/airbus-ship-detection) dataset and is
-subject to its own terms; it is not redistributed here.
+Code and reports: [MIT](LICENSE).
+
+The imagery is **not** ours to relicense. It comes from the
+[Airbus Ship Detection Challenge](https://www.kaggle.com/c/airbus-ship-detection) and remains
+subject to that competition's terms. None of it is redistributed here;
+`code/scripts/wp0_build_dataset.py` rebuilds the leakage-free split from the original archive,
+which you must obtain yourself.
