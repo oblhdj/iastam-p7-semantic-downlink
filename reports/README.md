@@ -1,6 +1,6 @@
 # Reports
 
-Twelve work packages, each a short write-up of what was measured, what it changed, and what it
+Fifteen work packages, each a short write-up of what was measured, what it changed, and what it
 cost us to believe. They are meant to be read in order, but each stands alone.
 
 Numbers live in `../code/results/` as `.csv` / `.json`; these documents narrate them. Where a
