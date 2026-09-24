@@ -1,0 +1,43 @@
+{
+  "ships": 400,
+  "runs": 3600,
+  "recall_vs_visible_fraction": {
+    "0.2": 0.115,
+    "0.3": 0.25,
+    "0.4": 0.4075,
+    "0.5": 0.5575,
+    "0.6": 0.64,
+    "0.7": 0.7225,
+    "0.8": 0.7475,
+    "0.9": 0.7925,
+    "1.0": 0.8125
+  },
+  "intact_recall": 0.8125,
+  "p_detected_given_cut": 0.7120833333333333,
+  "frame_px": 10000,
+  "tiles_no_overlap": 196,
+  "tiles_sahi20": 289,
+  "sahi_compute_x": 1.4744897959183674,
+  "expected_loss": {
+    "median 43 px": {
+      "size_px": 43,
+      "p_cut": 0.10884433322482645,
+      "loss_no_overlap": 0.010929785127992994
+    },
+    "medium 100 px": {
+      "size_px": 100,
+      "p_cut": 0.24346245659722232,
+      "loss_no_overlap": 0.024447688349971086
+    },
+    "large 200 px": {
+      "size_px": 200,
+      "p_cut": 0.4530164930555557,
+      "loss_no_overlap": 0.04549040617766207
+    },
+    "largest 380 px": {
+      "size_px": 380,
+      "p_cut": 0.7447645399305556,
+      "loss_no_overlap": 0.07478677255135999
+    }
+  }
+}

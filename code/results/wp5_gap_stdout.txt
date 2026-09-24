@@ -1,0 +1,36 @@
+192 pass-instances, DP resolution 4000 buckets, 16 truncation steps
+sanity (greedy <= optimum <= fractional bound): all pass
+
+===== operational instances (smallest item spans 0.003 of a byte-bucket, so the DP is coarse here and its gap is a LOWER bound) =====
+--- Value-greedy (ours) ---
+ tiles  passes   mean_gap    max_gap  median_items  saturated
+ 20000      12 2.6546e-16 1.6407e-15        1420.5     0.0000
+ 40000      12 2.8200e-16 1.8850e-15        6611.0     0.1667
+ 80000      12 4.9235e-04 5.7434e-03       47338.5     0.8333
+160000      12 3.2107e-03 2.4700e-02      108877.5     0.8333
+--- FIFO ---
+ tiles  passes   mean_gap    max_gap  median_items  saturated
+ 20000      12 2.6546e-16 1.6407e-15        1420.5     0.0000
+ 40000      12 2.1021e-02 1.2956e-01        5259.0     0.1667
+ 80000      12 2.8344e-01 7.4691e-01       39536.5     0.8333
+160000      12 5.2559e-01 8.4365e-01      105504.5     0.8333
+
+===== small instances (the DP resolves every item exactly) =====
+--- Value-greedy (ours) ---
+ tiles  passes   mean_gap    max_gap  median_items  saturated
+ 20000      12 1.4088e-16 9.2119e-16          25.0     0.0000
+ 40000      12 2.5467e-16 3.0561e-15          25.0     0.1667
+ 80000      12 4.6392e-02 3.3386e-01         200.0     0.8333
+160000      12 1.1766e-01 2.6196e-01         300.0     0.8333
+--- FIFO ---
+ tiles  passes   mean_gap    max_gap  median_items  saturated
+ 20000      12 1.4088e-16 9.2119e-16          25.0     0.0000
+ 40000      12 5.0534e-02 3.6427e-01          25.0     0.1667
+ 80000      12 5.7860e-01 9.2808e-01          50.0     0.8333
+160000      12 7.0783e-01 9.7170e-01         200.0     0.8333
+
+HEADLINE (saturated small passes, where the choice actually binds) -- value-greedy loses 8.95% of the optimal value on average, worst case 33.39%, over 22 windows.
+FIFO on the same queues: mean 72.92%, worst 97.17%.
+At operational scale (13762 items per window, median) the gap is 0.093% -- with thousands of small items in one window the instance is nearly fractional, and greedy is optimal for fractional knapsack.
+
+Saved wp5_optimality_gap.csv|.png in C:\Users\Mega-PC\Desktop\IASTAM_Problem7\code\results

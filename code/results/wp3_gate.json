@@ -1,0 +1,27 @@
+{
+  "params": 46897,
+  "input_px": 128,
+  "epochs": 4,
+  "infer_ms_per_tile": 0.052,
+  "device": "cuda",
+  "at_99_recall": {
+    "threshold": 0.11,
+    "ship_recall": 0.9900893184877034,
+    "empty_dropped": 0.356353591160221,
+    "tiles_kept": 0.9156015037593985
+  },
+  "at_99.5_recall": {
+    "threshold": 0.065,
+    "ship_recall": 0.9955952526612015,
+    "empty_dropped": 0.1841620626151013,
+    "tiles_kept": 0.9569548872180451
+  },
+  "classic_baseline": {
+    "ship_recall": 0.645,
+    "empty_dropped": 0.177
+  },
+  "eval_loop_ms_per_tile_dataloader_bound": 4.649235601484412,
+  "infer_ms_per_tile_cpu": 0.94,
+  "timing_note": "infer_ms_per_tile is the pure forward pass on a batch already on the device (median of 50, batch 32), measured against models/gate.pt after training. The original value 4.649 timed the whole eval loop including 768x768 JPEG decode and resize, which is ~80x the model cost and is not comparable with the detector 10.71 ms/tile.",
+  "empty_tile_fraction_test": 0.204
+}

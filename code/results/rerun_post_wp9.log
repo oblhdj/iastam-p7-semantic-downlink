@@ -1,0 +1,212 @@
+=============== wp5_optimality_gap.py --frac-steps 16 ===============
+192 pass-instances, DP resolution 4000 buckets, 16 truncation steps
+sanity (greedy <= optimum <= fractional bound): all pass
+
+===== operational instances (smallest item spans 0.003 of a byte-bucket, so the DP is coarse here and its gap is a LOWER bound) =====
+--- Value-greedy (ours) ---
+ tiles  passes   mean_gap    max_gap  median_items  saturated
+ 20000      12 2.4208e-16 1.1795e-15        1449.0     0.0000
+ 40000      12 1.5361e-16 1.1313e-15        6879.5     0.2500
+ 80000      12 6.3869e-05 4.8660e-04       48736.5     0.8333
+160000      12 2.6850e-03 2.3373e-02      110262.0     0.8333
+--- FIFO ---
+ tiles  passes   mean_gap    max_gap  median_items  saturated
+ 20000      12 2.4208e-16 1.1795e-15        1449.0     0.0000
+ 40000      12 1.7996e-02 1.0994e-01        5463.0     0.2500
+ 80000      12 2.8399e-01 7.7570e-01       40812.5     0.8333
+160000      12 5.2644e-01 8.7084e-01      108512.0     0.8333
+
+===== small instances (the DP resolves every item exactly) =====
+--- Value-greedy (ours) ---
+ tiles  passes   mean_gap    max_gap  median_items  saturated
+ 20000      12 1.3775e-16 1.5220e-15          25.0     0.0000
+ 40000      12 3.5490e-16 3.1227e-15          37.5     0.2500
+ 80000      12 6.4025e-03 3.9610e-02         150.0     0.8333
+160000      12 8.2241e-02 3.4724e-01         300.0     0.8333
+--- FIFO ---
+ tiles  passes   mean_gap    max_gap  median_items  saturated
+ 20000      12 1.3775e-16 1.5220e-15          25.0     0.0000
+ 40000      12 5.1946e-02 4.3695e-01          25.0     0.2500
+ 80000      12 5.2411e-01 8.5604e-01         100.0     0.8333
+160000      12 6.3785e-01 9.4162e-01         200.0     0.8333
+
+HEADLINE (saturated small passes, where the choice actually binds) -- value-greedy loses 4.62% of the optimal value on average, worst case 34.72%, over 23 windows.
+FIFO on the same queues: mean 63.33%, worst 94.16%.
+At operational scale (14180 items per window, median) the gap is 0.069% -- with thousands of small items in one window the instance is nearly fractional, and greedy is optimal for fractional knapsack.
+
+Saved wp5_optimality_gap.csv|.png in C:\Users\Mega-PC\Desktop\IASTAM_Problem7\code\results
+=============== wp5_joint_bound.py ===============
+ordering check (online <= bound, clairvoyant <= bound): all pass
+
+Whole-day value, REAL workload (value units, not ships):
+ tiles  online_greedy  clairvoyant      bound  total_gap  price_of_online  clair_gap  fifo_gap
+ 20000      10755.770    10755.770  10755.770  2.938e-13        2.938e-13      0.000 2.938e-13
+ 40000      21715.105    21715.105  21715.105  0.000e+00        0.000e+00      0.000 0.000e+00
+ 80000      43996.470    43996.335  44156.885  3.637e-03        0.000e+00      0.004 2.072e-01
+160000      84073.357    84235.918  87926.680  4.383e-02        1.850e-03      0.042 6.024e-01
+320000     151524.391   152249.187 167631.534  9.609e-02        4.324e-03      0.092 7.890e-01
+
+HEADLINE -- over the whole day the value-greedy schedule sits within 9.6% of a bound on the best possible schedule (worst load), and the part attributable to not knowing the future is at most 0.4%.
+At the loads where anything binds (160,000, 320,000 tiles/day) the total gap averages 7.0%.
+FIFO, for contrast, is 78.9% below the bound at worst.
+
+The bound is a relaxation, so the true optimum sits somewhere between 'clairvoyant' and 'bound' -- the real loss is smaller than 'total gap' suggests.
+
+Saved wp5_joint_bound.csv|.png in C:\Users\Mega-PC\Desktop\IASTAM_Problem7\code\results
+=============== wp7_budget_sweep.py ===============
+REAL workload, 40,000 tiles/day, 3 resampled days, value-greedy, 210 MB capacity
+
+                     coast thumbnails  ship_recall  d_recall  dark_recall  MB_offered  bytes_vs_base  MB_coast  n_whole_tiles  MB_ships  semantic_share  latency_med_h
+        tile q60 (interim) every tile        0.685     0.000        0.679     141.854          1.000    85.254       2037.667    20.436           0.144          4.389
+        tile q60 (interim)      gated        0.685     0.000        0.679     136.836          0.965    85.254       2037.667    20.436           0.149          4.389
+        tile q40 (current) every tile        0.685     0.000        0.679     120.636          0.850    64.036       2037.667    20.436           0.169          4.386
+        tile q40 (current)      gated        0.685     0.000        0.679     115.618          0.815    64.036       2037.667    20.436           0.177          4.386
+                  tile q30 every tile        0.685     0.000        0.679     107.953          0.761    51.353       2037.667    20.436           0.189          4.386
+                  tile q30      gated        0.685     0.000        0.679     102.935          0.726    51.353       2037.667    20.436           0.199          4.386
+           ROI mosaic only every tile        0.622    -0.063        0.624      59.262          0.418     2.662          0.000    20.436           0.345          4.402
+           ROI mosaic only      gated        0.622    -0.063        0.624      54.244          0.382     2.662          0.000    20.436           0.377          4.402
+adaptive q40, escalate>=25 every tile        0.659    -0.026        0.658      80.013          0.564    23.413        692.667    20.436           0.255          4.387
+adaptive q40, escalate>=25      gated        0.659    -0.026        0.658      74.995          0.529    23.413        692.667    20.436           0.272          4.387
+adaptive q40, escalate>=11 every tile        0.669    -0.016        0.665      89.964          0.634    33.364       1023.667    20.436           0.227          4.389
+adaptive q40, escalate>=11      gated        0.669    -0.016        0.665      84.946          0.599    33.364       1023.667    20.436           0.241          4.389
+ adaptive q40, escalate>=6 every tile        0.673    -0.012        0.668      96.986          0.684    40.386       1257.333    20.436           0.211          4.387
+ adaptive q40, escalate>=6      gated        0.673    -0.012        0.668      91.969          0.648    40.386       1257.333    20.436           0.222          4.387
+ adaptive q40, escalate>=3 every tile        0.677    -0.008        0.672     103.323          0.728    46.723       1468.000    20.436           0.198          4.389
+ adaptive q40, escalate>=3      gated        0.677    -0.008        0.672      98.305          0.693    46.723       1468.000    20.436           0.208          4.389
+ adaptive q40, escalate>=1 every tile        0.681    -0.004        0.676     109.539          0.772    52.939       1671.667    20.436           0.187          4.384
+ adaptive q40, escalate>=1      gated        0.681    -0.004        0.676     104.521          0.737    52.939       1671.667    20.436           0.196          4.384
+
+Saved wp7_budget_sweep.csv|.png in C:\Users\Mega-PC\Desktop\IASTAM_Problem7\code\results
+=============== wp8_queue_aware.py ===============
+REAL workload, online encode+schedule, value-greedy, 2 days each, link share 0.25
+
+--- 20,000 tiles/day (best: whole tile always, recall 0.686) ---
+              policy  ship_recall  dark_recall  MB_offered  MB_sent  latency_med_h
+   whole tile always        0.686        0.677      57.971   57.971          4.417
+ adaptive, fixed >=3        0.679        0.671      48.917   48.917          4.411
+adaptive, fixed >=11        0.671        0.664      42.014   42.014          4.415
+adaptive, fixed >=25        0.661        0.657      37.158   37.158          4.384
+       mosaic always        0.621        0.613      26.782   26.782          4.376
+  queue-aware (ours)        0.686        0.677      57.971   57.971          4.417
+
+--- 40,000 tiles/day (best: whole tile always, recall 0.682) ---
+              policy  ship_recall  dark_recall  MB_offered  MB_sent  latency_med_h
+   whole tile always        0.682        0.681     117.951  117.946          4.417
+ adaptive, fixed >=3        0.674        0.674     100.160  100.160          4.422
+adaptive, fixed >=11        0.666        0.666      86.028   86.016          4.421
+adaptive, fixed >=25        0.655        0.660      75.728   75.728          4.419
+       mosaic always        0.621        0.629      54.383   54.383          4.409
+  queue-aware (ours)        0.682        0.681     117.951  117.946          4.417
+
+--- 80,000 tiles/day (best: whole tile always, recall 0.687) ---
+              policy  ship_recall  dark_recall  MB_offered  MB_sent  latency_med_h
+   whole tile always        0.687        0.681     234.777  185.952          4.733
+ adaptive, fixed >=3        0.679        0.672     197.060  185.792          4.503
+adaptive, fixed >=11        0.670        0.665     170.702  170.685          4.393
+adaptive, fixed >=25        0.661        0.656     151.369  151.346          4.344
+       mosaic always        0.624        0.619     108.850  108.850          4.335
+  queue-aware (ours)        0.679        0.674     205.254  185.952          4.555
+
+--- 160,000 tiles/day (best: adaptive, fixed >=11, recall 0.663) ---
+              policy  ship_recall  dark_recall  MB_offered  MB_sent  latency_med_h
+   whole tile always        0.648        0.685     468.455  187.057          5.010
+ adaptive, fixed >=3        0.657        0.676     394.636  186.756          4.895
+adaptive, fixed >=11        0.663        0.667     341.299  186.554          4.757
+adaptive, fixed >=25        0.658        0.658     302.161  186.341          4.618
+       mosaic always        0.623        0.622     218.320  185.872          4.384
+  queue-aware (ours)        0.662        0.663     336.754  187.057          4.741
+
+--- 320,000 tiles/day (best: adaptive, fixed >=25, recall 0.629) ---
+              policy  ship_recall  dark_recall  MB_offered  MB_sent  latency_med_h
+   whole tile always        0.592        0.638     934.135  188.907          6.857
+ adaptive, fixed >=3        0.607        0.646     788.649  188.322          6.868
+adaptive, fixed >=11        0.621        0.651     681.289  187.703          6.867
+adaptive, fixed >=25        0.629        0.652     604.534  187.345          6.687
+       mosaic always        0.623        0.622     435.276  186.665          5.434
+  queue-aware (ours)        0.629        0.651     600.161  188.907          6.684
+
+Regret against the best policy for each load (how much a fixed choice costs when the regime is unknown):
+              policy  worst_case   mean
+  queue-aware (ours)      0.0075 0.0018
+adaptive, fixed >=11      0.0168 0.0115
+ adaptive, fixed >=3      0.0229 0.0106
+adaptive, fixed >=25      0.0269 0.0168
+   whole tile always      0.0371 0.0104
+       mosaic always      0.0656 0.0472
+
+Saved wp8_queue_aware.csv|.png and wp8_control_trace.png in C:\Users\Mega-PC\Desktop\IASTAM_Problem7\code\results
+=============== wp6_simulate_real.py --mix dataset --repeats 1 --tag datasetmix ===============
+REAL workload -- 5320 held-out tiles, mix=dataset
+  day: 40000 tiles, 61938 real ships (44983 with conf>=0.25, 6303 flagged dark [ASSUMPTION]), 8242 real false alarms
+  contexts: {'cloud': 169, 'ships': 23617, 'coast': 10532, 'empty': 5682}
+  payload: per-ship WP4 power law
+  6 passes in 36 h, cubesat_sband x 0.25 -> 210 MB
+
+                        strategy  ship_recall    recall_ci95  recall_spread  ceiling_recall  downlink_eff  dark_recall  value_frac  latency_med_h  latency_p90_h  dark_latency_med_h  MB_sent  MB_offered  data_reduction_x  dropped_storage
+           Bent pipe (raw, FIFO)        0.003 [0.003, 0.004] [0.003, 0.003]           0.998         0.003        0.003       0.003         22.265         35.311              22.265  201.720   70479.839           349.395          35222.0
+     Phi-sat-2 style, ocean only        0.540 [0.536, 0.544] [0.540, 0.540]           0.540         1.000        0.544       0.541          4.430          9.419               4.490   38.968      38.968          1808.659              0.0
+Phi-sat-2 style, fair (+coastal)        0.726 [0.722, 0.729] [0.726, 0.726]           0.726         1.000        0.728       0.726          4.405          9.401               4.453   53.182      53.182          1325.257              0.0
+           Ours: LoD + no buffer        0.249 [0.246, 0.252] [0.249, 0.249]           0.840         0.297        0.260       0.266          8.666         11.053               8.618  133.853     447.203           526.547              0.0
+                Ours: LoD + FIFO        0.349 [0.346, 0.353] [0.349, 0.349]           0.840         0.416        0.346       0.367         17.313         26.887              17.257  186.636     447.203           377.633              0.0
+        Ours: LoD + value-greedy        0.769 [0.766, 0.772] [0.769, 0.769]           0.840         0.916        0.840       0.827          5.297         11.269               5.199  186.693     447.203           377.518              0.0
+
+REAL vs SYNTHETIC workload, same orbit and link:
+                                           ship_recall                               MB_sent                
+workload                         REAL detections (WP6) SYNTHETIC (WP5) REAL detections (WP6) SYNTHETIC (WP5)
+strategy                                                                                                    
+Bent pipe (raw, FIFO)                            0.003           0.004               201.720         201.720
+Phi-sat-2 style, ocean only                      0.540           0.693                38.968          14.761
+Phi-sat-2 style, fair (+coastal)                 0.726           0.996                53.182          21.021
+Ours: LoD + no buffer                            0.249           0.873               133.853         101.735
+Ours: LoD + FIFO                                 0.349           0.998               186.636         115.974
+Ours: LoD + value-greedy                         0.769           0.998               186.693         115.974
+
+Onboard confidence threshold sweep (ours, value-greedy) -- REAL confidences:
+ det_thr  detected_frac  false_alarms  ship_recall  dark_recall  MB_sent  latency_med_h
+    0.05          0.862         44059        0.852        0.925  186.781          5.261
+    0.10          0.822         23906        0.827        0.901  186.742          5.273
+    0.15          0.789         15915        0.809        0.882  186.721          5.285
+    0.25          0.726          8242        0.769        0.840  186.693          5.297
+    0.40          0.630          3431        0.699        0.772  186.664          5.332
+    0.55          0.535          1448        0.633        0.704  186.614          5.369
+    0.70          0.417           545        0.552        0.611  186.581          5.395
+
+Saved wp6_real_table_datasetmix.csv, wp6_real_vs_sim_datasetmix.csv, wp6_real_sweep_datasetmix.csv, wp6_thr_sweep_datasetmix.csv and 3 charts in C:\Users\Mega-PC\Desktop\IASTAM_Problem7\code\results
+=============== wp6_simulate_real.py --no-size-model --repeats 1 --tag nosizemodel ===============
+REAL workload -- 5320 held-out tiles, mix=orbit
+  day: 40000 tiles, 21137 real ships (14785 with conf>=0.25, 2139 flagged dark [ASSUMPTION]), 2908 real false alarms
+  contexts: {'cloud': 6025, 'ships': 7690, 'coast': 2060, 'empty': 24225}
+  payload: WP4 medians (ablation)
+  6 passes in 36 h, cubesat_sband x 0.25 -> 210 MB
+
+                        strategy  ship_recall    recall_ci95  recall_spread  ceiling_recall  downlink_eff  dark_recall  value_frac  latency_med_h  latency_p90_h  dark_latency_med_h  MB_sent  MB_offered  data_reduction_x  dropped_storage
+           Bent pipe (raw, FIFO)        0.002 [0.001, 0.002] [0.002, 0.002]           0.835         0.002        0.001       0.002         13.195         35.286              35.264  201.720   60117.811           298.026          29366.0
+     Phi-sat-2 style, ocean only        0.512 [0.505, 0.518] [0.512, 0.512]           0.512         1.000        0.519       0.514          4.507          9.464               4.513   13.210      13.210          4550.932              0.0
+Phi-sat-2 style, fair (+coastal)        0.617 [0.610, 0.623] [0.617, 0.617]           0.617         1.000        0.626       0.619          4.512          9.467               4.579   15.941      15.941          3771.270              0.0
+           Ours: LoD + no buffer        0.620 [0.613, 0.626] [0.620, 0.620]           0.680         0.912        0.611       0.660          5.098          9.772               5.131   99.465     109.379           604.413              0.0
+                Ours: LoD + FIFO        0.680 [0.674, 0.686] [0.680, 0.680]           0.680         1.000        0.679       0.727          4.566          9.527               4.630  109.379     109.379           549.626              0.0
+        Ours: LoD + value-greedy        0.680 [0.674, 0.686] [0.680, 0.680]           0.680         1.000        0.679       0.727          4.492          9.518               4.555  109.379     109.379           549.626              0.0
+
+REAL vs SYNTHETIC workload, same orbit and link:
+                                           ship_recall                               MB_sent                
+workload                         REAL detections (WP6) SYNTHETIC (WP5) REAL detections (WP6) SYNTHETIC (WP5)
+strategy                                                                                                    
+Bent pipe (raw, FIFO)                            0.002           0.004               201.720         201.720
+Phi-sat-2 style, ocean only                      0.512           0.693                13.210          14.761
+Phi-sat-2 style, fair (+coastal)                 0.617           0.996                15.941          21.021
+Ours: LoD + no buffer                            0.620           0.873                99.465         101.735
+Ours: LoD + FIFO                                 0.680           0.998               109.379         115.974
+Ours: LoD + value-greedy                         0.680           0.998               109.379         115.974
+
+Onboard confidence threshold sweep (ours, value-greedy) -- REAL confidences:
+ det_thr  detected_frac  false_alarms  ship_recall  dark_recall  MB_sent  latency_med_h
+    0.05          0.843         16576        0.768        0.769  121.806          4.512
+    0.10          0.811          8796        0.743        0.747  115.387          4.509
+    0.15          0.784          5824        0.724        0.724  112.679          4.514
+    0.25          0.699          2908        0.680        0.679  109.379          4.492
+    0.40          0.575          1190        0.611        0.612  106.414          4.476
+    0.55          0.480           458        0.544        0.538  104.191          4.445
+    0.70          0.367           200        0.464        0.454  102.057          4.439
+
+Saved wp6_real_table_nosizemodel.csv, wp6_real_vs_sim_nosizemodel.csv, wp6_real_sweep_nosizemodel.csv, wp6_thr_sweep_nosizemodel.csv and 3 charts in C:\Users\Mega-PC\Desktop\IASTAM_Problem7\code\results
+ALL DONE 15:32:07

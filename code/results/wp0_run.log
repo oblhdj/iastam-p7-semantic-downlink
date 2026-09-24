@@ -1,0 +1,128 @@
+[1/6] dataset: 192556 images in the zip, 42556 with ships selected + 10639 empty = 53195 tiles, 81723 ships
+      hashed 2000/53195
+      hashed 4000/53195
+      hashed 6000/53195
+      hashed 8000/53195
+      hashed 10000/53195
+      hashed 12000/53195
+      hashed 14000/53195
+      hashed 16000/53195
+      hashed 18000/53195
+      hashed 20000/53195
+      hashed 22000/53195
+      hashed 24000/53195
+      hashed 26000/53195
+      hashed 28000/53195
+      hashed 30000/53195
+      hashed 32000/53195
+      hashed 34000/53195
+      hashed 36000/53195
+      hashed 38000/53195
+      hashed 40000/53195
+      hashed 42000/53195
+      hashed 44000/53195
+      hashed 46000/53195
+      hashed 48000/53195
+      hashed 50000/53195
+      hashed 52000/53195
+[2/6] perceptual hashes: 53195 tiles x 6 windows in 321s
+      candidates: 4,489,505 pairs
+      within hash distance 26: 4,480,743 pairs to verify
+      overlap proofs 50,000/4,480,743
+      overlap proofs 100,000/4,480,743
+      overlap proofs 150,000/4,480,743
+      overlap proofs 200,000/4,480,743
+      overlap proofs 250,000/4,480,743
+      overlap proofs 300,000/4,480,743
+      overlap proofs 350,000/4,480,743
+      overlap proofs 400,000/4,480,743
+      overlap proofs 450,000/4,480,743
+      overlap proofs 500,000/4,480,743
+      overlap proofs 550,000/4,480,743
+      overlap proofs 600,000/4,480,743
+      overlap proofs 650,000/4,480,743
+      overlap proofs 700,000/4,480,743
+      overlap proofs 750,000/4,480,743
+      overlap proofs 800,000/4,480,743
+      overlap proofs 850,000/4,480,743
+      overlap proofs 900,000/4,480,743
+      overlap proofs 950,000/4,480,743
+      overlap proofs 1,000,000/4,480,743
+      overlap proofs 1,050,000/4,480,743
+      overlap proofs 1,100,000/4,480,743
+      overlap proofs 1,150,000/4,480,743
+      overlap proofs 1,200,000/4,480,743
+      overlap proofs 1,250,000/4,480,743
+      overlap proofs 1,300,000/4,480,743
+      overlap proofs 1,350,000/4,480,743
+      overlap proofs 1,400,000/4,480,743
+      overlap proofs 1,450,000/4,480,743
+      overlap proofs 1,500,000/4,480,743
+      overlap proofs 1,550,000/4,480,743
+      overlap proofs 1,600,000/4,480,743
+      overlap proofs 1,650,000/4,480,743
+      overlap proofs 1,700,000/4,480,743
+      overlap proofs 1,750,000/4,480,743
+      overlap proofs 1,800,000/4,480,743
+      overlap proofs 1,850,000/4,480,743
+      overlap proofs 1,900,000/4,480,743
+      overlap proofs 1,950,000/4,480,743
+      overlap proofs 2,000,000/4,480,743
+      overlap proofs 2,050,000/4,480,743
+      overlap proofs 2,100,000/4,480,743
+      overlap proofs 2,150,000/4,480,743
+      overlap proofs 2,200,000/4,480,743
+      overlap proofs 2,250,000/4,480,743
+      overlap proofs 2,300,000/4,480,743
+      overlap proofs 2,350,000/4,480,743
+      overlap proofs 2,400,000/4,480,743
+      overlap proofs 2,450,000/4,480,743
+      overlap proofs 2,500,000/4,480,743
+      overlap proofs 2,550,000/4,480,743
+      overlap proofs 2,600,000/4,480,743
+      overlap proofs 2,650,000/4,480,743
+      overlap proofs 2,700,000/4,480,743
+      overlap proofs 2,750,000/4,480,743
+      overlap proofs 2,800,000/4,480,743
+      overlap proofs 2,850,000/4,480,743
+      overlap proofs 2,900,000/4,480,743
+      overlap proofs 2,950,000/4,480,743
+      overlap proofs 3,000,000/4,480,743
+      overlap proofs 3,050,000/4,480,743
+      overlap proofs 3,100,000/4,480,743
+      overlap proofs 3,150,000/4,480,743
+      overlap proofs 3,200,000/4,480,743
+      overlap proofs 3,250,000/4,480,743
+      overlap proofs 3,300,000/4,480,743
+      overlap proofs 3,350,000/4,480,743
+      overlap proofs 3,400,000/4,480,743
+      overlap proofs 3,450,000/4,480,743
+      overlap proofs 3,500,000/4,480,743
+      overlap proofs 3,550,000/4,480,743
+      overlap proofs 3,600,000/4,480,743
+      overlap proofs 3,650,000/4,480,743
+      overlap proofs 3,700,000/4,480,743
+      overlap proofs 3,750,000/4,480,743
+      overlap proofs 3,800,000/4,480,743
+      overlap proofs 3,850,000/4,480,743
+      overlap proofs 3,900,000/4,480,743
+      overlap proofs 3,950,000/4,480,743
+      overlap proofs 4,000,000/4,480,743
+      overlap proofs 4,050,000/4,480,743
+      overlap proofs 4,100,000/4,480,743
+      overlap proofs 4,150,000/4,480,743
+      overlap proofs 4,200,000/4,480,743
+      overlap proofs 4,230,743/4,480,743
+      overlap proofs 4,280,743/4,480,743
+      overlap proofs 4,330,743/4,480,743
+      overlap proofs 4,380,743/4,480,743
+      overlap proofs 4,430,743/4,480,743
+      overlap proofs 4,480,743/4,480,743
+[3/6] duplicates: 6282 pairs -> 47313 groups for 53195 tiles (4259 groups with >1 tile, largest 63) in 1726s
+[4/6] split (no leakage: 0 groups span splits) -- a naive random split would have leaked 1617 groups
+      train:  42555 tiles,  65377 ships, 34111 tiles with ships
+      val  :   5320 tiles,   8173 ships,  4211 tiles with ships
+      test :   5320 tiles,   8173 ships,  4234 tiles with ships
+[5/6] extracted 53195 images + labels (8074 MB) in 51s
+[6/6] report: C:\Users\Mega-PC\Desktop\IASTAM_Problem7\code\results\wp0_report.md | stats: wp0_stats.json | charts: wp0_groups.png, wp0_duplicates.jpg
+Total 2110.4s. Train with: yolo detect train data=C:/Users/Mega-PC/Desktop/IASTAM_Problem7/code/data/yolo_ships/data.yaml model=yolov8n.pt imgsz=768

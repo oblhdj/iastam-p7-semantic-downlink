@@ -1,0 +1,10 @@
+scoring 5320 tiles of split 'test' on cuda, input 128px
+  128/5320
+  1408/5320
+  2688/5320
+  3968/5320
+  5248/5320
+
+5320 tiles in 21s (3.9 ms/tile incl. JPEG decode)
+score distribution: min 0.0017 median 0.7647 max 1.0000
+Saved wp3_gate_scores_test.csv in C:\Users\Mega-PC\Desktop\IASTAM_Problem7\code\results

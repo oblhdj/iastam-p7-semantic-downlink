@@ -1,0 +1,26 @@
+{
+  "target_0.99": {
+    "threshold_from_val": 0.126,
+    "val": {
+      "ship_recall": 0.9900893184877034,
+      "empty_dropped": 0.3913435527502254
+    },
+    "test": {
+      "ship_recall": 0.9877645907255598,
+      "empty_dropped": 0.4014732965009208,
+      "tiles_kept": 0.9033834586466165
+    }
+  },
+  "target_0.995": {
+    "threshold_from_val": 0.076,
+    "val": {
+      "ship_recall": 0.9953505444757127,
+      "empty_dropped": 0.2344454463480613
+    },
+    "test": {
+      "ship_recall": 0.9947387740119907,
+      "empty_dropped": 0.21823204419889503,
+      "tiles_kept": 0.9490601503759398
+    }
+  }
+}

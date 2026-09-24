@@ -1,0 +1,11 @@
+SIMULATION -- synthetic workload: 40000 tiles/day, 20640 true ships (2070 dark), seed 0
+6 passes in 36 h, link cubesat_sband x share 0.25 -> 210 MB capacity
+
+                     strategy  ship_recall    recall_ci95  dark_recall  value_frac  latency_med_h  latency_p90_h  dark_latency_med_h  MB_sent  MB_offered  dropped_storage
+        Bent pipe (raw, FIFO)        0.004 [0.003, 0.004]        0.006       0.004         22.226         35.278              12.452  201.720   60057.649            29332
+Phi-sat-2 style (patch, FIFO)        0.666 [0.660, 0.673]        0.671       0.667          5.877         10.186               5.800  142.100     142.100                0
+        Ours: LoD + no buffer        0.439 [0.432, 0.445]        0.426       0.440          7.790         10.665               7.776  116.985     262.601                0
+             Ours: LoD + FIFO        0.685 [0.678, 0.691]        0.693       0.695         13.200         21.117              13.151  185.962     262.601                0
+     Ours: LoD + value-greedy        0.930 [0.926, 0.933]        0.976       0.943          6.081         13.939               6.100  186.133     262.601                0
+
+Saved sim_table.csv, sim_recall.png, sim_latency.png, sim_load_sweep.png in C:\Users\Mega-PC\Desktop\IASTAM_Problem7\code\results

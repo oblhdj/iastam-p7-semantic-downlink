@@ -1,0 +1,65 @@
+{
+  "tiles": 5320,
+  "device": "cuda",
+  "gate_threshold": 0.126,
+  "det_thr": 0.25,
+  "catalogue_cross_check": {
+    "tiles_compared": 5320,
+    "context": {
+      "agree": 1.0,
+      "n_differ": 0
+    },
+    "ctx3": {
+      "agree": 1.0,
+      "n_differ": 0
+    },
+    "n_candidates": {
+      "agree": 1.0,
+      "n_differ": 0
+    },
+    "n_ships": {
+      "agree": 1.0,
+      "n_differ": 0
+    },
+    "n_fp_0.25": {
+      "agree": 0.9998120300751879,
+      "n_differ": 1
+    },
+    "ships_compared": 8173,
+    "ship_size_max_abs_diff": 5.684341886080802e-14,
+    "ship_conf_max_abs_diff": 0.25063408911228174,
+    "ship_conf_n_differ": 6858,
+    "decision_flips": {
+      "det_thr": 1,
+      "conf_low": 1,
+      "conf_high": 0
+    }
+  },
+  "thin_context_pools": {
+    "cloud": {
+      "real_tiles": 21,
+      "drawn": 6025,
+      "reuse_x": 286.9
+    }
+  },
+  "day": {
+    "tiles": 40000,
+    "ships": 21137,
+    "passes": 6,
+    "items": 45268
+  },
+  "ground": {
+    "ship_recall": 0.6798031887211998,
+    "ceiling_recall": 0.6798031887211998,
+    "dark_recall": 0.6792893875642824,
+    "downlink_eff": 1.0,
+    "MB_sent": 108.51560979850909,
+    "MB_offered": 108.51560979850838,
+    "latency_med_h": 4.490398555483832
+  },
+  "stage_ms_per_tile": {
+    "prefilter": 56.281849974766374,
+    "gate": 0.15377661653556265,
+    "detector": 11.068667368407544
+  }
+}

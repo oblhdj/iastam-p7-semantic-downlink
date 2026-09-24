@@ -1,0 +1,29 @@
+device: NVIDIA GeForce RTX 5060 Laptop GPU
+train 42555 tiles (80% with ships) | val 5320 | test 5320
+gate: 47k parameters, input 128px
+  epoch 1 batch 0/332 loss 0.2940
+  epoch 1 batch 100/332 loss 0.2302
+  epoch 1 batch 200/332 loss 0.2188
+  epoch 1 batch 300/332 loss 0.2116
+epoch 1/4: loss 0.2100 in 46s
+  epoch 2 batch 0/332 loss 0.1743
+  epoch 2 batch 100/332 loss 0.1918
+  epoch 2 batch 200/332 loss 0.1890
+  epoch 2 batch 300/332 loss 0.1852
+epoch 2/4: loss 0.1827 in 30s
+  epoch 3 batch 0/332 loss 0.1589
+  epoch 3 batch 100/332 loss 0.1649
+  epoch 3 batch 200/332 loss 0.1666
+  epoch 3 batch 300/332 loss 0.1631
+epoch 3/4: loss 0.1615 in 32s
+  epoch 4 batch 0/332 loss 0.1554
+  epoch 4 batch 100/332 loss 0.1494
+  epoch 4 batch 200/332 loss 0.1474
+  epoch 4 batch 300/332 loss 0.1445
+epoch 4/4: loss 0.1458 in 33s
+
+gate on TEST (5320 tiles, 8173 ships): 4.65 ms/tile on cuda
+  at 99.0% ship recall : drops 35.6% of empty tiles (threshold 0.110)
+  at 99.5% ship recall : drops 18.4% of empty tiles
+  classic filter, same test data: recall 0.645 while dropping 17.7% of empty tiles
+Saved wp3_gate.json, wp3_gate_tradeoff.csv|png in C:\Users\Mega-PC\Desktop\IASTAM_Problem7\code\results

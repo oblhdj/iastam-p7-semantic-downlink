@@ -1,0 +1,14 @@
+5320 tiles in split 'val', device 0
+  32/5320
+  672/5320
+  1312/5320
+  1952/5320
+  2592/5320
+  3232/5320
+  3872/5320
+  4512/5320
+  5152/5320
+
+17201 boxes, 8173 ground-truth ships, recall 0.871
+5320 tiles in 59s (11 ms/tile)
+Saved wp2_val_predictions.csv and wp2_val_gt_matched.csv in C:\Users\Mega-PC\Desktop\IASTAM_Problem7\code\results

@@ -1,0 +1,34 @@
+=== WP12b: 400 real ships, cut at 9 visible fractions (3600 detector runs), device 0 ===
+
+  50/400 ships
+  100/400 ships
+  150/400 ships
+  200/400 ships
+  250/400 ships
+  300/400 ships
+  350/400 ships
+  400/400 ships
+
+Recall vs how much of the ship stayed inside the tile:
+ visible   recall    small   medium    large
+     20%    0.115    0.000    0.124    0.211
+     30%    0.250    0.000    0.225    0.500
+     40%    0.407    0.016    0.419    0.754
+     50%    0.557    0.101    0.620    0.915
+     60%    0.640    0.209    0.713    0.965
+     70%    0.723    0.341    0.798    1.000
+     80%    0.748    0.395    0.837    0.986
+     90%    0.792    0.504    0.860    0.993
+    100%    0.812    0.527    0.891    1.000
+
+Intact-ship recall (visible 100%): 0.812  <- the reference
+P(still detected | cut, larger piece visible) = 0.712
+
+On a 10000x10000 swath tiled at 768 px (196 tiles, SAHI@20% 289 = 1.47x compute):
+           ship size   P(cut)  loss no-overlap  loss SAHI
+        median 43 px    10.9%             1.1%       0.0%
+       medium 100 px    24.3%             2.4%       0.0%
+        large 200 px    45.3%             4.5%       0.0%
+      largest 380 px    74.5%             7.5%       0.0%
+
+Saved wp12b_cut_recall.json|.csv|.png in C:\Users\Mega-PC\Desktop\IASTAM_Problem7\code\results

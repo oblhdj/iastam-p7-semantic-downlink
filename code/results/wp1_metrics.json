@@ -1,0 +1,37 @@
+{
+  "weights": "C:\\Users\\Mega-PC\\Desktop\\IASTAM_Problem7\\code\\runs\\ships\\weights\\best.pt",
+  "test": {
+    "mAP50": 0.8039831583260127,
+    "mAP50-95": 0.5383375009309491,
+    "precision": 0.8170351724866505,
+    "recall": 0.7293527468493821
+  },
+  "by_size": [
+    {
+      "bucket": "small (<32 px)",
+      "ships": 3859,
+      "recall": 0.7385332987820679
+    },
+    {
+      "bucket": "medium (32-96 px)",
+      "ships": 2767,
+      "recall": 0.9580773400795085
+    },
+    {
+      "bucket": "large (>96 px)",
+      "ships": 1547,
+      "recall": 0.9941822882999354
+    }
+  ],
+  "inference_ms_per_tile_gpu": 10.71106556389845,
+  "exports": {
+    "onnx": {
+      "error": "No module named 'onnx'"
+    },
+    "onnx-int8": {
+      "error": "No module named 'onnx'"
+    }
+  },
+  "epochs": 12,
+  "imgsz": 768
+}

@@ -1,0 +1,23 @@
+# --- data and weights: too large for git, and reproducible from the scripts ---
+code/data/
+code/runs/
+code/yolov8n.pt
+code/models/*.pt
+
+# --- environments ---
+code/.venv/
+code/.venv312/
+
+# --- python ---
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# --- editor / OS ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# --- kaggle upload staging: weights + a copy of the split ---
+kaggle_upload/*.pt

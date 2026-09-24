@@ -1,0 +1,48 @@
+{
+  "split": "test",
+  "tiles": 5320,
+  "ships": 8173,
+  "context_counts": {
+    "ships": 3118,
+    "coast": 1415,
+    "empty": 766,
+    "cloud": 21
+  },
+  "prefilter_context_counts": {
+    "candidates": 3707,
+    "land_coast": 1415,
+    "empty_sea": 177,
+    "cloud": 21
+  },
+  "prefilter_ms_median": 88.84534996468574,
+  "ships_per_ship_tile": 1.830339961513791,
+  "ships_per_coast_tile": 1.7342756183745582,
+  "detector_recall_any_conf": 0.8612504588278478,
+  "conf_percentiles_found": {
+    "10": 0.16852317154407503,
+    "25": 0.37548306584358215,
+    "50": 0.6840493083000183,
+    "75": 0.8454820513725281,
+    "90": 0.8911224961280823
+  },
+  "false_alarms": {
+    "conf>=0.05": {
+      "fp_total": 5943,
+      "fp_per_tile": 1.1171052631578948,
+      "empty_tiles_with_fp": 0.07734806629834254,
+      "recall_at_thr": 0.8612504588278478
+    },
+    "conf>=0.25": {
+      "fp_total": 1107,
+      "fp_per_tile": 0.20808270676691729,
+      "empty_tiles_with_fp": 0.01565377532228361,
+      "recall_at_thr": 0.7249479995105836
+    },
+    "conf>=0.4": {
+      "fp_total": 471,
+      "fp_per_tile": 0.08853383458646616,
+      "empty_tiles_with_fp": 0.006445672191528545,
+      "recall_at_thr": 0.6287776826134834
+    }
+  }
+}

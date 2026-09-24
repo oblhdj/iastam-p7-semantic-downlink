@@ -1,0 +1,78 @@
+{
+  "weights": "C:\\Users\\Mega-PC\\Desktop\\IASTAM_Problem7\\code\\runs\\ships\\weights\\best.pt",
+  "imgsz": 768,
+  "conf": 0.25,
+  "size_MB": {
+    "pytorch": 6.27,
+    "onnx_fp32": 12.34,
+    "onnx_int8": 3.43,
+    "int8_smaller_x": 3.6
+  },
+  "accuracy": {
+    "pytorch_fp32": {
+      "ships": 970,
+      "recall": 0.8030927835051547,
+      "mean_conf_found": 0.6711400494801982,
+      "small (<32 px)": {
+        "ships": 452,
+        "recall": 0.6061946902654868
+      },
+      "medium (32-96 px)": {
+        "ships": 311,
+        "recall": 0.9614147909967846
+      },
+      "large (>96 px)": {
+        "ships": 207,
+        "recall": 0.9951690821256038
+      }
+    },
+    "onnx_fp32": {
+      "ships": 970,
+      "recall": 0.8030927835051547,
+      "mean_conf_found": 0.671145833273142,
+      "small (<32 px)": {
+        "ships": 452,
+        "recall": 0.6061946902654868
+      },
+      "medium (32-96 px)": {
+        "ships": 311,
+        "recall": 0.9614147909967846
+      },
+      "large (>96 px)": {
+        "ships": 207,
+        "recall": 0.9951690821256038
+      }
+    },
+    "onnx_int8": {
+      "ships": 970,
+      "recall": 0.788659793814433,
+      "mean_conf_found": 0.6780441487147137,
+      "small (<32 px)": {
+        "ships": 452,
+        "recall": 0.584070796460177
+      },
+      "medium (32-96 px)": {
+        "ships": 311,
+        "recall": 0.9485530546623794
+      },
+      "large (>96 px)": {
+        "ships": 207,
+        "recall": 0.9951690821256038
+      }
+    }
+  },
+  "int8_minus_fp32": {
+    "recall": -0.01443298969072171,
+    "small (<32 px)": -0.02212389380530977,
+    "medium (32-96 px)": -0.012861736334405238,
+    "large (>96 px)": 0.0,
+    "lost_by_int8": 16,
+    "gained_by_int8": 2
+  },
+  "latency_ms_per_tile": {
+    "pytorch_gpu": 12.5,
+    "onnx_fp32_cpu": 38.6,
+    "onnx_int8_cpu": 328.8,
+    "pytorch_cpu": 46.6
+  }
+}

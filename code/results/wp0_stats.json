@@ -1,0 +1,39 @@
+{
+  "zip_images": 192556,
+  "selected_tiles": 53195,
+  "ship_tiles": 42556,
+  "empty_tiles": 10639,
+  "ships": 81723,
+  "duplicate_pairs": 6282,
+  "pairs_by_method": {
+    "ncc": 4823,
+    "orb": 1459
+  },
+  "groups": 47313,
+  "groups_with_duplicates": 4259,
+  "largest_group": 63,
+  "tiles_in_duplicate_groups": 10141,
+  "groups_spanning_splits": 0,
+  "groups_a_naive_split_would_leak": 1617,
+  "split": {
+    "train": {
+      "tiles": 42555,
+      "ships": 65377
+    },
+    "val": {
+      "tiles": 5320,
+      "ships": 8173
+    },
+    "test": {
+      "tiles": 5320,
+      "ships": 8173
+    }
+  },
+  "runtime_s": 2110.4,
+  "settings": {
+    "max_distance": 26,
+    "orb": true,
+    "empty_ratio": 0.25,
+    "seed": 0
+  }
+}

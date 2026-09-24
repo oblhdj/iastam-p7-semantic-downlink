@@ -1,0 +1,41 @@
+=== WP11 end-to-end integration: 5320 real tiles, device cuda ===
+
+[1/6] classic pre-filter (the cheap stage that runs on every tile) ...
+      5320 tiles, 56.3 ms/tile (median, its own timer)
+      contexts: {'candidates': 3707, 'land_coast': 1415, 'empty_sea': 177, 'cloud': 21}
+
+[2/6] learned gate (WP3, 47k parameters) ...
+      keeps 4807/5320 tiles (90.4%), 0.154 ms/tile incl. transfer
+
+[3/6] detector (YOLO, all tiles so the gate's cost is measurable) ...
+      8173 ground-truth ships, 17263 raw boxes @0.05, 11.1 ms/tile
+      recall @0.25: 0.7248
+
+[4/6] cross-check against the stored catalogue that WP6-WP10 replay ...
+      OK   context          agreement 1.0000  (0 differ)
+      OK   ctx3             agreement 1.0000  (0 differ)
+      OK   n_candidates     agreement 1.0000  (0 differ)
+      OK   n_ships          agreement 1.0000  (0 differ)
+      DIFF n_fp_0.25        agreement 0.9998  (1 differ)
+      OK   ship pairing       8173 ships, max |size diff| 5.68e-14
+      ---- ship confidences   max |diff| 2.51e-01, 6858 of 8173 differ bitwise
+      DIFF decisions changed  det_thr: 1, conf_low: 1, conf_high: 0  <- the number that actually matters
+
+[5/6] scale to a day, encode, schedule over real orbit passes ...
+      source pool backing each context of the simulated day:
+        empty   24225 drawn from  766 real tiles  (x32 reuse)
+        ships    7690 drawn from 3118 real tiles  (x2 reuse)
+        cloud    6025 drawn from   21 real tiles  (x287 reuse)  <-- THIN
+        coast    2060 drawn from 1415 real tiles  (x1 reuse)
+      WARNING: cloud backed by <30 real tiles -- absolute recall from this run is
+               NOT comparable with WP6, which draws from all 5,320.
+      day: 40000 tiles, 21137 ships, 6 passes, 210 MB capacity
+      45268 items encoded, 108.5 MB offered
+
+[6/6] ground segment ...
+      ships recovered        0.6798  (ceiling 0.6798 = what the satellite still knew)
+      dark vessels recovered 0.6793
+      bytes sent             108.5 MB of 108.5 offered
+      median latency         4.49 h
+
+Saved wp11_integration.json, wp11_per_tile.csv, wp11_funnel.png in C:\Users\Mega-PC\Desktop\IASTAM_Problem7\code\results

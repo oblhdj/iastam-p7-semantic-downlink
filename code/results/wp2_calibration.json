@@ -1,0 +1,34 @@
+{
+  "val_predictions": 17201,
+  "test_predictions": 17257,
+  "platt": {
+    "a": 1.6627244968494297,
+    "b": 0.889134089946544
+  },
+  "fitted_on": "val",
+  "evaluated_on": "test",
+  "test": {
+    "raw": {
+      "ECE": 0.08782539456135503,
+      "Brier": 0.11323962415521768,
+      "mean_conf": 0.3519926229644559
+    },
+    "platt": {
+      "ECE": 0.01427424370538988,
+      "Brier": 0.09997738912320836,
+      "mean_conf": 0.4055478496476021
+    },
+    "isotonic": {
+      "ECE": 0.009871952517966043,
+      "Brier": 0.10002387105371843,
+      "mean_conf": 0.40577193236126397
+    }
+  },
+  "recommended": "isotonic",
+  "lod_rungs": {
+    "conf_high_now": 0.9,
+    "conf_high_calibrated_equivalent": 0.6704376339912415,
+    "share_above_conf_high_now": 0.03071217476965869,
+    "share_above_calibrated_equivalent": 0.21666570087500725
+  }
+}

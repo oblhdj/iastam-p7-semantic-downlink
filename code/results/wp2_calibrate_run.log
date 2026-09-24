@@ -1,0 +1,21 @@
+labelling predictions (IoU >= 0.5)...
+  val   17201 predictions, 0.414 correct
+  test  17257 predictions, 0.408 correct
+
+calibration on the TEST split (fitted on val):
+  raw       ECE 0.0878   Brier 0.1132   mean 0.352 (actual accuracy 0.408)
+  platt     ECE 0.0143   Brier 0.1000   mean 0.406 (actual accuracy 0.408)
+  isotonic  ECE 0.0099   Brier 0.1000   mean 0.406 (actual accuracy 0.408)
+
+-> lowest ECE: isotonic (0.0878 raw -> 0.0099)
+
+What a level-of-detail rung should compare against:
+ intended_probability  raw_conf_for_isotonic  share_of_preds_isotonic  share_of_preds_raw
+                 0.25                  0.278                    0.452               0.481
+                 0.40                  0.329                    0.401               0.348
+                 0.50                  0.355                    0.381               0.291
+                 0.75                  0.513                    0.286               0.180
+                 0.90                  0.670                    0.217               0.031
+                 0.95                  0.725                    0.192               0.002
+
+Saved wp2_calibration.json, wp2_thresholds.csv, wp2_reliability.png in C:\Users\Mega-PC\Desktop\IASTAM_Problem7\code\results

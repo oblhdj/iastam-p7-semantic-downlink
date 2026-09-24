@@ -1,0 +1,36 @@
+REAL workload -- 5320 held-out tiles, mix=orbit
+  day: 40000 tiles, 21137 real ships (14785 with conf>=0.25, 2139 flagged dark [ASSUMPTION]), 2908 real false alarms
+  contexts: {'cloud': 6025, 'ships': 7690, 'coast': 2060, 'empty': 24225}
+  payload: per-ship WP4 power law
+  6 passes in 36 h, cubesat_sband x 0.25 -> 210 MB
+
+                        strategy  ship_recall    recall_ci95  recall_spread  ceiling_recall  downlink_eff  dark_recall  value_frac  latency_med_h  latency_p90_h  dark_latency_med_h  MB_sent  MB_offered  data_reduction_x  dropped_storage
+           Bent pipe (raw, FIFO)        0.002 [0.002, 0.003] [0.002, 0.003]           0.841         0.003        0.002       0.002         19.456         31.456              23.052  201.720   60124.299           298.058        29369.667
+     Phi-sat-2 style, ocean only        0.518 [0.511, 0.525] [0.512, 0.526]           0.518         1.000        0.522       0.519          4.422          9.440               4.461   13.537      13.537          4441.588            0.000
+Phi-sat-2 style, fair (+coastal)        0.622 [0.615, 0.628] [0.617, 0.625]           0.622         1.000        0.624       0.622          4.408          9.430               4.481   16.260      16.260          3697.681            0.000
+           Ours: LoD + no buffer        0.605 [0.598, 0.611] [0.601, 0.609]           0.685         0.883        0.596       0.643          5.147          9.723               5.186  103.795     117.643           579.258            0.000
+                Ours: LoD + FIFO        0.685 [0.679, 0.691] [0.680, 0.690]           0.685         1.000        0.679       0.730          4.472          9.452               4.516  117.643     117.643           511.073            0.000
+        Ours: LoD + value-greedy        0.685 [0.679, 0.691] [0.680, 0.690]           0.685         1.000        0.679       0.730          4.387          9.440               4.431  117.640     117.643           511.089            0.000
+
+REAL vs SYNTHETIC workload, same orbit and link:
+                                           ship_recall                               MB_sent                
+workload                         REAL detections (WP6) SYNTHETIC (WP5) REAL detections (WP6) SYNTHETIC (WP5)
+strategy                                                                                                    
+Bent pipe (raw, FIFO)                            0.002           0.004               201.720         201.720
+Phi-sat-2 style, ocean only                      0.518           0.693                13.537          14.761
+Phi-sat-2 style, fair (+coastal)                 0.622           0.996                16.260          21.021
+Ours: LoD + no buffer                            0.605           0.873               103.795         101.735
+Ours: LoD + FIFO                                 0.685           0.998               117.643         115.974
+Ours: LoD + value-greedy                         0.685           0.998               117.640         115.974
+
+Onboard confidence threshold sweep (ours, value-greedy) -- REAL confidences:
+ det_thr  detected_frac  false_alarms  ship_recall  dark_recall  MB_sent  latency_med_h
+    0.05          0.843         16576        0.768        0.769  129.862          4.515
+    0.10          0.811          8796        0.743        0.747  123.577          4.513
+    0.15          0.784          5824        0.724        0.724  120.925          4.518
+    0.25          0.699          2908        0.680        0.679  117.851          4.498
+    0.40          0.575          1190        0.611        0.612  115.358          4.481
+    0.55          0.480           458        0.544        0.538  113.398          4.450
+    0.70          0.367           200        0.464        0.454  111.094          4.446
+
+Saved wp6_real_table.csv, wp6_real_vs_sim.csv, wp6_real_sweep.csv, wp6_thr_sweep.csv and 3 charts in C:\Users\Mega-PC\Desktop\IASTAM_Problem7\code\results

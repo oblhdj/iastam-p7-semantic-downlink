@@ -1,0 +1,23 @@
+{
+  "params": 46897,
+  "input_px": 128,
+  "epochs": 1,
+  "infer_ms_per_tile": 2.5658046804618833,
+  "device": "cuda",
+  "at_99_recall": {
+    "threshold": 0.51,
+    "ship_recall": 0.9991435213507892,
+    "empty_dropped": 0.003683241252302026,
+    "tiles_kept": 0.9979323308270677
+  },
+  "at_99.5_recall": {
+    "threshold": 0.51,
+    "ship_recall": 0.9991435213507892,
+    "empty_dropped": 0.003683241252302026,
+    "tiles_kept": 0.9979323308270677
+  },
+  "classic_baseline": {
+    "ship_recall": 0.645,
+    "empty_dropped": 0.177
+  }
+}
