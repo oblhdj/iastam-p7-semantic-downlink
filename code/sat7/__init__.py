@@ -2,8 +2,10 @@
 
 Modules
 -------
-rle        Airbus Ship Detection run-length encoding <-> masks <-> boxes
-prefilter  Classic computer-vision pre-filter (Otsu, morphology, watershed)
-orbit      Ground-station contact windows and per-pass downlink capacity
-scheduler  Multi-pass, value-aware downlink scheduler + baseline policies
+rle            Airbus Ship Detection run-length encoding <-> masks <-> boxes
+prefilter      Classic computer-vision pre-filter (Otsu, morphology, watershed)
+orbit          Ground-station contact windows and per-pass downlink capacity
+scheduler      Multi-pass, value-aware downlink scheduler + baseline policies
+b2_sahi_fusion B2: SAHI sliced inference + global-coordinate detection fusion (detector-agnostic)
+relay          B4: inter-satellite visibility windows + direct-vs-relay path choice (SGP4-reused)
 """

@@ -4,6 +4,10 @@ code/runs/
 code/yolov8n.pt
 code/models/*.pt
 
+# --- rendered swath imagery: large JPG/PNG binaries, regenerable from wp15_build_swaths.py ---
+code/results/wp15_swaths/
+code/results/wp15_examples/
+
 # --- environments ---
 code/.venv/
 code/.venv312/
