@@ -1,0 +1,152 @@
+{
+  "label_note": "T_k REAL (laptop RTX 5060, not flight hw); downlink SIM (orbit sim); P_k ASSUMPTION (swept). ES_proc for the default CPU-ONNX build is P-independent. All stage times and MB/day are read LIVE from their source files (see provenance).",
+  "stage_times_ms": {
+    "preprocess_decode_cpu": 0.71,
+    "classic_prefilter_cpu": 56.281849974766374,
+    "gate_gpu": 0.052,
+    "gate_cpu": 0.94,
+    "detect_gpu": 10.71106556389845,
+    "detect_cpu_onnx": 38.6,
+    "fuse_cpu": 0.0,
+    "semantic_cpu": 0.5
+  },
+  "stage_time_provenance": {
+    "preprocess_decode_cpu": "UNSOURCED (REAL-derived): report 03 ~1,400 tiles/s warm JPEG decode; not emitted to any results file. Shared stage, cancels in ES_proc.",
+    "classic_prefilter_cpu": "REAL live: wp11_integration.json stage_ms_per_tile.prefilter",
+    "gate_gpu": "REAL live: wp3_gate.json infer_ms_per_tile (pure forward, GPU)",
+    "gate_cpu": "REAL live: wp3_gate.json infer_ms_per_tile_cpu",
+    "detect_gpu": "REAL live: wp1_metrics.json inference_ms_per_tile_gpu",
+    "detect_cpu_onnx": "REAL live: wp1_export.json latency_ms_per_tile.onnx_fp32_cpu (onboard build)",
+    "fuse_cpu": "definitional: single-tile frame has no cross-slice fusion (B2/SAHI adds it)",
+    "semantic_cpu": "ASSUMPTION (invented, not measured): LoD encode + schedule decision, CPU"
+  },
+  "unsourced_figures": [
+    "preprocess_decode_cpu (not in any results file)",
+    "semantic_cpu (ASSUMPTION, not a measurement)"
+  ],
+  "sanity_gate": {
+    "check_a_data_reduction": {
+      "model_d_raw/d_sent": 556.96,
+      "wp6_real_table_data_reduction_x": 556.96,
+      "rel_err": 0.0
+    },
+    "check_b_rate_bound": {
+      "R_eff_Mbps": 2.531,
+      "R_zenith_Mbps": 6.4
+    },
+    "passed": true
+  },
+  "powers_W_assumption": {
+    "cpu": 28.0,
+    "gpu": 60.0,
+    "tx": 15.0
+  },
+  "downlink": {
+    "source": "results/passes.csv (SGP4 orbit sim) + sat7.orbit.rate_bps; D_sent/D_raw live from results/wp6_real_table.csv",
+    "passes_per_day": 5,
+    "contact_min_day": 34.2,
+    "capacity_MB_day": 649.2,
+    "R_eff_Mbps": 2.531,
+    "R_zenith_Mbps_model": 6.4,
+    "D_sent_MB_day": 107.95,
+    "D_raw_MB_day": 60124.3,
+    "capacity_used_by_semantic": 0.1663,
+    "bent_pipe_days_of_contact_needed": 92.6
+  },
+  "E_proc_per_tile_J": {
+    "cpu_onnx_DEFAULT": {
+      "baseline": {
+        "preprocess": 0.01988,
+        "gate_or_prefilter": 1.5758917992934585,
+        "detect": 1.0808,
+        "fuse": 0.0,
+        "semantic": 0.014
+      },
+      "proposed": {
+        "preprocess": 0.01988,
+        "gate_or_prefilter": 0.02632,
+        "detect": 1.0808,
+        "fuse": 0.0,
+        "semantic": 0.014
+      },
+      "E_base": 2.6906,
+      "E_prop": 1.141,
+      "ES_proc": 0.5759,
+      "ES_proc_note": "P_cpu cancels (all-CPU) -> = time ratio, power-independent; LOWER BOUND (gate also skips 40.2% of empty tiles, report 04, uncounted here)"
+    },
+    "gpu_report12_budget": {
+      "baseline": {
+        "preprocess": 0.01988,
+        "gate_or_prefilter": 1.5758917992934585,
+        "detect": 0.642663933833907,
+        "fuse": 0.0,
+        "semantic": 0.014
+      },
+      "proposed": {
+        "preprocess": 0.01988,
+        "gate_or_prefilter": 0.0031199999999999995,
+        "detect": 0.642663933833907,
+        "fuse": 0.0,
+        "semantic": 0.014
+      },
+      "E_base": 2.2524,
+      "E_prop": 0.6797,
+      "ES_proc": 0.6983,
+      "ES_proc_note": "depends on P_cpu/P_gpu (classic stage is CPU, detector GPU); energy saving < the 6x TIME saving because the eliminated CPU stage draws less than the retained GPU detector"
+    }
+  },
+  "E_per_day_kJ": {
+    "tiles_per_day": 40000,
+    "E_proc_proposed": 45.64,
+    "E_proc_baseline": 107.62,
+    "E_comm_proposed_semantic": 5.12,
+    "E_comm_bent_pipe_raw": 2850.63,
+    "E_total_proposed": 50.76,
+    "proc_vs_comm_ratio_proposed": 8.92,
+    "ES_total_vs_bent_pipe": 0.9822
+  },
+  "sensitivity_P_sweep": {
+    "P_cpu": {
+      "range_W": [
+        15.0,
+        45.0
+      ],
+      "ES_proc_gpu": [
+        0.5589,
+        0.7832
+      ],
+      "ES_total": [
+        0.9896,
+        0.9725
+      ]
+    },
+    "P_gpu": {
+      "range_W": [
+        35.0,
+        115.0
+      ],
+      "ES_proc_gpu": [
+        0.7931,
+        0.5525
+      ],
+      "ES_total": [
+        0.9822,
+        0.9822
+      ]
+    },
+    "P_tx": {
+      "range_W": [
+        8.0,
+        30.0
+      ],
+      "ES_proc_gpu": [
+        0.6983,
+        0.6983
+      ],
+      "ES_total": [
+        0.9682,
+        0.9902
+      ]
+    }
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "label": "REAL",
+  "n_swaths": 24,
+  "swath_px": 3072,
+  "tiles_per_side": 4,
+  "overlap": 0.0,
+  "tile_pool": "ships",
+  "n_source_tiles": 384,
+  "n_ships": 716,
+  "n_straddling_seam": 77,
+  "pct_straddling_seam": 10.75,
+  "ships_per_swath_mean": 29.83,
+  "report13_2x2_straddle_pct": 15.0,
+  "sanity_note": "straddle % should sit near report 13's 15.0% because the seam grid bisects every source tile exactly as report 13's 2x2 midline cut did; it will not match exactly (different sample, swath-edge effects, N!=2)",
+  "elapsed_s": 2.7
+}

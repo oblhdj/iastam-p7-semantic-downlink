@@ -302,3 +302,28 @@ measured; q30 rejected on measurement; thumbnail gating re-keyed onto the learne
 ## Honesty rules we follow (keep them)
 Label every figure REAL / SIM / LIT / TARGET. We rejected 3 versions of the duplicate finder after
 looking at evidence (hash-only, haze, no-data bars). Report negative results (classic pre-filter).
+
+
+## Phase 3 progress (as of [date])
+
+Reports 15–20 done: swath-stitching + global fusion (15–16, reverses report 13 at 768px,
+confirmed at 512px it does NOT reverse — window-size dependent, B2 targets 768), energy
+model (17, live-sourced + sanity gated), B0–B3 campaign runner (18, spec + code; B3 reproduces
+wp6_real_table.csv "Ours: LoD + value-greedy" within the 2% / 0.01 gate — 554x / 0.680 vs the
+authoritative 557x / 0.685), relay energy (19) + relay path-choice (20) — both peer-owned,
+read-only, interface: sat7.relay.route(plan, links, *, lam_E, lam_T, direct_energy=,
+relay_energy=, link=LinkParams(...)).
+
+Done (report 21): B4 wired into the wp18 campaign runner — full B0–B4 runs (START_HERE §5
+item 4 closed). Design question resolved by checking sat7/scheduler.py + sat7/relay.py: relay
+REROUTES already-scheduled items (recall/MB unchanged — eviction/capacity/aging are inside
+simulate() upstream; route() only changes latency+energy), asserted by a sanity gate. Earlier
+context below is kept for provenance — reports
+19–20 point toward "reroute," not confirmed in code yet.
+
+Coordination: peer Claude session owns wp17/sat7.relay/wp20/report 19 — treat as stable
+interface, SendMessage before changing.
+
+Next after B4 wiring: derive real R_isl from 1252km ISL range (LIT, if a datasheet turns
+up), flight-hardware timing, multi-ground-station, bursty arrivals — all lower priority,
+not blocking.

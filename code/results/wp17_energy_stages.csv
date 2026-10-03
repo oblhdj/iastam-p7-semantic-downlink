@@ -1,0 +1,11 @@
+config,pipeline,stage,E_J_per_tile
+cpu_onnx,baseline,preprocess,0.01988
+cpu_onnx,baseline,gate_or_prefilter,1.5758917992934585
+cpu_onnx,baseline,detect,1.0808
+cpu_onnx,baseline,fuse,0.0
+cpu_onnx,baseline,semantic,0.014
+cpu_onnx,proposed,preprocess,0.01988
+cpu_onnx,proposed,gate_or_prefilter,0.02632
+cpu_onnx,proposed,detect,1.0808
+cpu_onnx,proposed,fuse,0.0
+cpu_onnx,proposed,semantic,0.014

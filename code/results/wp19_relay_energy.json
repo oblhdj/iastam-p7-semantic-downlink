@@ -1,0 +1,106 @@
+{
+  "label_note": "E_ISL/E_GS structure built. D SIM (live wp6_real_table.csv), R_gs SIM (orbit sim), P_tx ASSUMPTION (reused from wp17). P_isl/R_isl ASSUMPTION+SWEPT, NEW, PENDING the SGP4 link-window track for the real ISL window/rate.",
+  "status": {
+    "energy_terms": "BUILT (E_ISL, E_GS, E_relay, direct)",
+    "weighted_ES": "COMPUTED -- route() (report 20) now exists; our energy injected",
+    "latency_T": "NOT computed here -- it is the relay track's (report 20); SIM there",
+    "full_B0_B4": "route() exists (report 20) + energy here -> B4 now runnable; the B0-B4 campaign still needs wp18's runner wired to route()"
+  },
+  "route_interface": {
+    "direct_energy": "direct_energy(d_bytes, p_tx, r_gs_bps) -> {E_comm_J, tx_time_s}",
+    "relay_energy": "relay_energy(d_bytes, p_tx, p_isl, r_gs_bps, r_isl_bps) -> {E_ISL_J, E_GS_J, E_relay_J, isl_time_s, gs_time_s}",
+    "note": "these are the E primitives route() calls per path to form J = lambda_E*E + lambda_T*T; proposed to the path-choice track, pending confirmation"
+  },
+  "inputs": {
+    "D_sent_MB_day": 107.95,
+    "D_raw_MB_day": 60124.3,
+    "R_gs_Mbps_SIM": 2.531,
+    "R_isl_Mbps": 2.531,
+    "R_isl_is_default_eq_ground": true,
+    "contact_min_day": 34.2,
+    "capacity_MB_day": 649.2
+  },
+  "powers_W": {
+    "tx_ground_ASSUMPTION_wp17": 15.0,
+    "isl_ASSUMPTION_NEW": 12.0
+  },
+  "sanity_gate": {
+    "check_b_relay_gt_direct": {
+      "E_relay_J": 9212.8,
+      "E_direct_J": 5118.2,
+      "ratio": 1.8
+    },
+    "check_c_rate_bound": {
+      "R_gs_Mbps": 2.531,
+      "R_zenith_Mbps": 6.4
+    },
+    "check_a_matches_wp17_Ecomm": {
+      "wp17_kJ": 5.12,
+      "here_kJ": 5.12,
+      "rel_err": 0.0003
+    },
+    "passed": true
+  },
+  "per_path_energy_daily_kJ": {
+    "E_direct": 5.118,
+    "E_ISL": 4.095,
+    "E_GS": 5.118,
+    "E_relay": 9.213,
+    "relay_over_direct_x": 1.8,
+    "payload_D_MB": 107.95
+  },
+  "ES_bounds": {
+    "note": "ES = 1 - (E_proc + E_comm_mix)/E_bent_pipe; E_comm_mix = (1-f)*E_direct + f*E_relay, f = relay byte-fraction from route().",
+    "all_direct_f0": 0.9822,
+    "all_relay_f1": 0.9808
+  },
+  "ES_weighted_via_route20": {
+    "lam_E=0.0": {
+      "relay_fraction_f": 0.44,
+      "ES_weighted": 0.9816
+    },
+    "lam_E=1.0": {
+      "relay_fraction_f": 0.44,
+      "ES_weighted": 0.9816
+    },
+    "lam_E=10.0": {
+      "relay_fraction_f": 0.0,
+      "ES_weighted": 0.9822
+    },
+    "cross_check_lamE0_vs_wp20": {
+      "f_here": 0.44,
+      "wp20_reported": 0.44,
+      "note": "lam_E=0 is energy-free -> must match wp20's latency-optimal f"
+    },
+    "status": "COMPUTED via sat7.relay.route_item with our energy injected (drop-in)"
+  },
+  "isl_windows_SIM": {
+    "source": "wp20_isl_windows.csv (SIM, sat7.relay SGP4)",
+    "n_windows": 46,
+    "total_min": 656.3,
+    "min_range_km": 1252.3,
+    "mean_range_km": 2695.3,
+    "isl_time_needed_s_for_D": 341.2,
+    "window_time_sufficient": true,
+    "note": "range is SIM from the relay track; it could DERIVE a real R_isl via a crosslink budget (datasheet -> LIT) but is NOT used in the energy here (R_isl stays ASSUMPTION). A stale 458 km min-range figure in report 20's prose was flagged against this CSV and corrected to 1252 km."
+  },
+  "sensitivity_NEW_assumptions": {
+    "P_isl=5.0W": {
+      "E_relay_kJ": 6.82,
+      "relay/direct": 1.333
+    },
+    "P_isl=30.0W": {
+      "E_relay_kJ": 15.35,
+      "relay/direct": 3.0
+    },
+    "R_isl=1.0Mbps": {
+      "E_relay_kJ": 15.48,
+      "relay/direct": 3.025
+    },
+    "R_isl=50.0Mbps": {
+      "E_relay_kJ": 5.33,
+      "relay/direct": 1.04
+    }
+  },
+  "batch_consistency_note": "RESOLVED upstream check (task prerequisite): wp17's gate time (0.052 ms, wp3_gate.json) is a PURE-forward batch-32 figure; its detector time (10.71 ms, wp1_metrics.json) is end-to-end model.predict over a file list (decode+pre/post+Python match, batch-1-ish). They are NOT the same measurement scope, so '0.052 vs 10.71' is not a like-for-like comparison. This does NOT affect any figure here: E_ISL/E_GS/E_direct are transmit energies (P*D/R) and use neither forward time. It also does not change wp17's ES_proc conclusion (the gate is negligible vs the 56.3 ms classic prefilter it replaces), but wp17's per-stage gpu numbers mix scopes and should carry that provenance."
+}

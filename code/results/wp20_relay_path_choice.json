@@ -1,0 +1,47 @@
+{
+  "label_note": "ISL windows + latency SIM (sat7.orbit SGP4); per-item energy E TARGET (placeholder, from the energy track); lam_E/lam_T ASSUMPTION (swept).",
+  "setup": {
+    "start": "2026-09-18T00:00:00+00:00",
+    "hours": 36.0,
+    "link": "cubesat_sband",
+    "relay_raan_offset_deg": 90.0,
+    "relay_model": "SIM: 2nd satellite via sat7.orbit.make_satellite (reproducible Keplerian, RAAN-offset plane); no external TLE, no new orbital code"
+  },
+  "windows_SIM": {
+    "primary_ground_passes": 6,
+    "relay_ground_passes": 6,
+    "isl_windows": 46,
+    "isl_total_min": 656.3,
+    "isl_min_range_km": 1252.3,
+    "isl_max_mean_range_km": 2724.7
+  },
+  "sanity_gate": {
+    "ground_only_passes_reproduced": true,
+    "latency_collapses_to_baseline": true,
+    "n_arrival_times": 432,
+    "passed": true,
+    "baseline": "find_passes(primary, Sfax, 2026-09-18, 36h) -- WP5b/WP6/wp18"
+  },
+  "latency_SIM_energy_free": {
+    "direct_only_median_h": 4.781,
+    "direct_only_p90_h": 9.751,
+    "direct_only_max_h": 11.532,
+    "with_relay_median_h": 1.948,
+    "with_relay_p90_h": 4.431,
+    "with_relay_max_h": 5.782,
+    "relay_chosen_frac_latency_optimal": 0.44
+  },
+  "path_choice_TARGET": {
+    "rule": "J = lam_E*E + lam_T*T, choose min(J_direct, J_relay)",
+    "E_status": "TARGET placeholder (E_direct=1, E_ISL=0.6, E_GS=1.0 units; NOT joules) -- replace via route()'s direct_energy/relay_energy from the energy track",
+    "lam_T_per_s_ASSUMPTION": 0.0002777777777777778,
+    "relay_chosen_frac_vs_lam_E": {
+      "lam_E=0.0": 0.44,
+      "lam_E=1.0": 0.44,
+      "lam_E=5.0": 0.44,
+      "lam_E=10.0": 0.229,
+      "lam_E=20.0": 0.0,
+      "lam_E=50.0": 0.0
+    }
+  }
+}

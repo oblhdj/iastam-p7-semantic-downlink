@@ -1,5 +1,19 @@
 # 13 — Tile seams and SAHI, measured instead of derived
 
+> ### ⚠ CORRECTION 2 Oct — §5's recommendation inverts at real swath scale
+> This report measured the four policies by cutting a **single 768 px tile into 384 px quarters**
+> and flagged its own scale caveat (§3): read the ordering as the result, the magnitudes as an
+> upper bound. [Report 16](16-swath-policies.md) redoes the measurement on **real multi-tile
+> swaths with actual global-coordinate fusion** — the operational regime this report could not
+> reach — and the §5 recommendation **reverses**. At native-768 swath scale SAHI's overhead falls
+> from 2.25× to **1.56×** the regular tiling, while edge-triggered rises to **2.13×** (it builds on
+> a naive grid that is itself already 1.56× here). So **edge-triggered now costs *more* than SAHI**
+> (compute ratio 1.36 vs this report's 0.61) **and recovers fewer seam ships** (0.883 vs 0.922):
+> **SAHI dominates edge-triggered**, the opposite of §5. What this report got right: the ordering
+> *heuristics at small scale* and that seams genuinely hurt (a cut still costs ~23 pts on seam
+> ships). What it could not see: that SAHI's overlap overhead is asymptotically cheap on a wide
+> swath, and that real cross-tile fusion changes the picture. The body below is left unedited.
+
 Closes `../docs/ARCHITECTURE.md` §E item 2: *"`sahi_cost.png` is a geometric formula, not an
 experiment."* Scripts: `../code/scripts/wp12_seams.py`, `../code/scripts/wp12b_cut_recall.py`.
 Data: `../code/results/wp12_seams.json|.csv|.png`, `../code/results/wp12b_cut_recall.json|.csv|.png`.

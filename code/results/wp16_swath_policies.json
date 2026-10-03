@@ -1,0 +1,84 @@
+{
+  "label": "REAL",
+  "source": "wp15 swaths (real Airbus test tiles stitched; GT in swath-global coords)",
+  "n_swaths": 24,
+  "n_ships": 716,
+  "swath_px": 3072,
+  "seam_offset_px": 384,
+  "n_straddling": 77,
+  "straddling_share": 0.10754189944134078,
+  "conf": 0.25,
+  "nms_iou": 0.5,
+  "imgsz": 768,
+  "overlap": 0.2,
+  "sahi_window": 768,
+  "sanity": {
+    "whole_overall": 0.8282828282828283,
+    "direct_tile_overall": 0.8282828282828283,
+    "delta": 0.0,
+    "passed": true
+  },
+  "policies": {
+    "whole": {
+      "recall_overall": 0.7737430167597765,
+      "recall_small": 0.6005586592178771,
+      "recall_medium": 0.9154929577464789,
+      "recall_large": 0.993103448275862,
+      "recall_on_seam": 0.9090909090909091,
+      "recall_off_seam": 0.7574334898278561,
+      "slices_per_swath": 16.0,
+      "compute_vs_regular_tiling": 1.0
+    },
+    "naive": {
+      "recall_overall": 0.7276536312849162,
+      "recall_small": 0.5614525139664804,
+      "recall_medium": 0.8779342723004695,
+      "recall_large": 0.9172413793103448,
+      "recall_on_seam": 0.6753246753246753,
+      "recall_off_seam": 0.7339593114241002,
+      "slices_per_swath": 25.0,
+      "compute_vs_regular_tiling": 1.5625
+    },
+    "sahi": {
+      "recall_overall": 0.7723463687150838,
+      "recall_small": 0.611731843575419,
+      "recall_medium": 0.892018779342723,
+      "recall_large": 0.993103448275862,
+      "recall_on_seam": 0.922077922077922,
+      "recall_off_seam": 0.7543035993740219,
+      "slices_per_swath": 25.0,
+      "compute_vs_regular_tiling": 1.5625
+    },
+    "edge": {
+      "recall_overall": 0.7723463687150838,
+      "recall_small": 0.6061452513966481,
+      "recall_medium": 0.9107981220657277,
+      "recall_large": 0.9793103448275862,
+      "recall_on_seam": 0.8831168831168831,
+      "recall_off_seam": 0.758998435054773,
+      "slices_per_swath": 34.041666666666664,
+      "compute_vs_regular_tiling": 2.1276041666666665
+    }
+  },
+  "comparison_to_report13": {
+    "report13_claim": "edge-triggered ties SAHI on seam recall at 61% of the compute (edge 1.38x vs SAHI 2.25x the naive=regular grid); blanket SAHI a poor trade",
+    "compute_basis": "relative to the regular NxN tiling (16 cells); report 13's naive(4) was its frame's regular tiling, so these denominators correspond",
+    "seam_recall_whole": 0.9090909090909091,
+    "seam_recall_naive": 0.6753246753246753,
+    "seam_recall_sahi": 0.922077922077922,
+    "seam_recall_edge": 0.8831168831168831,
+    "sahi_compute_vs_regular": 1.5625,
+    "report13_sahi_compute": 2.25,
+    "edge_compute_vs_regular": 2.1276041666666665,
+    "report13_edge_compute": 1.38,
+    "edge_vs_sahi_compute_ratio": 1.3616666666666666,
+    "report13_edge_vs_sahi": 0.61,
+    "edge_ties_sahi_on_seam(|d|<=0.03)": false,
+    "edge_cheaper_than_sahi": false,
+    "edge_recovers_over_naive": true,
+    "seam_recall_ordering_replicates": false,
+    "compute_ordering_replicates(edge<sahi)": false,
+    "note": "report 13's scale caveat was warranted and its recommendation inverts. At native-768 swath scale SAHI's overhead drops from 2.25x to 1.56x the regular tiling (not free -- it still adds a 20% overlap ring), while edge-triggered rises from 1.38x to 2.13x because the naive grid it builds on is itself already 1.56x here. So edge now costs MORE than SAHI (ratio 1.36 vs report 13's 0.61) and recovers fewer seam ships (0.883 vs 0.922): SAHI dominates edge-triggered, the reverse of report 13's single-tile finding."
+  },
+  "elapsed_s": 36.6
+}
