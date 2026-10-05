@@ -195,7 +195,8 @@ The report's 8 failure modes were all prose; none of our tests injected a fault.
   **Strictly better, not a trade** — at 320k tiles/day: large-dark recall **+24.1 pts**
   (0.686→0.927), all-dark +5.2, **overall ship recall +1.8**, dark latency **−2.0 h**, bytes +1.2%.
   (Bumping `dark_weight` to 9.5 instead would have cost −2.9 pts of overall recall.)
-  WP6 headline: 511× data reduction (was 517×), ship recall unchanged at 0.685.
+  WP6 headline: 511× data reduction (was 517×; now **557×** after WP2 calibration landed — report 03),
+  ship recall unchanged at 0.685.
 * "Thumbnail + **raw ring buffer**, ground re-request": the thumbnail exists but carries **no
   ship ids** (so it never counts as delivery), and **there is no ring buffer in the code**.
 * "Audit sampling: 1% random **raw tiles**": implemented as a 2% sample of *thumbnails* on
@@ -295,7 +296,8 @@ measured; q30 rejected on measurement; thumbnail gating re-keyed onto the learne
 * WP3 gate (24 Sept): `wp3_gate_report.md`, `wp3_gate.json`, `wp3_gate_val_selected.json`,
   `wp3_gate_tradeoff.csv|.png`, weights `models/gate.pt`
   (⚠ `wp3_gate*_SMOKETEST_ONLY_1epoch.*` is a 1-epoch verification run — not a result)
-* `report/` — 3 PDFs: Technical Report, Project Overview (from zero), Phase 2 & Poster Guide
+* `paper/` — `PHASE3_RESULTS.md` (measured Phase-3 results) + `video_script.md`; the 3 superseded
+  PDFs (Technical Report, Project Overview, Phase 2 & Poster Guide) were removed 2026-10-05
 * `GLOSSARY.md`, `architecture.png`, `simple_steps.png`
 * Rebuild PDFs: `scripts/build_report.py`, `build_overview.py`, `build_phase2_guide.py`
 

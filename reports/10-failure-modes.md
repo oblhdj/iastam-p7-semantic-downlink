@@ -102,7 +102,9 @@ is at risk.
 
 At 40,000–160,000 tiles/day recall is unchanged (nothing binds) and the cost is +1.1% bytes;
 dark-vessel latency still improves by 0.4 h at 160,000. The WP6 headline moves from 517x to
-**511x** data reduction, with ship recall unchanged at 0.685.
+**511x** data reduction, with ship recall unchanged at 0.685. (This run predates the WP2
+calibration change; the current project headline is **557x** — see
+[report 03](03-confidence-calibration.md).)
 
 ## Other findings
 
