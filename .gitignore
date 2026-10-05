@@ -28,3 +28,9 @@ kaggle_upload/*.pt
 
 # --- demo live-run scratch outputs (never the authoritative results) ---
 demo/_live/
+
+# --- results noise: run logs, console dumps, and smoke-test scratch (not real results) ---
+code/results/*.log
+code/results/*stdout*.txt
+code/results/*SMOKETEST*
+code/results/*1epoch*
