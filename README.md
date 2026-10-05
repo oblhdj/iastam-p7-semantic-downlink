@@ -51,11 +51,11 @@ catalogue-driven simulation to four decimal places — see
 
 | path | what is in it |
 |---|---|
-| **[`reports/`](reports/)** | **Start here.** 15 narrative write-ups, one per work package |
+| **[`reports/`](reports/)** | **Start here.** 22 narrative write-ups, one per work package |
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | what is built, what is missing, ranked and audited |
 | [`docs/STATUS.md`](docs/STATUS.md) | current state, open items, environment notes |
 | [`docs/GLOSSARY.md`](docs/GLOSSARY.md) | every term and symbol used in the reports |
-| [`paper/`](paper/) | the Technical Report, Project Overview and Poster Guide (PDF) |
+| [`paper/`](paper/) | Phase-3 measured results (`PHASE3_RESULTS.md`) and the 2-min video script |
 | `code/sat7/` | the package: encoder, scheduler, exact optimum, orbit, pre-filter, dedup |
 | `code/scripts/` | one script per work package, each with a docstring saying *why* it exists |
 | `code/tests/` | 96 tests — 14 fault-injection, exact-solver checks, and the gate's claims pinned |
@@ -104,8 +104,8 @@ Timings are a laptop RTX 5060, not flight hardware — "runs onboard" is **not**
 The Airbus set is 0.4% cloud, so the cloud assumption cannot be settled from this data. Tiles are
 resampled i.i.d. rather than as orbital strips. A single ground station is modelled. Tile seams
 are measured ([report 13](reports/13-tile-seams-and-sahi.md)) but SAHI is not implemented.
-The three PDFs in `paper/` predate reports 05–15 and still describe a synthetic workload — the
-reports, not the PDFs, are the current account of this project.
+The numbered reports under [`reports/`](reports/) are the current and authoritative account of
+this project.
 
 ## Licence and data
 
