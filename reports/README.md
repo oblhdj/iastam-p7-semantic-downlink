@@ -1,8 +1,8 @@
 # Reports
 
 Twenty work packages — each a short write-up of what was measured, what it changed, and what it
-cost us to believe — plus one planning spec (18). They are meant to be read in order, but each
-stands alone.
+cost us to believe — plus one planning spec (18) and an onboard-feasibility reframe (22). They are
+meant to be read in order, but each stands alone.
 
 Numbers live in `../code/results/` as `.csv` / `.json`; these documents narrate them. Where a
 report carries a **REFRESHED** banner, the banner is current and the tables below it are not —
@@ -33,6 +33,7 @@ the `.csv` is always authoritative.
 | 19 | [Relay energy](19-relay-energy.md) | `E_relay = E_ISL + E_GS` for B4: **relay always costs more energy than direct (1.8×), so it's a latency buy, not a power saving** — our energy injected into report 20's `route()` gives weighted ES **0.9816** (f=0.44), but ES is ~flat in the relay fraction (0.14-pt spread) |
 | 20 | [Relay path choice](20-relay-path-choice.md) | B4 windows + `min(J_direct, J_relay)`: a complementary-coverage relay **halves worst-case latency (11.5 h → 5.8 h)** — SIM from real orbit propagation; the energy half is TARGET (report 19), and direct-only reproduces the ground-only baseline exactly |
 | 21 | [B0–B4 campaign](21-b0-b4-campaign.md) | the full campaign end to end (closes START_HERE §5.4), B3 pinned to the 108 MB/557× headline row: **B4 is a reroute, not extra capacity** — recall/MB = B3 verbatim (0.680 at 15% cloud / 108.5 MB), relay cuts worst-case latency **11.6 h → 6.2 h** for +34% comm energy (TARGET); all sanity gates pass |
+| 22 | [Onboard feasibility](22-onboard-feasibility.md) | **demo, not prototype:** every timing is a laptop, so "runs onboard" is a TARGET — but a 3.15M-param detector + 47k-param gate is the class our baseline **Φ-sat-2 already runs onboard** (Myriad 2, ~1 W), it's a **few-% duty cycle** at 40k tiles/day even on a VPU 6× slower, and the ES_proc energy saving is a hardware-independent time ratio; states what a prototype still owes |
 
 ## If you only read three
 

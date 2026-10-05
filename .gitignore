@@ -25,3 +25,6 @@ Thumbs.db
 
 # --- kaggle upload staging: weights + a copy of the split ---
 kaggle_upload/*.pt
+
+# --- demo live-run scratch outputs (never the authoritative results) ---
+demo/_live/

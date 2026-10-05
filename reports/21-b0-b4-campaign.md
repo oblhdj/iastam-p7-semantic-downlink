@@ -16,9 +16,10 @@ detector sample (200 tiles / 2 swaths), REAL recall, independent of the daily lo
 0–50 % cloud** (START_HERE §7) — stated once here and repeated on each number, never quoted bare.
 
 **Labels (a campaign mixes them by row):** B0 **SIM** (raw volume); B1/B2 recall **REAL**; B3 recall
-**SIM-over-REAL**; **B4 latency SIM** (orbit), **B4 energy TARGET** (report 19, pending real
-`P_isl`/`R_isl`), **λ_E/λ_T ASSUMPTION**. B4's recall and MB-sent are **inherited from B3 verbatim**
-(§1) and keep B3's label — wiring into the campaign upgrades nothing.
+**SIM-over-REAL**; **B4 latency SIM — under an assumed relay orbit (RAAN +90°, ASSUMPTION) and
+`R_isl` = ground rate (ASSUMPTION)**; **B4 energy TARGET** (report 19, pending real `P_isl`/`R_isl`),
+**λ_E/λ_T ASSUMPTION**. B4's recall and MB-sent are **inherited from B3 verbatim** (§1) and keep
+B3's label — wiring into the campaign upgrades nothing.
 
 ## 1. The design question, resolved by checking: reroute, not extra capacity
 
@@ -34,23 +35,43 @@ So relay **cannot change which items are sent → recall and MB-sent are fixed b
 
 ## 2. The campaign, one labeled row per config
 
-| config | onboard | key result | label |
-|---|---|---|---|
-| **B0** | none | 60,124 MB/day raw reference (at 40k tiles/day) | SIM |
-| **B1** | YOLO per tile | ship recall **0.782** (262 ships, 200-tile sample; at 15% cloud n/a — pre-gate detector recall) | REAL |
-| **B2** | SAHI + YOLO + fusion | ship recall **0.745** (47 ships, 2 swaths) @ **1.56×** compute | REAL |
-| **B3** | + gate + LoD + scheduler | ship recall **0.680** *(at 15% cloud; band 0.40–0.82)*, **108.5 MB/day**, **554× vs B0** — 40k tiles/day, share 0.25, seed 0 | SIM-over-REAL |
-| **B4** | + relay / adaptive comms | **= B3 recall & MB** (0.680 at 15% cloud / 108.5 MB); worst-case latency **11.58 h → 6.16 h** (same load) | latency SIM · energy TARGET |
+**Recall is not one quantity across these rows — read the sample/cloud column before comparing any
+two.** B1/B2 are REAL detector recall on small fixed samples with **no cloud model** (every ship is
+visible); B3/B4 recall is a **simulated operational day at an assumed 15 % cloud fraction**. A B1/B2
+number and a B3 number are therefore **not comparable down a single column**, so each recall is
+reported with the ship population and cloud basis it rests on.
 
-**B3 reproduces the headline, and here is the traceability.** The **557× / 108.0 MB headline
-(`wp6_real_table.csv`, "Ours: LoD + value-greedy") stays authoritative.** wp18's **554× / 108.5 MB**
-is the **same configuration reproduced within the 2 % traceability gate — not a replacement** for
-557×; the 0.5 % gap is the gate tolerance, and the CSV row remains the cited figure. Its recall
-**0.680** (at 15 % cloud; band 0.40–0.82) sits inside the documented **day-resampling spread
-[0.680, 0.690]** (report 05 §"3 resampled days"; report 11 §sensitivity). (An earlier draft of this
-report quoted 0.690 / 53.7 MB — that was a **20,000 tiles/day, share 0.15** validation run, i.e.
-**half the load**, so its MB was ~half; it is replaced here by the canonical 40k run that reproduces
-the CSV headline.)
+| config | onboard | ship recall (REAL/SIM) | sample · cloud basis | reduction vs B0 | label |
+|---|---|---|---|---|---|
+| **B0** | none | — | — | 60,124 MB/day raw ref | SIM |
+| **B1** | YOLO per tile | **0.782** (95 % CI 0.73–0.83) | 262 ships / 200 tiles · **no cloud** | — | REAL |
+| **B2** | SAHI + YOLO + fusion | **0.745** (95 % CI 0.62–0.87) @ 1.56× compute | 47 ships / 2 swaths · **no cloud** | — | REAL |
+| **B3** | + gate + LoD + scheduler | **0.680** *(band 0.40–0.82)* | simulated day · **15 % cloud** | **554×** (108.5 MB/day) | SIM-over-REAL |
+| **B4** | + relay / adaptive comms | **= B3** (0.680; reroute) | simulated day · **15 % cloud** | **554×** (108.5 MB) | latency SIM · energy TARGET |
+
+(95 % CIs are Wald binomial on the ship count: B1 205/262, B2 35/47. B4 changes **latency, not
+recall or bytes** — §3; its worst-case latency falls 11.58 h → 6.16 h at the same load.)
+
+**B2 (0.745) comes in below B1 (0.782) — stated plainly, not hidden.** On these samples SAHI+fusion
+scores 3.7 points under per-tile YOLO. But this is **not** a controlled SAHI-vs-YOLO result: the two
+rows are different, tiny ship populations (47 vs 262 ships) and their 95 % CIs overlap heavily
+(0.62–0.87 vs 0.73–0.83), so the ordering is **within sampling noise**. The controlled comparison is
+[report 16](16-swath-policies.md), which runs every tiling policy on the *same* 24 swaths / 716 ships
+at the **native 768 px window** — B2's window (`wp18_campaign.json` `B2.window_px = 768`): there SAHI
+reaches **0.772 overall and 0.922 on seam ships, matching the never-cut oracle (0.774 / 0.909) at
+1.56× compute**. So at scale SAHI does **not** lose to plain tiling, and the window that applies is
+**768 px, not the paper's 512** (report 16 §"Window size": at 512 the policy ordering reverts to
+report 13's). Note **report 16 does not itself put B1 against B2** (it compares tiling policies on one
+fixed ship set), so it does not *literally* reconcile this B2<B1 number — what it reconciles is the
+only form of the question that is controlled for sample and window.
+
+**B3 reproduces the headline, and 557× stays authoritative.** The **557× / 108.0 MB headline
+(`wp6_real_table.csv`, "Ours: LoD + value-greedy") remains the cited figure.** wp18's **554× /
+108.5 MB** is the **same configuration reproduced within the 2 % traceability gate — not a
+replacement** for 557×; the 0.5 % gap is the gate tolerance. Its recall **0.680** (15 % cloud; band
+0.40–0.82) sits within the CSV row's documented **±0.005 day-resampling spread around its 0.6851**
+(report 05 §"3 resampled days"; report 11 §sensitivity) — the gate tolerance is justified against
+that spread in §4.
 
 ## 3. What B4 changes from B3, at the chosen λ
 
@@ -58,7 +79,10 @@ the CSV headline.)
 validated (f = 0.440), and it isolates the latency buy from the energy term, which is still TARGET.
 A middle λ would blend a SIM result with a placeholder energy number.
 
-All numbers below at **40k tiles/day, share 0.25, seed 0; recall at 15 % cloud (band 0.40–0.82)**:
+All numbers below at **40k tiles/day, share 0.25, seed 0; recall at 15 % cloud (band 0.40–0.82)**.
+**The latency figures are SIM under an assumed relay orbit** (`wp18_campaign.json`
+`relay_raan_offset_deg = 90` — a RAAN +90° companion, **ASSUMPTION**) **and `R_isl` = ground rate
+(ASSUMPTION)**; they move with that orbit and that rate, which are not yet sourced:
 
 | quantity | B3 (direct) | B4 (relay reroute) | change |
 |---|---|---|---|
@@ -73,10 +97,10 @@ All numbers below at **40k tiles/day, share 0.25, seed 0; recall at 15 % cloud (
 **Relay roughly halves worst-case latency (11.58 → 6.16 h) for +34 % comm energy** — the whole story
 of B4: it spends energy to buy time, exactly as reports 19–20 framed it. The 11.58 h worst case is
 Sfax's single-station gap ([report 09](09-whole-day-bound.md)); a complementary relay closes it. The
-43.6 % relay fraction is **recomputed from the 40k run, not carried over** from the earlier 20k draft:
-`wp18_campaign.json` records **n_relayed / n_items_routed = 19,731 / 45,264 = 0.436** at
-`B3.day_tiles = 40,000` (day_ships 21,137) — the item count is ~2× a 20k run's, confirming it is the
-40k plan being routed. It tracks report 20's 44.0 % over a uniform grid. (B4's direct-only energy
+43.6 % relay fraction is **recomputed from the 40k run, not carried over** from any smaller-scale
+run: `wp18_campaign.json` records **n_relayed / n_items_routed = 19,731 / 45,264 = 0.436** at
+`B3.day_tiles = 40,000` (day_ships 21,137) — the routed-item count scales with the 40k plan,
+confirming it is that plan being routed. It tracks report 20's 44.0 % over a uniform grid. (B4's direct-only energy
 5.15 kJ also reconciles with [report 19](19-relay-energy.md)'s `E_comm` 5.12 kJ/day at 108 MB — the
 two energy models agree on the same downlink.)
 
@@ -92,7 +116,7 @@ until those are sourced.
   `MB_sent` 108.0, `data_reduction_x` 557): **MB_sent within 2 %** (108.5 vs 108.0 ✓) and
   **ship_recall within 0.01** (0.680 vs 0.6851 ✓). The runner aborts if either fails.
   **Why 0.01 for recall:** WP6 measured the rep-to-rep (day-resampling) spread at **±0.005** (report
-  05 §"3 resampled days" → [0.680, 0.690]; report 11 §sensitivity, "±0.005 seed noise"), so one seed
+  05 §"3 resampled days"; report 11 §sensitivity, "±0.005 seed noise"), so one seed
   can differ from another realization by up to ~0.005; **0.01 ≈ 2× that spread**, the smallest
   tolerance that lets any single-seed run reproduce any documented realization of this row. It is not
   slack hiding an error: at this exact 40k / 0.25 / 15 %-cloud load, **reports 05 and 11 both report
@@ -127,10 +151,15 @@ until those are sourced.
 * **B1/B2 are a small-scale detector sample** (200 tiles / 2 swaths), for wiring correctness; their
   REAL recalls are samples, not the full-split figures (report 02's 0.804 mAP50 is the detector).
 * **B3/B4 are the canonical 40k-tile load** and reproduce the CSV headline, but one seed / one Sfax
-  day; recall is a resampling realization in [0.680, 0.690].
+  day; recall is a single resampling realization, within the CSV row's ±0.005 day-resampling spread.
 * **B4 energy is TARGET** (report 19 placeholders; `P_isl`/`R_isl` ASSUMPTION-and-swept), so +34 %
-  energy and the λ_E crossover are provisional. The **latency** cut is SIM and firm; recall/MB are
-  B3's and exact.
+  energy and the λ_E crossover are provisional. The **latency** cut is **SIM under an assumed relay
+  orbit (RAAN +90°, ASSUMPTION) and `R_isl` = ground rate (ASSUMPTION)** — firm *given those
+  assumptions*, not absolute; recall/MB are B3's and exact.
+* **The ISL geometry is a SIM output, not literature.** The min ISL range 1252 km (report 19, from
+  `wp20_isl_windows.csv`) is **SIM** — computed from the propagated RAAN +90° orbit — **not LIT**; it
+  would become LIT only if matched to a published crosslink range, and it does not set `R_isl` until a
+  link budget is applied.
 * **Single relay, single ground station** — the benefit is complementary Sfax coverage; more stations
   shrink the direct gaps and the relay's win (report 20 §6).
 * **B3 recall carries the 15 % cloud assumption** (band 0.40–0.82) and must never be quoted bare
