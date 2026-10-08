@@ -1,7 +1,14 @@
 # IASTAM 6.0 — Problem 7 — START HERE
 
+> **⚠ STATUS UPDATE (7 Oct 2026).** This file was written mid-Phase-3 and parts of §3/§5 below are
+> now out of date: **SAHI + global-coordinate fusion, the per-stage energy model, and the optional
+> inter-satellite relay are all implemented and measured**, and the B0→B4 campaign runs end to end.
+> For current status trust **[`../paper/PHASE3_RESULTS.md`](../paper/PHASE3_RESULTS.md)** and
+> **[`../demo/PAPER_COVERAGE.md`](../demo/PAPER_COVERAGE.md)**. The §7 *superseded-numbers* list and
+> the project rules (§8) remain correct and useful.
+
 **Read this file alone and you can help with the project.** It is self-contained: no other file
-is needed. Written 2 Oct 2026.
+is needed. Written 2 Oct 2026; status banner updated 7 Oct 2026.
 
 Everything is in the repo `github.com/oblhdj/iastam-p7-semantic-downlink`, locally at
 `Desktop/IASTAM_Problem7`. Deeper detail lives in `docs/STATUS.md`, `docs/ARCHITECTURE.md` and
@@ -53,15 +60,15 @@ It promises a **B0→B4 progression**:
 
 and priority levels **P0** discard · **P1** metadata · **P2** metadata+ROI · **P3** metadata+ROI+context.
 
-### ⚠ The paper describes things the code does not implement
+### ✅ What the paper promised — now built and measured (updated 7 Oct 2026)
 
 | promised | status |
 |---|---|
-| **SAHI sliced inference** (512×512, 20% overlap) | **not implemented** — and see the trap in §7 |
-| **Global-coordinate transform + detection fusion** | **not implemented** |
-| **Per-stage energy model** `E_proc = Σ P_k·T_k` | **not implemented** (only a rough estimate) |
-| **Optional inter-satellite relay**, `J_direct` vs `J_relay` | **not implemented** — single ground station |
-| Joint objective `min αE + βD + γT` | we optimise value-per-byte instead |
+| **SAHI sliced inference** (window + 20% overlap) | **implemented & measured** — `sat7/b2_sahi_fusion.py`, `sat7/perception.py`; B2 ran (recall 0.745 @ 1.56× compute). Window **768**, not 512 — the result reverses at 512 (report 16); see the trade in §7 |
+| **Global-coordinate transform + detection fusion** | **implemented & measured** — `sat7/b2_sahi_fusion.fuse`; validated to 0.0000 recall error vs per-tile (report 16) |
+| **Per-stage energy model** `E_proc = Σ P_k·T_k` | **implemented & measured** — `wp17_energy_model.py` / `sat7/energy.py`; ES_proc 57.6%, ES_total ≈ 98%, proc:comm 8.9:1 (report 17) |
+| **Optional inter-satellite relay**, `J_direct` vs `J_relay` | **implemented & measured** — `sat7/relay.py`; worst-case latency 11.6→6.2 h (reports 19–21) |
+| Joint objective `min αE + βD + γT` | the online scheduler uses value-per-byte (near-optimal, report 08); the full program is also solved directly in `sat7/joint.py` (report 23) |
 
 And the reverse — **built, but absent from the paper**: dark-vessel/AIS prioritisation, the
 multi-pass scheduler itself, queue-aware adaptive detail, the optimality bounds, the leakage-free
@@ -103,22 +110,28 @@ The 15 work packages, one line each:
 | 14 | The q40 coastal setting adopted as "no recall cost" **actually costs 4.0 points**, all on small ships; q30 rejected |
 | 15 | Moving thumbnail gating onto the learned gate returns **3.8% of the whole downlink at zero measured recall cost** |
 
-## 5. What Phase 3 still has to produce
+## 5. What Phase 3 produced (all delivered — see `../paper/PHASE3_RESULTS.md`)
 
 Ranked by "the paper promised it":
 
-1. **SAHI + global-coordinate fusion (B2)** — the paper's centrepiece. See the trap in §7 first.
-2. **Per-stage energy model** — `E_proc = Σ P_k·T_k` across preprocess / tile / detect / fuse /
-   semantic, plus `E_comm = P_tx·D_tx/R_tx`, and the energy-saving ratio `ES = 1 − E_prop/E_base`.
-3. **Optional inter-satellite relay (B4)** — nothing exists. Needs `E_relay = E_ISL + E_GS`,
-   a path choice `min(J_direct, J_relay)` with `J = λ_E·E + λ_T·T`, and link-window constraints.
-4. **Run the B0–B4 campaign** end to end and report it as the paper framed it.
-5. **Ablations the paper lists**: without SAHI / without overlap / without fusion / without
-   adaptive downlink / without ROI / without relay. (The last three are partly done already.)
-6. **Fold the unreported work in** — dark vessels, scheduler, bounds — under §IV-B.
+1. ✅ **SAHI + global-coordinate fusion (B2)** — `sat7/b2_sahi_fusion.py` + `sat7/perception.py`;
+   B2 ran, recall 0.745 @ 1.56× compute (reports 13, 16). Window 768, the measured trade in §7.
+2. ✅ **Per-stage energy model** — `wp17_energy_model.py` / `sat7/energy.py`: `E_proc = Σ P_k·T_k`,
+   `E_comm = P_tx·D_tx/R_tx`, `ES = 1 − E_prop/E_base`. ES_proc 57.6%, ES_total ≈ 98% (report 17).
+3. ✅ **Optional inter-satellite relay (B4)** — `sat7/relay.py`: `E_relay = E_ISL + E_GS`,
+   `min(J_direct, J_relay)` with `J = λ_E·E + λ_T·T`, real ISL windows. Worst latency 11.6→6.2 h
+   (reports 19–21). Energy half is TARGET pending real P_isl/R_isl.
+4. ✅ **B0–B4 campaign** end to end — `wp18_campaign_runner.py`, sanity-gated (report 21).
+5. 🟡 **Ablations**: without SAHI / adaptive / ROI / relay are reported (reports 06, 07, 16, 21);
+   without-overlap / without-fusion are now isolable as flags (`sat7/perception.py`, report 23) but
+   not yet run as their own measured rows.
+6. ✅ **Unreported work folded in** — scheduler, queue-aware LoD, optimality bounds, leakage-free
+   split — under §IV-B in `../paper/PHASE3_RESULTS.md`.
 
-Still open besides: edge-hardware timing (every figure is a laptop RTX 5060, so "runs onboard" is
-unsupported), multi-ground-station, burst/correlated arrivals (tiles are resampled i.i.d.), CI.
+Still open (stated as limitations, not claims): edge-hardware wall-clock (every figure is a laptop
+RTX 5060, so "runs onboard" is a **TARGET**, report 22); multi-ground-station (the capability exists,
+`sat7.orbit.find_passes_multi`, but the headline campaign is single-station); burst/correlated
+arrivals (tiles resampled i.i.d.); CI.
 
 ## 6. How to run things
 

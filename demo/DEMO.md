@@ -35,6 +35,22 @@ chain prefilter→gate→detector→LoD→scheduler→ground with an integrity c
 
 ---
 
+## Pre-flight checklist (do this before you walk in)
+
+- [ ] `python demo/summary.py` prints the full screen **with no dataset and no GPU** — this is the
+      guaranteed backup. (It reads only `code/results/*.csv|json`; the 7.7 GB Airbus set is **not**
+      needed.) Confirm the B0→B4 table and the honesty block appear.
+- [ ] Slide deck opens: double-click **`paper/slides/index.html`** in a browser; `←/→` navigate,
+      `N` toggles speaker notes (the 90-s track), `F` full-screen. Works offline.
+- [ ] **`demo/QA_CARD.md`** is on the podium (0.685+cloud, onboard TARGET, SAHI cost, Airbus-not-DOTA,
+      relay=latency, novelty, INT8).
+- [ ] If demoing live: `code/.venv312` exists and `bash demo/run_demo.sh` completes (~1 min). If not,
+      you present from the slide deck + `summary.py` — nothing is lost.
+- [ ] Numbers to have cold: **557×**, **0.685 @15% cloud (band 0.40–0.82)**, **+6.3 pts** fair baseline,
+      **11.6 h → 6.2 h** relay. Everything else: "the CSV is authoritative."
+
+---
+
 ## Click-by-click (live demo)
 
 1. Open a terminal.
@@ -76,10 +92,12 @@ chain prefilter→gate→detector→LoD→scheduler→ground with an integrity c
 
 ## The 3 questions judges will ask — and your answers
 
+The full set (seven) is in **`demo/QA_CARD.md`** — keep it on the podium. The three that always come:
+
 | They ask | You say |
 |---|---|
 | "Is 0.685 the real recall?" | "At an assumed **15% cloud**. The band is **0.40–0.82** over 0–50% cloud — cloud fraction moves it more than anything else, so we never quote it bare." |
-| "Does this actually run on a satellite?" | "Not yet — this is a **demo, not a prototype**. Every timing is a laptop RTX 5060. We map that compute+energy onto a flight processor as a **TARGET** (report 17), and we say so." |
+| "Does this actually run on a satellite?" | "Not yet — this is a **demo, not a prototype**. Every timing is a laptop RTX 5060. We map that compute+energy onto a flight processor as a **TARGET** (report 22), and we say so." |
 | "You rely on SAHI — isn't it expensive?" | "We measured it: a cut ship is usually still detected (report 13), so blanket SAHI is a poor trade. We argue **selective** slicing. It costs 1.56× compute, not 2.25× (report 16)." |
 
 ---
@@ -89,7 +107,7 @@ chain prefilter→gate→detector→LoD→scheduler→ground with an integrity c
 - B0→B4 → `code/results/wp18_campaign.json` (sanity gates assert B4 reproduces B3).
 - End-to-end integrity → `code/results/wp11_integration.json` (decision flips @conf_high = 0).
 - Dataset / leakage-free split → `code/results/wp0_stats.json`.
-- Full narrative per work package → `reports/01`–`reports/21`.
+- Full narrative per work package → `reports/01`–`reports/23`; Phase-3 write-up → `paper/PHASE3_RESULTS.md`.
 
 ## If something breaks
 - No GPU / no dataset → `python demo/summary.py` alone (it's the whole story, from committed data).

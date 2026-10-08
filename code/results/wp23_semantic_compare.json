@@ -1,0 +1,109 @@
+{
+  "label_note": "recall/MB/latency SIM-over-REAL (scheduler sim over real detections); recall at assumed cloud fraction, never bare (START_HERE 7). Joint: D/T SIM, E TARGET (placeholder powers), alpha/beta/gamma + P0-P3 thresholds ASSUMPTION.",
+  "workload": {
+    "tiles": 40000,
+    "ships": 21137,
+    "detected": 14785,
+    "dark": 2139,
+    "passes": 6,
+    "link_share": 0.25,
+    "cloud_caveat": "recall band 0.40-0.82 over 0-50% cloud"
+  },
+  "semantic_schemes": {
+    "lod": {
+      "name": "LoD ladder (repo)",
+      "n_items": 45264,
+      "ship_recall": 0.6799,
+      "dark_recall": 0.6793,
+      "MB_sent": 108.5,
+      "MB_offered": 108.5,
+      "value_frac": 0.7268,
+      "latency_med_h": 4.49,
+      "latency_p90_h": 9.51
+    },
+    "priority": {
+      "name": "P0-P3 (paper Table I)",
+      "n_items": 24172,
+      "ship_recall": 0.6166,
+      "dark_recall": 0.6265,
+      "MB_sent": 49.9,
+      "MB_offered": 49.9,
+      "value_frac": 0.9035,
+      "latency_med_h": 4.5,
+      "latency_p90_h": 9.46
+    }
+  },
+  "p0_p3_level_histogram": {
+    "P0-discard": 4620,
+    "P1-meta": 5927,
+    "P2-roi": 4450,
+    "P3-context": 2656
+  },
+  "joint_program": {
+    "objects": 13033,
+    "constraints": {
+      "a_min": 0.9,
+      "i_min": 0.5
+    },
+    "headline_1_1_1": {
+      "J": 186.076,
+      "E_total_J": 185.55,
+      "D_tx_MB": 0.52,
+      "T_total_h": 0.0,
+      "accuracy": 1.0,
+      "info_preservation": 0.5,
+      "feasible": true,
+      "gap_vs_lower_bound": 0.0
+    },
+    "weighting_sweep": [
+      {
+        "alpha": 1,
+        "beta": 0,
+        "gamma": 0,
+        "J": 185.5528300395257,
+        "E_total_J": 185.5528300395257,
+        "D_tx_MB": 0.52132,
+        "T_total_h": 0.001867376482213439,
+        "accuracy": 1.0,
+        "info_preservation": 0.5,
+        "feasible": true
+      },
+      {
+        "alpha": 0,
+        "beta": 1,
+        "gamma": 0,
+        "J": 0.52132,
+        "E_total_J": 185.5528300395257,
+        "D_tx_MB": 0.52132,
+        "T_total_h": 0.001867376482213439,
+        "accuracy": 1.0,
+        "info_preservation": 0.5,
+        "feasible": true
+      },
+      {
+        "alpha": 0,
+        "beta": 0,
+        "gamma": 1,
+        "J": 0.0018673764822134387,
+        "E_total_J": 185.5528300395257,
+        "D_tx_MB": 0.52132,
+        "T_total_h": 0.001867376482213439,
+        "accuracy": 1.0,
+        "info_preservation": 0.5,
+        "feasible": true
+      },
+      {
+        "alpha": 1,
+        "beta": 1,
+        "gamma": 1,
+        "J": 186.07601741600791,
+        "E_total_J": 185.5528300395257,
+        "D_tx_MB": 0.52132,
+        "T_total_h": 0.001867376482213439,
+        "accuracy": 1.0,
+        "info_preservation": 0.5,
+        "feasible": true
+      }
+    ]
+  }
+}

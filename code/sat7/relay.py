@@ -145,7 +145,8 @@ def default_relay_energy(d_bytes: float, p_tx: float, p_isl: float,
 def route_item(item_bytes: float, t_now: datetime, direct_passes, isl_wins, relay_passes, *,
                lam_E: float, lam_T: float, direct_energy=default_direct_energy,
                relay_energy=default_relay_energy, link: LinkParams | None = None,
-               isl_enabled: bool = True, direct_latency_s: float | None = None) -> dict:
+               isl_enabled: bool = True, direct_latency_s: float | None = None,
+               deadline_s: float | None = None) -> dict:
     """Per-item path choice: J = lam_E*E + lam_T*T, choose min(J_direct, J_relay).
 
     T (latency to the item reaching the ground, seconds) is SIM -- read from the propagated windows
@@ -159,6 +160,12 @@ def route_item(item_bytes: float, t_now: datetime, direct_passes, isl_wins, rela
     exact value for T_direct (and takes delivery as having happened, so E_direct is the real energy),
     while still owning the relay leg (T_relay from windows) and the min(J) decision. Default None
     leaves report 20's behaviour -- and every number in it -- unchanged.
+
+    `deadline_s` makes the choice deadline-AWARE (START_HERE / paper: "min(direct, relay) while
+    respecting deadlines"). When set, a path whose latency exceeds the deadline is disqualified
+    first; min(J) is taken over the paths that still meet it. If NEITHER path can meet the deadline
+    the item is marked `deadline_missed` and the fastest (lowest-T) path is taken as the least-bad
+    option. Default None keeps the pure min(J) behaviour and every report-20 number unchanged.
     """
     link = link or LinkParams()
     gd = _next(direct_passes, t_now)                               # primary's next ground pass
@@ -172,8 +179,9 @@ def route_item(item_bytes: float, t_now: datetime, direct_passes, isl_wins, rela
 
     out = {"path": "direct", "T_s": T_direct, "E": E_direct, "J": J_direct,
            "J_direct": J_direct, "T_direct_s": T_direct,
-           "J_relay": math.inf, "T_relay_s": math.inf}
+           "J_relay": math.inf, "T_relay_s": math.inf, "deadline_missed": False}
 
+    candidates = [("direct", T_direct, E_direct, J_direct)]
     if isl_enabled:
         wi = _next(isl_wins, t_now)                                # next sat-to-relay window
         gr = _next(relay_passes, _start(wi)) if wi else None       # relay's next ground pass after it
@@ -183,8 +191,18 @@ def route_item(item_bytes: float, t_now: datetime, direct_passes, isl_wins, rela
                                    link.r_gs_bps, link.r_isl_bps)["E_relay_J"]
             J_relay = lam_E * E_relay + lam_T * T_relay
             out.update(J_relay=J_relay, T_relay_s=T_relay)
-            if J_relay < J_direct:
-                out.update(path="relay", T_s=T_relay, E=E_relay, J=J_relay)
+            candidates.append(("relay", T_relay, E_relay, J_relay))
+
+    if deadline_s is None:
+        path, T, E, J = min(candidates, key=lambda c: c[3])        # pure min(J), unchanged
+    else:
+        feasible = [c for c in candidates if c[1] <= deadline_s]
+        if feasible:
+            path, T, E, J = min(feasible, key=lambda c: c[3])      # cheapest that still makes it
+        else:
+            path, T, E, J = min(candidates, key=lambda c: c[1])    # none make it: pick the fastest
+            out["deadline_missed"] = True
+    out.update(path=path, T_s=T, E=E, J=J)
     return out
 
 
@@ -197,4 +215,5 @@ def route(plan, links, *, lam_E: float, lam_T: float, isl_enabled: bool = True, 
     direct_passes, isl_wins, relay_passes = links
     return [route_item(it["bytes"], it["t_now"], direct_passes, isl_wins, relay_passes,
                        lam_E=lam_E, lam_T=lam_T, isl_enabled=isl_enabled,
-                       direct_latency_s=it.get("direct_latency_s"), **kw) for it in plan]
+                       direct_latency_s=it.get("direct_latency_s"),
+                       deadline_s=it.get("deadline_s"), **kw) for it in plan]
