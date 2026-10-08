@@ -1,8 +1,8 @@
 # 16 — The four tiling policies on real swaths: SAHI wins at scale
 
 Closes the scale caveat [report 13](13-tile-seams-and-sahi.md) raised against itself, and builds
-the **global-coordinate transform + detection fusion** that `../docs/START_HERE.md` §3 lists as
-*not implemented* (the paper's B2 centrepiece). Script: `../code/scripts/wp16_swath_policies.py`.
+the **global-coordinate transform + detection fusion** — the paper's B2 centrepiece (now in
+`../code/sat7/b2_sahi_fusion.py`). Script: `../code/scripts/wp16_swath_policies.py`.
 Data: `../code/results/wp16_swath_policies.json|.csv`, built on the real swaths from
 [the swath-stitching step](../code/results/wp15_manifest.json) (`wp15_build_swaths.py`).
 **REAL** — real Airbus test tiles, real ground truth, the trained detector, real cross-slice fusion.

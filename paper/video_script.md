@@ -1,102 +1,103 @@
-# 2-minute video — script and shot list
+# 2-minute video — script and shot list (Phase-3)
 
-**Target: 2:00 exactly.** The narration below is **295 words ≈ 118 s at a calm 150 wpm**, which
-leaves ~2 s of air. Do not add sentences; if you must, cut from §4 first.
+**Target: 2:00.** The narration below is **~300 words ≈ 120 s at a calm 150 wpm**. Do not add
+sentences; if you must cut, cut from §4 (B0→B4) first — never §6 (the self-correction).
 
-**Delivery notes.** Read it slowly. Short sentences on purpose. The numbers are the point — say
-them clearly and let them sit. Do not read the on-screen text aloud; the viewer can read.
+**Delivery.** Read slowly, short sentences, let the numbers sit. Do not read the on-screen text
+aloud — the viewer reads it. **Put `557×` and the band `0.40–0.82` on screen as text** (numbers
+heard once are lost). Every figure a card shows is labelled REAL / SIM / LIT / TARGET.
 
 ---
 
-## 0:00 – 0:15 · The problem
+## 0:00 – 0:12 · The problem
+> **ON SCREEN:** a slow zoom on one Airbus tile. Two bars: **60,124 MB imaged · ~210 MB downlink.**
 
-> **ON SCREEN:** a satellite passing over ocean; then a progress bar that fills only 1%.
-> Big text: **60,124 MB imaged — 210 MB of downlink.**
-
-A small satellite photographs far more ocean than it can ever send home.
+A small satellite photographs far more ocean than it can send home.
 In one day ours images sixty gigabytes. The radio link carries two hundred megabytes.
 So ninety-nine point seven percent of what it sees is thrown away.
 The usual answer is to compress the pictures harder.
 
----
-
-## 0:15 – 0:35 · The idea
-
-> **ON SCREEN:** `docs/architecture.png` — the pipeline, animated left to right.
-> Big text: **stop sending pictures. Send what you learned.**
+## 0:12 – 0:30 · Packet, not picture
+> **ON SCREEN:** `docs/architecture.png`, revealed left to right. Big text: **send the packet, not the picture.**
 
 We stopped sending pictures.
-The satellite finds the ships itself, then spends the link on **information about them**.
-A ship it is sure about costs forty bytes. One it is unsure about earns a picture.
-A coastal tile it may have misread is sent whole.
-Then a scheduler picks what goes down each pass, by value per byte.
+The satellite finds the ships itself, then sends a small **packet** about each one.
+A ship it is sure about costs forty bytes. One it is unsure about earns a cropped picture.
+One it may have missed on a coast earns the surrounding context.
+And the relay, when it helps, forwards the **packet** — never the image.
 
----
+## 0:30 – 0:48 · One real tile through the pipeline
+> **ON SCREEN:** one tile, then `code/results/wp4_lod_sizes.png` (the 40 B / 900 B / 2.5 kB ladder).
 
-## 0:35 – 1:05 · What it achieves
+Here is one real tile.
+The gate decides there is something worth a closer look.
+The detector finds the ships. SAHI stitches the detections into one map.
+The encoder turns each ship into a priority packet — P0 to P3.
+The scheduler picks what fits the next pass, by value per byte.
 
-> **ON SCREEN:** `code/results/wp6_real_sweep.png`, then the headline number large:
-> **557× less data.**
+## 0:48 – 1:08 · B0 → B4 *(cut here first if long)*
+> **ON SCREEN:** a five-row card B0→B4 (from `demo/summary.py` / `wp18_campaign.json`).
+
+Our paper promised a progression, and we measured all of it.
+Raw image. Then the detector alone — seventy-eight percent of the ships.
+Add SAHI — seventy-four, at one-and-a-half times the compute.
+Add the semantic policy — this is the full system.
+And an optional inter-satellite relay.
+
+## 1:08 – 1:28 · The numbers
+> **ON SCREEN:** `code/results/wp6_real_sweep.png`, then big: **557×** and **0.685 @15% cloud (0.40–0.82)**.
+> Then `code/results/sim_latency.png` with **11.6 h → 6.2 h**.
 
 Five hundred and fifty-seven times less data than sending the pictures.
-Sixty-eight percent of the ships delivered — and that is **one hundred percent of what the
-satellite still knew**. The link is no longer the bottleneck. The detector is.
-When the link does saturate, we deliver two-point-three times more ships than first-come
-first-served.
-Every number is measured on fifty-three thousand real Airbus tiles.
+Sixty-eight-point-five percent of the ships — at an assumed fifteen percent cloud —
+and that is one hundred percent of what the satellite still knew. The link is no longer the
+bottleneck; the detector is. The relay cuts worst-case latency from eleven-point-six hours to six.
 
----
-
-## 1:05 – 1:40 · The honest part *(this is the section that wins)*
-
-> **ON SCREEN:** split screen. Left: "we claimed". Right: "we measured". Strike through the left.
+## 1:28 – 1:52 · The honest part *(never cut)*
+> **ON SCREEN:** split screen "we claimed" / "we measured", strike through the left;
+> then `code/results/wp10_tornado.png` — point at the cloud bar.
 
 We also broke our own results on purpose.
-Our first baseline ignored coastal ships, which flattered us. Fixed, our advantage fell from
-sixteen points to six.
-We adopted an image setting as free. Re-running the detector showed it costs four points of
-small ships.
-And more than half of everything we report as lost traces back to twenty-one cloudy tiles.
-So we quote recall as a **band**, not a number.
+Our first baseline ignored coastal ships, which flattered us; fixed, our lead fell from sixteen
+points to six. We called an image setting free; re-running the detector showed it costs four points
+on small ships. And more than half of everything we report as lost traces to twenty-one cloudy
+tiles — so we quote recall as a **band**, not a number.
+Every timing is a laptop: running onboard is a **target**, not a prototype.
 
----
+## 1:52 – 2:00 · Close
+> **ON SCREEN:** `code/results/wp11_funnel.png`, then the repo URL + QR.
 
-## 1:40 – 2:00 · Close
-
-> **ON SCREEN:** `code/results/wp11_funnel.png`, then the repo URL and QR code.
-
-The whole chain runs end to end on real images, and reproduces our simulation to four decimal
-places. Ninety-six tests. Every figure labelled real, simulated, or from the literature.
-It is all open.
+The whole chain runs end to end on real images and reproduces our simulation to four decimals.
+Every figure is labelled. It is all open.
 
 > **HOLD 3 s:** `github.com/oblhdj/iastam-p7-semantic-downlink`
 
 ---
 
-## Shot list (what to actually record)
+## Shot list (all sources exist in the repo)
 
 | # | time | source | note |
 |---|---|---|---|
-| 1 | 0:00 | stock orbit clip **or** a slow zoom on one Airbus tile | avoid unlicensed footage — a static tile is fine |
-| 2 | 0:08 | title card, 60,124 MB vs 210 MB | build the two bars |
-| 3 | 0:15 | `docs/architecture.png` | reveal one stage at a time |
-| 4 | 0:25 | `code/results/wp4_lod_sizes.png` | the 40 B / 900 B / 2.5 kB ladder |
-| 5 | 0:35 | `code/results/wp6_real_sweep.png` | ours vs FIFO vs baseline |
-| 6 | 0:50 | big number card: **557×** | hold 3 s |
-| 7 | 1:05 | claimed-vs-measured split screen | make the strike-through visible |
-| 8 | 1:25 | `code/results/wp10_tornado.png` | point at the cloud bar |
-| 9 | 1:40 | `code/results/wp11_funnel.png` | |
-| 10 | 1:52 | repo URL + QR | hold to 2:00 |
+| 1 | 0:00 | slow zoom on one Airbus tile (static) | avoid unlicensed footage — a static tile is fine |
+| 2 | 0:06 | title card: 60,124 MB vs ~210 MB | build the two bars |
+| 3 | 0:12 | `docs/architecture.png` | reveal one stage at a time |
+| 4 | 0:30 | one tile + `code/results/wp4_lod_sizes.png` | the 40 B / 900 B / 2.5 kB ladder |
+| 5 | 0:48 | B0→B4 card (`demo/summary.py` block or `wp18_campaign.json`) | five rows, labels visible |
+| 6 | 1:08 | `code/results/wp6_real_sweep.png` | ours vs FIFO vs fair baseline |
+| 7 | 1:12 | big number card **557×** + **0.685 @15% cloud (band 0.40–0.82)** | hold 3 s |
+| 8 | 1:20 | `code/results/sim_latency.png` + text **11.6 h → 6.2 h** | the relay |
+| 9 | 1:28 | claimed-vs-measured split screen | make the strike-through visible |
+| 10 | 1:40 | `code/results/wp10_tornado.png` | point at the cloud bar |
+| 11 | 1:52 | `code/results/wp11_funnel.png` → repo URL + QR | hold to 2:00 |
 
 ## If you overrun
-
-Cut in this order: the last sentence of §2 ("Then a scheduler…"), then the FIFO sentence in §3.
-**Never cut §4** — the self-correction is the most distinctive thing in the project and no other
-team will have it.
+Cut in this order: the last sentence of §2 ("And the relay…"), then the SAHI line in §4.
+**Never cut §6** — the self-correction is the most distinctive thing in the project.
 
 ## Recording tips
-
-- Record narration **first**, then cut visuals to it. Far easier than the reverse.
+- Record narration **first**, then cut visuals to it.
 - One take per section, not one take for the whole thing.
 - Phone voice memo in a small carpeted room beats a laptop mic in a big room.
-- Put the 557× and the band (0.40–0.82) **on screen as text**; numbers heard once are lost.
+- Put `557×` and the band `0.40–0.82` **on screen as text** — the two numbers judges must leave with.
+- No slide/plot exists for energy by design — the 2-min cut stays on data reduction + recall + relay;
+  the energy story lives in the slide deck (`paper/slides/`) and `PHASE3_RESULTS.md §6`.

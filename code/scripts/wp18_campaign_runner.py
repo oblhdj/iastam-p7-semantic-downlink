@@ -57,6 +57,7 @@ from sat7.b2_sahi_fusion import SahiConfig, run_sahi
 from sat7.orbit import LINK_PRESETS, GroundStation, OrbitConfig, find_passes, make_satellite
 from sat7.real_workload import RealWorkloadConfig, load_size_model, workload_from_catalogue
 from sat7.scheduler import LoDConfig, ValueGreedy, encode_lod, metrics, simulate
+from sat7.priority import PriorityConfig, encode_semantic   # P0-P3 scheme (selectable, defaults off)
 from sat7.relay import LinkParams, RelayConfig, isl_windows, make_relay, route  # B4 (peer-owned)
 from wp6_simulate_real import onboard_ceiling
 from wp11_integration_demo import gt_boxes          # reuse the exact loader every WP uses
@@ -137,11 +138,17 @@ def run_b2(detect_fn, manifest, ships_csv, img_dir, n_swaths, window):
 
 
 # ----------------------------------------------------------------------------- B3
-def run_b3(cat_tiles, cat_ships, size_model, day_tiles, det_thr, link, link_share, storage_gb, seed):
+def run_b3(cat_tiles, cat_ships, size_model, day_tiles, det_thr, link, link_share, storage_gb, seed,
+           semantic="lod"):
     """B3: the real semantic-policy chain over the stored catalogue (= the wp11 chain).
 
     B1/B2 emit raw detections; this stage needs the per-tile catalogue frames, so it reuses the
     stored catalogue (report 12 proved live inference reproduces it to 1e-4). SIM-over-REAL recall.
+
+    `semantic` selects the encoder: "lod" (the repo ladder, the canonical headline B3 reproduces) or
+    "priority" (the paper's P0-P3 scheme, sat7.priority). The scheduler, passes and metrics are
+    identical, so the two are directly comparable; the traceability gate in main() only applies to
+    "lod" (the CSV it pins to is the LoD headline).
     """
     tiles = pd.read_csv(cat_tiles)
     ships = pd.read_csv(cat_ships)
@@ -152,12 +159,13 @@ def run_b3(cat_tiles, cat_ships, size_model, day_tiles, det_thr, link, link_shar
     sat = make_satellite(OrbitConfig(epoch=start))
     passes = find_passes(sat, GroundStation(), start, 36, LINK_PRESETS[link])
     passes = [replace(p, capacity_bytes=p.capacity_bytes * link_share) for p in passes]
-    items = encode_lod(wl, lod)
-    res = simulate(items, passes, start, ValueGreedy(), storage_gb * 1e9, encoder="LoD")
+    items = encode_semantic(wl, mode=semantic, lod=lod, cfg=PriorityConfig(p1_conf=lod.conf_high))
+    res = simulate(items, passes, start, ValueGreedy(), storage_gb * 1e9, encoder=semantic.upper())
     mt = metrics(res, wl, lod)
     mt.update(onboard_ceiling(wl, lod, "lod"))
     b0_matched_mb = stats.tiles * B0_RAW_PER_TILE_MB        # B0 raw at THIS run's tile count
-    summary = {"day_tiles": stats.tiles, "day_ships": stats.ships, "passes": len(passes),
+    summary = {"semantic_scheme": semantic,
+               "day_tiles": stats.tiles, "day_ships": stats.ships, "passes": len(passes),
                "ship_recall": round(float(mt["ship_recall"]), 4),
                "ceiling_recall": round(float(mt["ceiling_recall"]), 4),
                "MB_sent": round(float(mt["MB_sent"]), 1),
@@ -282,6 +290,9 @@ def main() -> None:
     ap.add_argument("--b3-day-tiles", type=int, default=40_000,
                     help="canonical operational load (wp6_real_table.csv headline); B3 reproduces its row")
     ap.add_argument("--det-thr", type=float, default=0.25)
+    ap.add_argument("--semantic", choices=("lod", "priority"), default="lod",
+                    help="B3 semantic encoder: 'lod' (repo ladder, the pinned headline) or 'priority' "
+                         "(paper P0-P3, sat7.priority). The traceability gate applies only to 'lod'.")
     ap.add_argument("--link", default="cubesat_sband")
     ap.add_argument("--link-share", type=float, default=0.25,
                     help="canonical link share (wp6_real_table.csv headline run)")
@@ -332,34 +343,47 @@ def main() -> None:
     # B3 ---------------------------------------------------------------------
     print(f"B3 semantic policy: real scheduler chain over the stored catalogue ...", flush=True)
     b3, b3ctx = run_b3(args.cat_tiles, args.cat_ships, args.size_model, args.b3_day_tiles, args.det_thr,
-                       args.link, args.link_share, args.storage_gb, args.seed)
-    b3.update({"onboard": "detector+gate+LoD+scheduler", "label": "SIM-over-REAL", "status": "ran"})
-    # ---- traceability gate: B3 must reproduce the named canonical CSV row within explicit tolerance
-    rt = pd.read_csv(args.real_table)
-    vg = rt[rt.strategy.str.contains("value-greedy", case=False, na=False)].iloc[0]
-    mb_csv, rec_csv, red_csv = float(vg["MB_sent"]), float(vg["ship_recall"]), float(vg["data_reduction_x"])
-    MB_TOL, REC_TOL = 0.02, 0.01                            # MB to 2%; recall to the day-resampling spread
-    mb_ok = abs(b3["MB_sent"] - mb_csv) / mb_csv <= MB_TOL
-    rec_ok = abs(b3["ship_recall"] - rec_csv) <= REC_TOL
-    if not (mb_ok and rec_ok):
-        raise SystemExit(f"[B3 trace] FAILED: MB {b3['MB_sent']} vs CSV {mb_csv:.1f} (tol {MB_TOL:.0%} -> {mb_ok}); "
-                         f"recall {b3['ship_recall']} vs CSV {rec_csv:.4f} (tol {REC_TOL} -> {rec_ok}). "
-                         f"B3 is not reproducing wp6_real_table.csv 'Ours: LoD + value-greedy'.")
-    b3["traceability"] = {"csv": "results/wp6_real_table.csv", "row": "Ours: LoD + value-greedy",
-                          "MB_sent_csv": round(mb_csv, 1), "MB_tol_frac": MB_TOL,
-                          "ship_recall_csv": round(rec_csv, 4), "recall_tol_abs": REC_TOL,
-                          "reduction_csv_x": round(red_csv, 1),
-                          "note": "MB reproduces to <2%; recall is a day-resampling realization within "
-                                  "the documented [0.680, 0.690] spread (START_HERE, reports 05/11)"}
+                       args.link, args.link_share, args.storage_gb, args.seed, semantic=args.semantic)
+    b3.update({"onboard": f"detector+gate+{args.semantic}+scheduler", "label": "SIM-over-REAL",
+               "status": "ran"})
     b3["run_params"] = {"day_tiles": b3["day_tiles"], "link_share": args.link_share, "seed": args.seed,
                         "det_thr": args.det_thr, "mix": "orbit", "conf_high": 0.670,
+                        "semantic": args.semantic,
                         "cloud_caveat": "recall at an assumed 15% cloud fraction; band 0.40-0.82 across 0-50%"}
-    configs["B3"] = b3
-    print(f"   ship_recall {b3['ship_recall']} (ceiling {b3['ceiling_recall']}), "
-          f"{b3['MB_sent']} MB sent, {b3['reduction_vs_B0_x']}x vs B0 [SIM-over-REAL]  "
-          f"-- {b3['cloud_assumption'].split(';')[0]}")
-    print(f"   [trace] reproduces wp6_real_table 'Ours: LoD + value-greedy' "
-          f"(CSV {mb_csv:.1f} MB / recall {rec_csv:.4f}): MB within 2% {mb_ok}, recall within {REC_TOL} {rec_ok}")
+    # ---- traceability gate: B3 must reproduce the named canonical CSV row within explicit tolerance.
+    #      Only the LoD encoder is pinned to that CSV; the P0-P3 scheme is a different (comparable)
+    #      policy with its own byte/recall profile, so the gate runs for --semantic lod only (see
+    #      scripts/wp23_semantic_compare.py for the LoD-vs-P0-P3 head-to-head).
+    if args.semantic == "lod":
+        rt = pd.read_csv(args.real_table)
+        vg = rt[rt.strategy.str.contains("value-greedy", case=False, na=False)].iloc[0]
+        mb_csv, rec_csv, red_csv = float(vg["MB_sent"]), float(vg["ship_recall"]), float(vg["data_reduction_x"])
+        MB_TOL, REC_TOL = 0.02, 0.01                        # MB to 2%; recall to the day-resampling spread
+        mb_ok = abs(b3["MB_sent"] - mb_csv) / mb_csv <= MB_TOL
+        rec_ok = abs(b3["ship_recall"] - rec_csv) <= REC_TOL
+        if not (mb_ok and rec_ok):
+            raise SystemExit(f"[B3 trace] FAILED: MB {b3['MB_sent']} vs CSV {mb_csv:.1f} (tol {MB_TOL:.0%} -> {mb_ok}); "
+                             f"recall {b3['ship_recall']} vs CSV {rec_csv:.4f} (tol {REC_TOL} -> {rec_ok}). "
+                             f"B3 is not reproducing wp6_real_table.csv 'Ours: LoD + value-greedy'.")
+        b3["traceability"] = {"csv": "results/wp6_real_table.csv", "row": "Ours: LoD + value-greedy",
+                              "MB_sent_csv": round(mb_csv, 1), "MB_tol_frac": MB_TOL,
+                              "ship_recall_csv": round(rec_csv, 4), "recall_tol_abs": REC_TOL,
+                              "reduction_csv_x": round(red_csv, 1),
+                              "note": "MB reproduces to <2%; recall is a day-resampling realization within "
+                                      "the documented [0.680, 0.690] spread (START_HERE, reports 05/11)"}
+        configs["B3"] = b3
+        print(f"   ship_recall {b3['ship_recall']} (ceiling {b3['ceiling_recall']}), "
+              f"{b3['MB_sent']} MB sent, {b3['reduction_vs_B0_x']}x vs B0 [SIM-over-REAL]  "
+              f"-- {b3['cloud_assumption'].split(';')[0]}")
+        print(f"   [trace] reproduces wp6_real_table 'Ours: LoD + value-greedy' "
+              f"(CSV {mb_csv:.1f} MB / recall {rec_csv:.4f}): MB within 2% {mb_ok}, recall within {REC_TOL} {rec_ok}")
+    else:
+        b3["traceability"] = {"skipped": "P0-P3 scheme is not pinned to the LoD headline CSV; "
+                                         "see scripts/wp23_semantic_compare.py for the head-to-head"}
+        configs["B3"] = b3
+        print(f"   ship_recall {b3['ship_recall']} (ceiling {b3['ceiling_recall']}), "
+              f"{b3['MB_sent']} MB sent, {b3['reduction_vs_B0_x']}x vs B0 [SIM-over-REAL, P0-P3]  "
+              f"-- traceability gate skipped (not the LoD headline)")
 
     # B4 ---------------------------------------------------------------------
     print(f"B4 relay reroute via sat7.relay.route (lam_E={args.b4_lam_e}, RAAN +{args.b4_raan:.0f}) ...",

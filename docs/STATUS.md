@@ -1,5 +1,10 @@
 # IASTAM 6.0 — Problem 7 — project state (24 Sept 2026)
 
+> **⚠ SUPERSEDED FOR STATUS (7 Oct 2026).** This snapshot predates the end of Phase 3. SAHI + global
+> fusion, the energy model, the relay and the B0→B4 campaign are now built and measured. Current
+> status: **[`../paper/PHASE3_RESULTS.md`](../paper/PHASE3_RESULTS.md)** and
+> **[`../demo/PAPER_COVERAGE.md`](../demo/PAPER_COVERAGE.md)**.
+
 ## ▶ RESUME HERE (last worked 24 Sept ~16:00)
 All work stopped cleanly; **86 tests pass**; no processes left running. Items 1–4 below are all
 **done** — the engineering backlog is empty and the remaining risk is the 26 Sept paper/video.

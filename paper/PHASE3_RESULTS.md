@@ -85,6 +85,27 @@ knew** — the gap from 1.0 to 0.685 is the detector + cloud, not the downlink. 
 catalogue to 4 decimals with **0 decisions changed** at every threshold, so the semantic records
 preserve the detector's decisions exactly. [reports 05, 12]
 
+## 5b. Adaptive downlink policy — contributions folded under paper §IV-B
+
+These are built and measured but have **no home in the accepted Phase-2 narrative**; they belong
+under the paper's §IV-B *adaptive downlink policy*, and are among the strongest results.
+
+* **Value-aware multi-pass scheduler.** The downlink is a knapsack that refills every orbit; items
+  are ordered by value-per-byte, aged so nothing starves, and progressive products (ROI/wake, tiles)
+  are **truncated** to fill a short pass. This is the mechanism that turns "what to drop" from a
+  fixed rule into a per-pass decision. [reports 05–06; `sat7/scheduler.py`]
+* **Queue-aware level of detail.** Buffer pressure — queued bytes against the capacity the satellite
+  can read off its own ephemeris — sets how much detail the coastal encoder spends, generous while
+  the link can drain and stingy once it cannot. No fixed coastal policy wins in more than one load
+  regime; the queue-aware law is within **1.1 points** of the best fixed policy at every load. [report 07]
+* **Optimality bounds.** An exact DP (brute-force verified) puts value-greedy **within 0.251 %** of
+  optimal at operational scale, and perfect foresight over a whole day is worth **≤ 0.2 %** — so
+  arrival prediction is deliberately *not* built. [reports 08–09]
+* **Leakage-free split.** 19.1 % of Airbus tiles have a near-duplicate twin; a naive split leaks
+  **1,617 groups** into test, ours leaks **0** — every recall number above rests on this. [report 01]
+* **Dark-vessel / AIS prioritisation.** A no-AIS match raises an object's *priority* (value), kept
+  decoupled from its payload after [report 10] caught a rule that inverted value on 13.6 % of ships.
+
 ## 6. Energy model (paper §V, eqs 8–19)
 
 `E_proc = Σ P_k·T_k`, `E_comm = P_tx·D_tx/R_tx`, `ES = 1 − E_proposed/E_baseline`, built in
@@ -126,7 +147,7 @@ not extra capacity: recall and bytes are B3's verbatim. **Relay always costs mor
 | without adaptive downlink | fixed coastal policy loses to queue-aware in every regime but one | report 07 |
 | without ROI | LoD-rung ablations; the ROI rung earns its bytes | report 06 |
 | without relay | direct-only = B3 exactly (sanity gate a) | report 21 |
-| without tile overlap / without fusion | partly isolated (edge-trigger vs overlap); not yet their own rows | reports 13, 16 |
+| without tile overlap / without fusion | now isolable as flags (`PerceptionConfig(overlap=0.0)`, `fuse=False`), report 23; measured rows not yet run (edge-trigger vs overlap stands in) | reports 13, 16, 23 |
 
 ## 10. Limitations (paper §X, extended honestly)
 

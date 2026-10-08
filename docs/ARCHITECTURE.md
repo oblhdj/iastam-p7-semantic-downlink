@@ -1,5 +1,12 @@
 # IASTAM P7 — architecture, and what is actually built
 
+> **⚠ SUPERSEDED FOR STATUS (7 Oct 2026).** This audit is from **24 Sept 2026**, before Phase-3
+> finished. Several rows below marked `[GAP]` / `[!]` are now **built and measured** — SAHI + global
+> fusion, the per-stage energy model, the inter-satellite relay, and the end-to-end B0→B4 run. For
+> current status trust **[`../paper/PHASE3_RESULTS.md`](../paper/PHASE3_RESULTS.md)** and
+> **[`../demo/PAPER_COVERAGE.md`](../demo/PAPER_COVERAGE.md)**. This file is kept as a historical
+> build audit, not a current one.
+
 Status of every stage as of **24 Sept 2026**, verified against the repo rather than the plan.
 Legend: **[DONE]** measured and tested · **[PART]** works but incomplete · **[GAP]** not started
 · **[!]** the plan claims it is done and it is not.

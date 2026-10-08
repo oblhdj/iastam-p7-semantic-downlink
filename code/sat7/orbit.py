@@ -96,6 +96,7 @@ class Pass:
     set: datetime
     max_elevation_deg: float
     capacity_bytes: float
+    station: str = ""                 # which ground station saw this pass (multi-station sweeps)
 
     @property
     def duration_s(self) -> float:
@@ -128,6 +129,61 @@ def find_passes(sat: EarthSatellite, gs: GroundStation, start: datetime, hours: 
             cap_bits = float(np.trapezoid(r, dx=dt)) if hasattr(np, "trapezoid") else float(np.trapz(r, dx=dt))
             peak = culm if culm is not None else rise
             passes.append(Pass(rise.utc_datetime(), peak.utc_datetime(), t.utc_datetime(),
-                               float(alt.degrees.max()), cap_bits / 8.0))
+                               float(alt.degrees.max()), cap_bits / 8.0, gs.name))
             rise = None
     return passes
+
+
+# ---------------------------------------------------------------- multi-ground-station extension
+# ARCHITECTURE.md / START_HERE section 5: "single ground station only; 11.4 h max gap dominates
+# latency". A real mission books several stations; more stations = more, earlier contacts = shorter
+# gaps and lower latency. This adds that without touching the single-station path or the scheduler:
+# it just returns MORE passes on one merged timeline (each tagged with the station that saw it), and
+# `simulate`/`simulate_online` consume them exactly as before.
+
+# A few real high-latitude / mid-latitude stations often used for LEO downlink (public locations).
+# Coordinates are approximate and ASSUMPTION-level; swap in the mission's actual network.
+STATION_PRESETS = {
+    "sfax":     GroundStation("Sfax (ENIS)", 34.74, 10.76, 5.0),
+    "svalbard": GroundStation("Svalbard (KSAT)", 78.23, 15.39, 5.0),
+    "troll":    GroundStation("Troll (Antarctica)", -72.01, 2.53, 5.0),
+    "fairbanks":GroundStation("Fairbanks (Alaska)", 64.80, -147.50, 5.0),
+    "awarua":   GroundStation("Awarua (NZ)", -46.52, 168.38, 5.0),
+}
+
+
+def find_passes_multi(sat: EarthSatellite, stations: list[GroundStation], start: datetime,
+                      hours: float = 24.0, link: LinkConfig | None = None, altitude_km: float = 500.0,
+                      step_s: float = 5.0, ts=None) -> list[Pass]:
+    """All passes over a NETWORK of ground stations, merged onto one chronological timeline.
+
+    Each Pass keeps the name of the station that saw it (``Pass.station``). Capacity is computed
+    per station with the same link model, so a pass over a station with a better geometry carries
+    more bytes. Overlapping passes at different stations are left as separate passes on purpose:
+    a satellite can only key one downlink at a time, but modelling that contention is the
+    scheduler's job (it already sends at most ``capacity_bytes`` per pass), and two near-simultaneous
+    passes simply give it two chances -- any double-count is bounded by the per-pass capacity.
+    """
+    ts = ts or load.timescale()
+    link = link or LinkConfig()
+    out: list[Pass] = []
+    for gs in stations:
+        out += find_passes(sat, gs, start, hours, link, altitude_km, step_s, ts)
+    return sorted(out, key=lambda p: p.rise)
+
+
+def max_gap_h(passes: list[Pass], start: datetime, hours: float) -> float:
+    """Longest stretch (hours) with no contact in [start, start+hours] -- the latency-dominating gap.
+
+    Measured edge to edge: from window start to the first rise, between consecutive passes (rise of
+    the next minus set of the previous), and from the last set to the window end. This is the number
+    the multi-station extension is meant to cut, so it is reported directly."""
+    if not passes:
+        return hours
+    end = start + timedelta(hours=hours)
+    ps = sorted(passes, key=lambda p: p.rise)
+    gaps = [(ps[0].rise - start).total_seconds()]
+    for a, b in zip(ps, ps[1:]):
+        gaps.append((b.rise - a.set).total_seconds())
+    gaps.append((end - ps[-1].set).total_seconds())
+    return max(0.0, max(gaps) / 3600.0)

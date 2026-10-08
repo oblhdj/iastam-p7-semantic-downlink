@@ -166,7 +166,8 @@ def main() -> None:
               f"leakage-free split ({w0.get('groups_a_naive_split_would_leak', '?'):,} groups a naive split would leak, ours leaks 0).")
 
     print("\n" + RULE)
-    print("  Full narrative: reports/  |  deep state: docs/STATUS.md  |  map: HANDOFF.md")
+    print("  Phase-3 write-up: paper/PHASE3_RESULTS.md  |  paper->evidence: demo/PAPER_COVERAGE.md")
+    print("  Full narrative: reports/01-23  |  runbook: demo/DEMO.md")
     print(RULE + "\n")
 
 
