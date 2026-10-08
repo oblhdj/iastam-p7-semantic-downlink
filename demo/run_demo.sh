@@ -20,7 +20,7 @@ TILES=400
 [ "${1:-}" = "--full" ] && TILES=5320
 # Live outputs go to a scratch dir so a small sample NEVER overwrites the authoritative
 # results in code/results/. summary.py always reports the committed full-run canon.
-LIVE_OUT="$REPO/demo/_live"
+LIVE_OUT="../demo/_live"
 mkdir -p "$LIVE_OUT"
 
 if [ ! -x "$PY312" ]; then
@@ -28,7 +28,7 @@ if [ ! -x "$PY312" ]; then
   echo "!!! torch env not found at code/.venv312 -- cannot run the LIVE pipeline here."
   echo "    Showing the committed results instead:"
   echo ""
-  (cd "$REPO" && python demo/summary.py)
+  (cd "$REPO" && python.exe demo/summary.py || python demo/summary.py)
   exit 0
 fi
 
@@ -50,7 +50,7 @@ echo ""
 echo "### [3/3] consolidated demo summary (reports the AUTHORITATIVE full-run canon in code/results/) ..."
 echo "    note: the live run above executed the real pipeline on a $TILES-tile sample and wrote to"
 echo "          demo/_live/ (scratch). The summary below is the committed full-run result, not the sample."
-(cd "$REPO" && python demo/summary.py) || fail=$((fail+1))
+(cd .. && code/.venv312/Scripts/python.exe demo/summary.py) || fail=$((fail+1))
 
 echo ""
 echo "=============== DEMO DONE: $fail failure(s) ==============="
