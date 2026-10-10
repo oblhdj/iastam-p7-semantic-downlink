@@ -15,7 +15,14 @@ python -m pip install -r demo/requirements-dashboard.txt   # once: quickstart de
 streamlit run demo/dashboard.py
 ```
 
-First load takes a few seconds (model load, one run on the bundled 3×3 swath).
+First load takes a few seconds (model load, one run on the bundled 3×3 swath). The browser opens
+on `http://localhost:8501` by itself.
+
+`demo/.streamlit/config.toml` (read by Streamlit because it sits next to the script) does three
+things for a first run on a new machine: it skips Streamlit's "Email:" prompt, which otherwise
+holds the terminal until someone presses Enter; it listens on this machine only, so Windows shows
+no firewall dialog; and it sends no usage statistics. The page makes no request outside
+`localhost`.
 
 | Path | Command | Needs |
 |---|---|---|
@@ -71,9 +78,12 @@ both fail on a stale set. Uploads and the settings sliders need the live pipelin
 ## Before a presentation
 
 - [ ] `python demo/make_fallback_assets.py --check` prints `fallback assets OK`.
-- [ ] `streamlit run demo/dashboard.py` opens; the sidebar's *Environment check* is all green.
+- [ ] `streamlit run demo/dashboard.py` opens; in the sidebar's *Environment check* nothing is ❌.
+      (Two ➖ rows, the Airbus split and the GPU environment, are normal on a clone: only the
+      full demo uses them.)
 - [ ] `P7_DEMO_FORCE_FALLBACK=1 streamlit run demo/dashboard.py` opens on the static results.
-- [ ] No network is needed once the packages are installed.
+- [ ] No network is needed once the packages are installed. Installing them does need it:
+      a few minutes, about 500 MB on disk.
 
 ## Files
 
@@ -84,4 +94,5 @@ both fail on a stale set. Uploads and the settings sliders need the live pipelin
 | `demo/demo_pipeline.py` | the live run, through `sat7.campaign`, `sat7.semantic`, `sat7.comms` |
 | `demo/make_fallback_assets.py` | writes and checks `demo/fallback_assets/` |
 | `demo/requirements-dashboard.txt` | quickstart requirements + streamlit |
-| `code/tests/test_dashboard.py` | 17 tests: canon, pipeline, routes, bad inputs, fallback, the page itself |
+| `demo/.streamlit/config.toml` | first-run settings: no email prompt, localhost only, no usage statistics |
+| `code/tests/test_dashboard.py` | 18 tests: canon, pipeline, routes, bad inputs, fallback, the page itself |

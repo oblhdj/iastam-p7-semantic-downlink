@@ -1,0 +1,14 @@
+# Streamlit settings for demo/dashboard.py. Streamlit reads this file because it sits next to the
+# script, whichever directory `streamlit run` is started from.
+
+[server]
+# On a machine that has never run Streamlit, `streamlit run` stops at an "Email:" prompt in the
+# terminal until someone presses Enter. The demo must start without anyone answering it.
+showEmailPrompt = false
+# Listen on this machine only. Without it the server listens on every network interface, and
+# Windows shows a firewall dialog the first time a given python.exe does that.
+address = "localhost"
+
+[browser]
+# No usage statistics are sent.
+gatherUsageStats = false

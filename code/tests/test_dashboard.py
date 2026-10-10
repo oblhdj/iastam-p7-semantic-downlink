@@ -87,6 +87,19 @@ def test_environment_names_a_fix_for_everything_missing():
     assert env["live_ok"] == (not env["blocking"])
 
 
+def test_first_run_config_needs_nobody_at_the_keyboard():
+    """Found by a clean-clone run: without this file `streamlit run` waits at an "Email:" prompt on
+    a machine that has never run Streamlit. It must sit next to the script to apply from any cwd."""
+    import tomllib
+    cfg = tomllib.loads((DEMO / ".streamlit" / "config.toml").read_text(encoding="utf-8"))
+    assert cfg["server"]["showEmailPrompt"] is False
+    assert cfg["server"]["address"] == "localhost"          # no listen on every interface
+    assert cfg["browser"]["gatherUsageStats"] is False
+    assert "headless" not in cfg["server"]                  # headless would stop the browser opening
+    assert {r["name"] for r in D.environment()["rows"] if r["optional"]} == {
+        "full demo: Airbus split", "full demo: torch + GPU env"}
+
+
 # ------------------------------------------------------------------------------ fallback assets
 def test_fallback_assets_load_and_match_todays_canon():
     index = D.fallback_index()

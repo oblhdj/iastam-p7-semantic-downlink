@@ -10,6 +10,8 @@ runs end-to-end on a laptop; "runs onboard" is presented as a TARGET, not a flow
 
 ## Three ways to run it
 
+**In a browser:** `streamlit run demo/dashboard.py` shows the same CPU-only chain as Q on one image, B0 to B4, with a static fallback — runbook: [`DASHBOARD.md`](DASHBOARD.md).
+
 ### Q. Live on CPU — no GPU, no dataset, ~2 seconds (the recommended live demo)
 ```bash
 python -m pip install -r demo/quickstart/requirements.txt   # once: numpy, opencv, onnxruntime, sgp4, skyfield

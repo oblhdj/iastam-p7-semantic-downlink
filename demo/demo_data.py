@@ -298,9 +298,9 @@ def environment() -> dict:
     pip = "python -m pip install -r demo/requirements-dashboard.txt"
     rows = []
 
-    def add(name, ok, detail, needed_for, fix, required=True):
+    def add(name, ok, detail, needed_for, fix, required=True, optional=False):
         rows.append({"name": name, "ok": bool(ok), "detail": detail, "needed_for": needed_for,
-                     "fix": "" if ok else fix, "required_for_live": required})
+                     "fix": "" if ok else fix, "required_for_live": required, "optional": optional})
 
     add("Python >= 3.10", sys.version_info >= (3, 10), platform.python_version(), "everything",
         "install Python 3.10 or newer")
@@ -338,11 +338,13 @@ def environment() -> dict:
     data = REPO / "code" / "data" / "yolo_ships"
     add("full demo: Airbus split", data.exists(), str(data.relative_to(REPO)) + (" present" if data.exists() else " absent"),
         "`bash demo/run_demo.sh` and `run_demo.py --data` (real tiles). NOT needed for this page",
-        "Kaggle 'Airbus Ship Detection Challenge' zip (~30 GB) -> code/scripts/wp0_build_dataset.py", required=False)
+        "Kaggle 'Airbus Ship Detection Challenge' zip (~30 GB) -> code/scripts/wp0_build_dataset.py",
+        required=False, optional=True)
     add("full demo: torch + GPU env", (REPO / "code" / ".venv312").exists(),
         "code/.venv312 present" if (REPO / "code" / ".venv312").exists() else "code/.venv312 absent",
         "`bash demo/run_demo.sh` (wp18 / wp11 on the real split). NOT needed for this page",
-        "a Python 3.12 env with torch + ultralytics (versions in audit/REPO_AUDIT.md section 6)", required=False)
+        "a Python 3.12 env with torch + ultralytics (versions in audit/REPO_AUDIT.md section 6)",
+        required=False, optional=True)
     live_ok = all(r["ok"] for r in rows if r["required_for_live"])
     return {"rows": rows, "live_ok": live_ok,
             "blocking": [r for r in rows if r["required_for_live"] and not r["ok"]]}

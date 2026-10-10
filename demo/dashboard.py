@@ -177,8 +177,11 @@ with st.sidebar:
 
     with st.expander("Environment check"):
         for r in ENV["rows"]:
-            st.markdown(f"{'✅' if r['ok'] else '❌'} **{r['name']}** — {r['detail']}"
+            mark = "✅" if r["ok"] else "➖" if r["optional"] else "❌"
+            st.markdown(f"{mark} **{r['name']}** — {r['detail']}"
                         + ("" if r["ok"] else f"  \n↳ needed for {r['needed_for']}. Fix: {r['fix']}"))
+        st.caption("✅ present · ❌ missing and used by this page · ➖ absent, and only the full "
+                   "dataset / GPU demo needs it")
 
 SETTINGS = (float(conf), int(window), float(overlap), context, float(capture_h), True)
 
