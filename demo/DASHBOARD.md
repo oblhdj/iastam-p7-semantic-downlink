@@ -80,9 +80,11 @@ both fail on a stale set. Uploads and the settings sliders need the live pipelin
 
 ## Before a presentation
 
-- [ ] The laptop is on mains power. On battery, in Windows' power-saving mode, the detector ran
-      about 20 times slower on the development laptop: about 700 ms per call instead of 35 ms, so
-      the first load and the terminal quickstart took about 22 s instead of 2 s.
+- [ ] In the sidebar's *Environment check*, the last line reads `Windows power throttling — opted
+      out`. Windows slows down the processes of an app that is in the background or minimised
+      (power throttling, which Windows calls EcoQoS), and the terminal that starts the demo is in
+      the background whenever the browser is in front. The demo processes ask Windows not to do
+      that to them, at start-up (`demo/host_power.py`). See *Windows power throttling* below.
 - [ ] `python demo/make_fallback_assets.py --check` prints `fallback assets OK`.
 - [ ] `streamlit run demo/dashboard.py` opens; in the sidebar's *Environment check* nothing is ❌.
       (Two ➖ rows, the Airbus split and the GPU environment, are normal on a clone: only the
@@ -90,6 +92,33 @@ both fail on a stale set. Uploads and the settings sliders need the live pipelin
 - [ ] `P7_DEMO_FORCE_FALLBACK=1 streamlit run demo/dashboard.py` opens on the static results.
 - [ ] No network is needed once the packages are installed. Installing them does need it:
       a few minutes, about 500 MB on disk.
+
+## Windows power throttling
+
+What happened on the development laptop on 10 Oct 2026, with the terminal quickstart:
+
+| State of the process | Detector | Quickstart |
+|---|---|---|
+| Normal | about 30 ms per call | about 2 s |
+| The slow period first observed (the app that launched it was minimised or hidden; on battery) | about 700 ms per call | 22 s |
+| Throttle forced on a test process, on battery and on mains alike | about 800 ms per call | 27 s |
+| Throttle forced on, with the opt-out active | 27 ms per call | 1.6 s |
+
+The slow period was not caused by the battery or the power plan as such: later, still on battery,
+the speed was normal, and forced, the throttle is as slow on mains power. What fits is Windows'
+treatment of background processes: forcing that state reproduces the slowdown, and the slow period
+coincided with the launching app being minimised. That Windows was throttling the process during
+that first period is an inference, not a measurement. `demo/host_power.py` opts each demo
+process out of it (one attribute of that process; no system setting changes), and the dashboard,
+the quickstart and `make_fallback_assets.py` all call it at start-up. `P7_DEMO_ALLOW_THROTTLING=1`
+switches the opt-out off, which is how the table's third row was measured against the fourth.
+
+One thing was not reproduced: Windows applying the throttle by itself, which needs the launching
+window in the background. The opt-out is the documented way to exclude a process from it and was
+verified against the forced state. A one-minute check on the demo laptop settles it: on battery,
+start the dashboard, put the terminal behind the browser, load the bundled swath, and read the
+SAHI *Time* tile in section C. About half a second is right; several seconds means the throttle
+got through.
 
 ## Files
 
@@ -100,5 +129,7 @@ both fail on a stale set. Uploads and the settings sliders need the live pipelin
 | `demo/demo_pipeline.py` | the live run, through `sat7.campaign`, `sat7.semantic`, `sat7.comms` |
 | `demo/make_fallback_assets.py` | writes and checks `demo/fallback_assets/` |
 | `demo/requirements-dashboard.txt` | quickstart requirements + streamlit |
+| `demo/host_power.py` | standard library only: opts the demo process out of Windows power throttling |
 | `demo/.streamlit/config.toml` | first-run settings: no email prompt, localhost only, no usage statistics |
 | `code/tests/test_dashboard.py` | 23 tests: canon, pipeline, routes, bad inputs, uploads and label files, fallback, the page itself |
+| `code/tests/test_host_power.py` | 5 tests: the opt-out is requested, overrides a throttled state, and every entry point calls it |
