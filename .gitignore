@@ -8,6 +8,12 @@ code/models/*.pt
 code/results/wp15_swaths/
 code/results/wp15_examples/
 
+# --- galleries cut from real Airbus tiles: the competition rules (7B) forbid redistributing them.
+#     Regenerated locally by eval_prefilter.py / wp0_build_dataset.py; never commit them.
+code/results/prefilter_real_gallery.jpg
+code/results/wp0_duplicates.jpg
+code/results/wp0_duplicates_grid.jpg
+
 # --- environments ---
 code/.venv/
 code/.venv312/

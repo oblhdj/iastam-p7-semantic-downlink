@@ -68,7 +68,7 @@ weights and the torch env were already on this laptop.
 | A2 Leakage-free dataset build + near-duplicate dedup | `scripts/wp0_build_dataset.py`, `sat7/dedup.py`, `tests/test_dedup.py`, `results/wp0_stats.json` | implemented | 11 dedup tests pass. `wp0_stats`: 6,282 duplicate pairs, 1,617 groups a naive split would leak, 0 spanning splits. R9 confirms disjoint splits | Needs the ~30 GB Kaggle zip and ~35 min (`runtime_s` 2,110). Dedup recall (missed pairs) is unmeasurable without labels. Equal val/test totals look like a bug on first read (they aren't, R9). | Note in report 01 that val/test totals are balanced by construction. | low |
 | A3 Legacy random-split converter | `scripts/airbus_to_yolo.py`, `scripts/eval_prefilter.py` | implemented (superseded) | Its own docstring warns that a random split leaks | `code/README.md` still points readers to it. | Mark deprecated and point to wp0. | low |
 | A4 RLE ↔ masks ↔ boxes | `sat7/rle.py`, `tests/test_rle.py` | implemented | 5 tests pass | — | none | low |
-| A5 Data & model licence compliance | `README.md` §Licence, `code/results/*.jpg`, `LICENSE` | partially implemented | README: "None of it is redistributed here." Kaggle rules §7A (non-commercial only) and §7B (no redistribution) were read 9 Oct | **4 tracked JPGs contain real Airbus pixels:** `prefilter_demo_gallery.jpg`, `prefilter_real_gallery.jpg`, `wp0_duplicates.jpg`, `wp0_duplicates_grid.jpg` (verified visually on `prefilter_real_gallery.jpg`). The weights' ONNX metadata says Ultralytics AGPL-3.0, while the repo is MIT. | Untrack the 4 images (scripts regenerate them) and fix the README sentence. Decide as a team whether to rewrite history. State the weight licence wherever weights ship. | **high** |
+| A5 Data & model licence compliance | `README.md` §Licence, `code/results/*.jpg`, `LICENSE` | partially implemented | README: "None of it is redistributed here." Kaggle rules §7A (non-commercial only) and §7B (no redistribution) were read 9 Oct | **3 tracked JPGs contain real Airbus pixels:** `prefilter_real_gallery.jpg`, `wp0_duplicates.jpg`, `wp0_duplicates_grid.jpg` (each viewed on 10 Oct). *Correction:* this row first listed four; `prefilter_demo_gallery.jpg` is synthetic (the repo's `sat7.synthetic` generator) and stays. **Untracked on 10 Oct 2026** on branch `checkpoint/2026-10-10`; they remain in history and on GitHub. The weights' ONNX metadata says Ultralytics AGPL-3.0, while the repo is MIT. | Untrack the 3 images (done locally, 10 Oct) and fix the README sentence. Decide as a team whether to rewrite history. State the weight licence wherever weights ship. | **high** |
 
 ### B. Perception
 
@@ -205,7 +205,7 @@ The weak joints:
      deliver ~285× more ships (0.685 vs 0.0024 recall). That is a strong result, but a different one.
 
    **Priority: high.**
-4. **The public repo redistributes Airbus pixels against competition rule §7B (A5).** Four tracked
+4. **The public repo redistributes Airbus pixels against competition rule §7B (A5).** Three tracked
    galleries contradict the README's own licence statement; the weights' AGPL origin is not
    stated. **Priority: high (compliance).**
 5. **A clean clone cannot run any detection (B1, B2, A1).** The weights, gate and torch env are
@@ -227,7 +227,7 @@ wp11 integrity claim is overstated and checked at a stale threshold (G2).
 2. **D3:** run `wp6_simulate_real` / `wp7` with `coast_mode="mosaic"` to publish the
    no-ground-recovery lower bound beside 0.685. Add "ground re-detects coastal misses" to the
    stated assumptions.
-3. **A5:** untrack the 4 galleries and fix the README licence sentence. The team decides on
+3. **A5:** untrack the 3 galleries (done locally, 10 Oct) and fix the README licence sentence. The team decides on
    history rewriting (it means a force-push).
 4. **H5, H2:** commit the quickstart on a branch, open a PR, merge `9200e55`.
 5. **Docs:** correct G2 ("0 flips at every threshold"), B9 (ablation ✅), D4 ("4.62 %"), H1 (the
