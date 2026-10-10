@@ -15,19 +15,19 @@
       "n_items": 45264,
       "ship_recall": 0.6799,
       "dark_recall": 0.6793,
-      "MB_sent": 108.5,
-      "MB_offered": 108.5,
+      "MB_sent": 178.5,
+      "MB_offered": 178.6,
       "value_frac": 0.7268,
-      "latency_med_h": 4.49,
-      "latency_p90_h": 9.51
+      "latency_med_h": 4.67,
+      "latency_p90_h": 9.82
     },
     "priority": {
       "name": "P0-P3 (paper Table I)",
       "n_items": 23732,
       "ship_recall": 0.6166,
       "dark_recall": 0.6265,
-      "MB_sent": 49.1,
-      "MB_offered": 49.1,
+      "MB_sent": 90.5,
+      "MB_offered": 90.5,
       "value_frac": 0.9035,
       "latency_med_h": 4.5,
       "latency_p90_h": 9.46

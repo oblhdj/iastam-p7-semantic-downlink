@@ -20,7 +20,7 @@ What runs live, on a 3×3 swath of 768 px tiles (2304 × 2304 px):
 | [4] semantic packet vs raw | `sat7.semantic.encode_image` (binary records, JPEG crops of the pixels, CCSDS space packets) + `decode_downlink` | **measured** packet bytes by level, headers + CRC, JPEG headers, the ground decode, modeled bytes beside them, raw bytes, reduction `1 − D_tx/D_raw` |
 | [5] downlink order | `sat7.scheduler.ValueGreedy` | metadata first, ROI crops next, coastal context last |
 | [6] reference | the committed REAL detections for the same 9 tile IDs (`wp1_predictions.csv`) through the same P0–P3 rules | what the real tiles give (sizes modeled: no Airbus pixels are bundled) |
-| [7] canon | read from `code/results/*` | mAP50 0.804, B2 0.745 @ 1.56×, 557×, P0–P3 vs LoD |
+| [7] canon | read from `code/results/*` | mAP50 0.804, B1 0.339 → B2 0.717 @ 1.56× (same scenes), 341× (coastal tiles measured; thumbnails and crops modeled), P0–P3 vs LoD |
 
 It writes `demo/quickstart/_out/swath_annotated.jpg` (detections coloured by P-level, SAHI
 windows, tile seams; watermarked when the tiles are synthetic), `downlink.bin` (the actual
@@ -45,11 +45,13 @@ results files, never typed in. This demo adds one more:
   numbers, but from a 9-tile sample, not the 40k-tile day behind the headline.
 
 The 9 tiles were chosen so that every P-level appears, so they hold far more ships than an
-average tile. That is why their reduction is **not** the 557× headline: a real day is mostly
-empty sea, which sends almost nothing. Measured packet streams (9 Oct 2026): synthetic tiles
-45,681 B (99.68 %, 310×; synthetic coast compresses easily) and the real tiles with `--data`
-158,034 B (98.88 %, 90×), against 86,552 B the size model would have charged for the same real
-packet — two real coastal context tiles alone are 133 kB (see `code/results/wp25_semantic_packets.json`).
+average tile. That is why their reduction is **not** the 341× headline: a real day is mostly
+empty sea, which sends almost nothing. Measured packet streams (re-run 10 Oct 2026): synthetic
+tiles 45,681 B (99.68 %, 310×; synthetic coast compresses easily) and the real tiles with `--data`
+158,034 B (98.88 %, 90×). The size model charges 153,948 B for that same real packet now that a
+coastal tile is costed at its measured mean (66.1 kB); on the earlier flat 32.4 kB it charged
+86,552 B — two real coastal context tiles alone are 133 kB (see
+`code/results/wp25_semantic_packets.json`). That gap is what moved the headline from 557× to 341×.
 
 ## Why the tiles are synthetic
 
@@ -126,11 +128,11 @@ weights. They were also trained on Airbus Competition Data under the non-commerc
   cannot tell a false alarm from a ship. The catalogue runs (wp23) cost a known false alarm as a
   zero-value 40 B report instead.
 * **3×3 swath, not 4×4.** SAHI here is 16 windows for 9 tiles. The measured **1.56×** (25 windows
-  for 16 tiles, `wp18_campaign.json`) is quoted from file in section [7], not from this run.
+  for 16 tiles, `wp26_b0_b4.json`) is quoted from file in section [7], not from this run.
 * **P3 on coasts.** `sat7.priority.classify` escalates *every* detection above 0.25 on a coastal
-  tile to P3, confident ones included. Its docstring describes the escalation as being for
-  *uncertain* coastal ships. The demo reports what the code does; wp23's numbers were produced by
-  the same code.
+  tile to P3, confident ones included (`PriorityConfig.coast_escalation = "all"`, the measured
+  default; `"uncertain"` escalates only those below the P1 threshold). wp23's numbers were produced
+  with the same default.
 * **Thresholds** (0.25 cut, 0.670 P1/P2 boundary) and the P-level policy are **ASSUMPTION**, as
   everywhere in the repo, and swept in report 11 / report 23.
 

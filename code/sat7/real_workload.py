@@ -12,7 +12,8 @@ ships per tile, their lengths           | when each tile is captured (no timesta
 detector confidence, misses, false      |   in the data -> uniform over the day)
   alarms, per tile                      | which ships are "dark" (no AIS in the data)
 tile context (classic pre-filter)       | how many tiles/day the satellite images
-payload bytes (WP4 power law)           | the context mix, unless mix="dataset"
+payload bytes (WP4 power law; coastal    | the context mix, unless mix="dataset"
+  tiles: each tile's own JPEG, wp28)    |
 
 The Airbus set is a *ship-finding benchmark*: 59% of its tiles contain a ship and
 27% touch a coast, which no real orbit ever sees. So by default we keep the
@@ -85,7 +86,26 @@ def load_catalogue(results_dir: str | Path) -> tuple[pd.DataFrame, pd.DataFrame]
         f = pd.read_csv(flags)
         f = f[f.false_alarm & f.image.isin(set(tiles.image))]
         tiles.attrs["fa_conf"] = {img: g.conf.to_numpy() for img, g in f.groupby("image")}
+    attach_coast_sizes(tiles, d)
     return tiles, ships
+
+
+COAST_SIZES_CSV = "wp28_coast_tile_bytes.csv"
+
+
+def attach_coast_sizes(tiles: pd.DataFrame, results_dir: str | Path) -> pd.DataFrame:
+    """Fold the MEASURED coastal-tile sizes (scripts/wp28_coast_tile_model.py) into the catalogue.
+
+    One number per real coastal tile: its own baseline JPEG q40 + image header + packet headers.
+    ``workload_from_catalogue`` copies it onto every day tile drawn from that image, so the encoders
+    charge a coastal context tile what that tile really costs instead of one flat constant. Without
+    the file nothing is attached and the encoders fall back to the measured mean.
+    """
+    p = Path(results_dir) / COAST_SIZES_CSV
+    if p.exists():
+        c = pd.read_csv(p)
+        tiles.attrs["coast_bytes"] = dict(zip(c.image, c.packet_B.astype(float)))
+    return tiles
 
 
 def workload_from_catalogue(tiles: pd.DataFrame, ships: pd.DataFrame,
@@ -125,6 +145,7 @@ def workload_from_catalogue(tiles: pd.DataFrame, ships: pd.DataFrame,
     times = np.sort(rng.uniform(0, cfg.hours * 3600, n))
 
     names = tiles.image.to_numpy()
+    coast_table = tiles.attrs.get("coast_bytes")
     ship_list: list[Ship] = []
     tile_list: list[tuple[float, str, tuple[int, ...]]] = []
     fa_list: list[int] = []
@@ -152,7 +173,10 @@ def workload_from_catalogue(tiles: pd.DataFrame, ships: pd.DataFrame,
     wl = Workload(ship_list, tile_list,
                   WorkloadConfig(hours=cfg.hours, tiles_per_day=cfg.tiles_per_day, seed=cfg.seed),
                   false_alarms=fa_list, gate_empty=gate_list, unconfirmed=unconf_list,
-                  source="real detections (WP6)", sources=[str(names[r]) for r in picks])
+                  source="real detections (WP6)", sources=[str(names[r]) for r in picks],
+                  coast_bytes=None if coast_table is None else
+                  [coast_table.get(str(names[r])) if c == "coast" else None
+                   for r, c in zip(picks, contexts)])
     stats = RealWorkloadStats(
         tiles=n, ships=len(ship_list), dark=sum(s.dark for s in ship_list),
         detected=sum(s.confidence >= cfg.det_thr for s in ship_list),

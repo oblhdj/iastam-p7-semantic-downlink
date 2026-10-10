@@ -1,9 +1,10 @@
 """WP24 -- detection evaluation at full scale: precision / recall / F1 / AP for B1, B2 and the SAHI
 ablations (audit G1, B8, B9).
 
-REAL. Why this exists: the B0->B4 table quotes B1 = 0.782 and B2 = 0.745, but wp18_campaign.json is
-labelled "small-scale validation run ... not a full campaign" -- 262 and 47 ships -- and both are
-recall only. The two SAHI ablations the paper lists ("without tile overlap", "without detection
+REAL. Why this exists: until 10 Oct 2026 the B0->B4 table quoted B1 = 0.782 and B2 = 0.745 from
+wp18's small samples -- 262 and 47 ships, recall only (now wp18_campaign.json legacy_small_samples;
+the table's B1 / B2 come from the same-input run wp26). This file is the full-scale reference for
+"the detector on native tiles", which is not the paper's B1. The two SAHI ablations the paper lists ("without tile overlap", "without detection
 fusion") existed as PerceptionConfig flags but were never measured. This scores all of them on the
 full data with the standard detection metrics (sat7.evaluation), through the library path the
 pipeline actually uses (sat7.perception: load_detector -> detect_image -> b2_sahi_fusion):
@@ -273,13 +274,15 @@ def main() -> int:
               f"{m['F1']:8.4f}{m['AP50']:8.4f}{m['AP50-95']:9.4f}{m['recall_on_seam']:8.4f}"
               f"{m['recall_off_seam']:8.4f}{m['FP']:6d}")
 
-    camp = json.loads((res_dir / "wp18_campaign.json").read_text())["configs"]
+    old = json.loads((res_dir / "wp18_campaign.json").read_text())["legacy_small_samples"]
+    camp = {"B1": old["native_tiles"], "B2": old["swaths"]}
     report["superseded_small_sample"] = {
         "B1": {"recall": camp["B1"]["recall"]["overall"], "gt_ships": camp["B1"]["gt_ships"]},
         "B2": {"recall": camp["B2"]["recall"]["overall"], "gt_ships": camp["B2"]["gt_ships"]},
-        "source": "wp18_campaign.json (small-scale validation run)"}
-    print(f"\n[vs the quoted small-sample figures] B1 {camp['B1']['recall']['overall']} "
-          f"(n={camp['B1']['gt_ships']}) -> {b1['recall']} (n={b1['n_gt']});  B2 "
+        "source": "wp18_campaign.json legacy_small_samples (a detector call per native tile; SAHI on 2 "
+                  "swaths) -- what the B0-B4 table called B1 / B2 until 10 Oct 2026"}
+    print(f"\n[vs the earlier small-sample figures] native tiles {camp['B1']['recall']['overall']} "
+          f"(n={camp['B1']['gt_ships']}) -> {b1['recall']} (n={b1['n_gt']});  swaths "
           f"{camp['B2']['recall']['overall']} (n={camp['B2']['gt_ships']}) -> "
           f"{swath_out['sahi_B2']['recall']} (n={swath_out['sahi_B2']['n_gt']})")
     report["elapsed_s"] = round(time.perf_counter() - t_all, 1)

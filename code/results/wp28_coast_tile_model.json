@@ -1,0 +1,232 @@
+{
+  "label": "coastal tile bytes REAL (measured JPEG q40 of every real coastal test tile); thumbnails, chips and ROI crops MODELED; day (tiles/day, context mix, capture times) ASSUMPTION",
+  "definition": "reduction = D_raw / D_tx; D_raw = every non-cloud tile as uncompressed 8-bit RGB (1,769,472 B); D_tx = bytes the LoD ladder offers to the downlink (all of it is delivered at this load -- the scheduled figure is results/wp6_real_table.csv)",
+  "days": {
+    "n": 3,
+    "seeds": [
+      0,
+      1,
+      2
+    ],
+    "tiles_per_day": 40000,
+    "det_thr": 0.25,
+    "D_raw_MB_mean": 60124.3,
+    "raw_tiles_mean": 33978.7
+  },
+  "coastal_tile_q40": {
+    "measured_all_coastal_test_tiles": {
+      "jpeg_baseline": {
+        "tiles": 1415,
+        "median_B": 66527.0,
+        "mean_B": 65967.0,
+        "p10_B": 33585.6,
+        "p90_B": 96612.0
+      },
+      "jpeg_progressive": {
+        "tiles": 1415,
+        "median_B": 62552.0,
+        "mean_B": 61378.8,
+        "p10_B": 29333.8,
+        "p90_B": 90066.2
+      },
+      "packet_B (baseline + image header + CCSDS)": {
+        "tiles": 1415,
+        "median_B": 66681.0,
+        "mean_B": 66118.0,
+        "p10_B": 33675.6,
+        "p90_B": 96822.0
+      }
+    },
+    "flat_fallback_COAST_TILE_BYTES_MEASURED": 66118.0,
+    "earlier_modeled_COAST_TILE_BYTES_WP7": 32420.0,
+    "why_they_differ": "the WP7 ladder sampled 400 random ship-bearing tiles, mostly open sea; a coastal tile carries land texture. WP13 measured 65.5 kB at q40 on its own coastal sample."
+  },
+  "headline": {
+    "canonical": {
+      "model": "measured_per_tile",
+      "D_tx_offered_MB": 176.39,
+      "reduction_x": 340.9,
+      "DR_percent": 99.707
+    },
+    "earlier_modeled_estimate": {
+      "model": "modeled_wp7_flat",
+      "D_tx_offered_MB": 107.95,
+      "reduction_x": 557.0,
+      "DR_percent": 99.82
+    },
+    "still_modeled_share_of_canonical_bytes": 0.2375
+  },
+  "models": {
+    "measured_per_tile": {
+      "D_tx_offered_MB": 176.39,
+      "reduction_x": 340.9,
+      "DR_percent": 99.707,
+      "products": {
+        "tile": {
+          "product": "coastal context tile (JPEG q40)",
+          "items_per_day": 2037.7,
+          "MB": 134.497,
+          "share": 0.7625,
+          "mean_B": 66005.4,
+          "size_source": "MEASURED (wp28 table)"
+        },
+        "thumb": {
+          "product": "thumbnail",
+          "items_per_day": 28961.0,
+          "MB": 28.961,
+          "share": 0.1642,
+          "mean_B": 1000.0,
+          "size_source": "MODELED"
+        },
+        "L2": {
+          "product": "ROI + wake crop",
+          "items_per_day": 1110.3,
+          "MB": 6.947,
+          "share": 0.0394,
+          "mean_B": 6256.5,
+          "size_source": "MODELED"
+        },
+        "L1": {
+          "product": "small chip",
+          "items_per_day": 4289.0,
+          "MB": 3.525,
+          "share": 0.02,
+          "mean_B": 821.9,
+          "size_source": "MODELED"
+        },
+        "fp": {
+          "product": "false-alarm chip",
+          "items_per_day": 2427.7,
+          "MB": 2.185,
+          "share": 0.0124,
+          "mean_B": 900.0,
+          "size_source": "MODELED"
+        },
+        "L0": {
+          "product": "metadata record",
+          "items_per_day": 6820.0,
+          "MB": 0.273,
+          "share": 0.0015,
+          "mean_B": 40.0,
+          "size_source": "MODELED"
+        }
+      },
+      "per_day": [
+        {
+          "seed": 0,
+          "D_tx_offered_MB": 178.61,
+          "reduction_x": 336.6
+        },
+        {
+          "seed": 1,
+          "D_tx_offered_MB": 175.17,
+          "reduction_x": 343.6
+        },
+        {
+          "seed": 2,
+          "D_tx_offered_MB": 175.38,
+          "reduction_x": 342.5
+        }
+      ]
+    },
+    "modeled_wp7_flat": {
+      "D_tx_offered_MB": 107.95,
+      "reduction_x": 557.0,
+      "DR_percent": 99.82,
+      "products": {
+        "tile": {
+          "product": "coastal context tile (JPEG q40)",
+          "items_per_day": 2037.7,
+          "MB": 66.061,
+          "share": 0.612,
+          "mean_B": 32420.0,
+          "size_source": "MODELED"
+        },
+        "thumb": {
+          "product": "thumbnail",
+          "items_per_day": 28961.0,
+          "MB": 28.961,
+          "share": 0.2683,
+          "mean_B": 1000.0,
+          "size_source": "MODELED"
+        },
+        "L2": {
+          "product": "ROI + wake crop",
+          "items_per_day": 1110.3,
+          "MB": 6.947,
+          "share": 0.0644,
+          "mean_B": 6256.5,
+          "size_source": "MODELED"
+        },
+        "L1": {
+          "product": "small chip",
+          "items_per_day": 4289.0,
+          "MB": 3.525,
+          "share": 0.0327,
+          "mean_B": 821.9,
+          "size_source": "MODELED"
+        },
+        "fp": {
+          "product": "false-alarm chip",
+          "items_per_day": 2427.7,
+          "MB": 2.185,
+          "share": 0.0202,
+          "mean_B": 900.0,
+          "size_source": "MODELED"
+        },
+        "L0": {
+          "product": "metadata record",
+          "items_per_day": 6820.0,
+          "MB": 0.273,
+          "share": 0.0025,
+          "mean_B": 40.0,
+          "size_source": "MODELED"
+        }
+      },
+      "per_day": [
+        {
+          "seed": 0,
+          "D_tx_offered_MB": 108.51,
+          "reduction_x": 554.0
+        },
+        {
+          "seed": 1,
+          "D_tx_offered_MB": 108.12,
+          "reduction_x": 556.7
+        },
+        {
+          "seed": 2,
+          "D_tx_offered_MB": 107.22,
+          "reduction_x": 560.2
+        }
+      ]
+    }
+  },
+  "sensitivity_flat_coast_tile_size": [
+    {
+      "coast_tile_B": 25900,
+      "D_tx_MB": 94.7,
+      "reduction_x": 635.0
+    },
+    {
+      "coast_tile_B": 32420,
+      "D_tx_MB": 108.0,
+      "reduction_x": 557.0
+    },
+    {
+      "coast_tile_B": 50000,
+      "D_tx_MB": 143.8,
+      "reduction_x": 418.0
+    },
+    {
+      "coast_tile_B": 66118,
+      "D_tx_MB": 176.6,
+      "reduction_x": 340.0
+    },
+    {
+      "coast_tile_B": 81919,
+      "D_tx_MB": 208.8,
+      "reduction_x": 288.0
+    }
+  ]
+}

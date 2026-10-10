@@ -75,12 +75,12 @@
         "conf_high_0.670": 0
       }
     },
-    "seconds": 230.9
+    "seconds": 217.4
   },
   "swaths": {
     "n_swaths": 24,
     "n_ships": 716,
-    "seconds": 106.1,
+    "seconds": 96.3,
     "rows": {
       "whole_grid": {
         "images": 24,
@@ -294,7 +294,7 @@
       "recall": 0.7447,
       "gt_ships": 47
     },
-    "source": "wp18_campaign.json (small-scale validation run)"
+    "source": "wp18_campaign.json legacy_small_samples (a detector call per native tile; SAHI on 2 swaths) -- what the B0-B4 table called B1 / B2 until 10 Oct 2026"
   },
-  "elapsed_s": 339.2
+  "elapsed_s": 316.1
 }

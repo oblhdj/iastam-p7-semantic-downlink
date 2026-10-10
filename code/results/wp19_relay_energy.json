@@ -12,7 +12,7 @@
     "note": "these are the E primitives route() calls per path to form J = lambda_E*E + lambda_T*T; proposed to the path-choice track, pending confirmation"
   },
   "inputs": {
-    "D_sent_MB_day": 107.95,
+    "D_sent_MB_day": 176.27,
     "D_raw_MB_day": 60124.3,
     "R_gs_Mbps_SIM": 2.531,
     "R_isl_Mbps": 2.531,
@@ -26,8 +26,8 @@
   },
   "sanity_gate": {
     "check_b_relay_gt_direct": {
-      "E_relay_J": 9212.8,
-      "E_direct_J": 5118.2,
+      "E_relay_J": 15042.9,
+      "E_direct_J": 8357.2,
       "ratio": 1.8
     },
     "check_c_rate_bound": {
@@ -35,37 +35,37 @@
       "R_zenith_Mbps": 6.4
     },
     "check_a_matches_wp17_Ecomm": {
-      "wp17_kJ": 5.12,
-      "here_kJ": 5.12,
+      "wp17_kJ": 8.36,
+      "here_kJ": 8.36,
       "rel_err": 0.0003
     },
     "passed": true
   },
   "per_path_energy_daily_kJ": {
-    "E_direct": 5.118,
-    "E_ISL": 4.095,
-    "E_GS": 5.118,
-    "E_relay": 9.213,
+    "E_direct": 8.357,
+    "E_ISL": 6.686,
+    "E_GS": 8.357,
+    "E_relay": 15.043,
     "relay_over_direct_x": 1.8,
-    "payload_D_MB": 107.95
+    "payload_D_MB": 176.27
   },
   "ES_bounds": {
     "note": "ES = 1 - (E_proc + E_comm_mix)/E_bent_pipe; E_comm_mix = (1-f)*E_direct + f*E_relay, f = relay byte-fraction from route().",
-    "all_direct_f0": 0.9822,
-    "all_relay_f1": 0.9808
+    "all_direct_f0": 0.9811,
+    "all_relay_f1": 0.9787
   },
   "ES_weighted_via_route20": {
     "lam_E=0.0": {
       "relay_fraction_f": 0.44,
-      "ES_weighted": 0.9816
+      "ES_weighted": 0.98
     },
     "lam_E=1.0": {
       "relay_fraction_f": 0.44,
-      "ES_weighted": 0.9816
+      "ES_weighted": 0.98
     },
     "lam_E=10.0": {
       "relay_fraction_f": 0.0,
-      "ES_weighted": 0.9822
+      "ES_weighted": 0.9811
     },
     "cross_check_lamE0_vs_wp20": {
       "f_here": 0.44,
@@ -80,25 +80,25 @@
     "total_min": 656.3,
     "min_range_km": 1252.3,
     "mean_range_km": 2695.3,
-    "isl_time_needed_s_for_D": 341.2,
+    "isl_time_needed_s_for_D": 557.1,
     "window_time_sufficient": true,
     "note": "range is SIM from the relay track; it could DERIVE a real R_isl via a crosslink budget (datasheet -> LIT) but is NOT used in the energy here (R_isl stays ASSUMPTION). A stale 458 km min-range figure in report 20's prose was flagged against this CSV and corrected to 1252 km."
   },
   "sensitivity_NEW_assumptions": {
     "P_isl=5.0W": {
-      "E_relay_kJ": 6.82,
+      "E_relay_kJ": 11.14,
       "relay/direct": 1.333
     },
     "P_isl=30.0W": {
-      "E_relay_kJ": 15.35,
+      "E_relay_kJ": 25.07,
       "relay/direct": 3.0
     },
     "R_isl=1.0Mbps": {
-      "E_relay_kJ": 15.48,
+      "E_relay_kJ": 25.28,
       "relay/direct": 3.025
     },
     "R_isl=50.0Mbps": {
-      "E_relay_kJ": 5.33,
+      "E_relay_kJ": 8.7,
       "relay/direct": 1.04
     }
   },

@@ -51,7 +51,8 @@ from sat7.orbit import LINK_PRESETS, GroundStation, OrbitConfig, find_passes, ma
 from sat7.priority import PriorityConfig, encode_priority
 from sat7.scheduler import encode_lod
 from sat7.real_workload import RealWorkloadConfig, load_catalogue, load_size_model, workload_from_catalogue
-from sat7.scheduler import FIFO, Item, LoDConfig, NoBuffer, Ship, ValueGreedy, _l1, _l2, metrics, simulate
+from sat7.scheduler import (COAST_TILE_BYTES_WP7, FIFO, Item, LoDConfig, NoBuffer, Ship, ValueGreedy,
+                            _l1, _l2, metrics, simulate)
 from sat7.semantic import (_IMG_HDR, EncoderConfig, Ids, Packetizer, TMFraming, decode_downlink,
                            encode_image, encode_jpeg, pack_record)
 
@@ -117,7 +118,7 @@ def summarise(enc, dets, cfg: EncoderConfig, lod: LoDConfig):
             _pid, _x0, _y0, _w, _h, q, _codec = _IMG_HDR.unpack_from(p.payload, 0)
             s = Ship(0, 0.0, False, 1.0, False, float(max(dets[p.dets[0]][2], dets[p.dets[0]][3])))
             if p.kind == "P3" and q == cfg.coast_tile_quality and q != cfg.ctx_quality:
-                sub, modeled = "P3_coast_tile", lod.coast_tile_bytes
+                sub, modeled = "P3_coast_tile", COAST_TILE_BYTES_WP7     # the earlier flat estimate
             elif p.kind == "P3":
                 sub, modeled = "P3_crop", _l2(s, lod)
             elif q == cfg.ctx_quality and q != cfg.roi_quality:
@@ -207,9 +208,11 @@ def run(items, wl, lod, passes, start, policy, storage_gb, enc, with_value: bool
 
 
 def lod_with_measured_coast(wl, lod, corpus: Corpus, quality: int = 40):
-    """The LoD ladder (the 557x headline encoder), item for item as scheduler.encode_lod builds it,
-    with each coastal tile's size replaced by its MEASURED encoding (baseline JPEG q40 -- what WP7 /
-    WP13 measured -- + an 18 B image header + packet headers). Everything else keeps its model."""
+    """The LoD ladder (the headline encoder), item for item as scheduler.encode_lod builds it, with
+    each coastal tile's size re-measured FROM PIXELS here (baseline JPEG q40 + an 18 B image header +
+    packet headers). `lod` is the earlier flat-size config, so the swaps record old -> measured.
+    The canonical encoder reads the same sizes from results/wp28_coast_tile_bytes.csv; main() checks
+    the two agree byte for byte."""
     from sat7.scheduler import _Ids, encode_tile
     pk_over = lambda n: n + 8 * math.ceil(n / (4096 - 2))       # CCSDS headers + CRC per segment
     nid, rng, items, swaps = _Ids(), np.random.default_rng(wl.cfg.seed + 1), [], []
@@ -243,6 +246,7 @@ def main() -> int:
     tiles, ships = load_catalogue(res_dir)
     corpus = Corpus(args.data, tiles, res_dir / "wp1_predictions.csv")
     lod = LoDConfig(conf_low=args.det_thr, size_model=load_size_model(res_dir / "wp6_size_model.json"))
+    lod_wp7 = replace(lod, coast_tile_bytes=COAST_TILE_BYTES_WP7)     # the earlier all-modeled sizes
     pcfg = PriorityConfig(p1_conf=lod.conf_high)
     start = datetime(2026, 9, 18, tzinfo=timezone.utc)
     sat = make_satellite(OrbitConfig(epoch=start))
@@ -257,16 +261,19 @@ def main() -> int:
               "day": {"tiles": stats.tiles, "ships": stats.ships, "passes": len(passes),
                       "link_share": args.link_share, "MB_capacity": round(sum(p.capacity_bytes for p in passes) / 1e6, 1)}}
 
-    # ---- 1. canon: the modeled P0-P3 run, as wp23
+    # ---- 1. canon: the P0-P3 run as wp23 does it (ground-truth catalogue; coastal context tiles at
+    #         their measured size, records / crops modeled) and the same run on the earlier flat size
     canon = run(encode_priority(wl, lod, pcfg), wl, lod, passes, start, ValueGreedy(), args.storage_gb,
-                "P0-P3 modeled (wp23 method)", with_value=True)
+                "P0-P3 (wp23 method)", with_value=True)
     w23 = json.loads((res_dir / "wp23_semantic_compare.json").read_text())["semantic_schemes"]["priority"]
-    canon["wp23_committed"] = {"MB_sent": w23["MB_sent"], "ship_recall": w23["ship_recall"],
-                               "note": "committed before the dark-wake de-duplication (priority.py)"}
+    canon["wp23_committed"] = {"MB_sent": w23["MB_sent"], "ship_recall": w23["ship_recall"]}
+    canon["earlier_flat_coast_tile"] = run(encode_priority(wl, lod_wp7, pcfg), wl, lod, passes, start,
+                                           ValueGreedy(), args.storage_gb, "P0-P3, flat 32,420 B coastal tile",
+                                           with_value=True)
     report["canon_modeled"] = canon
-    print(f"[1] canon modeled P0-P3: {canon['MB_sent']} MB, recall {canon['ship_recall']}  "
-          f"(wp23 committed {w23['MB_sent']} MB / {w23['ship_recall']}; the difference is the "
-          f"de-duplicated dark wake crop)")
+    print(f"[1] canon P0-P3 (wp23 method): {canon['MB_sent']} MB, recall {canon['ship_recall']}  "
+          f"(wp23 committed {w23['MB_sent']} MB / {w23['ship_recall']}); on the earlier flat coastal "
+          f"tile {canon['earlier_flat_coast_tile']['MB_sent']} MB")
 
     # ---- 2. the same day, onboard-style from real boxes: modeled vs measured sizes
     base = EncoderConfig(det_thr=args.det_thr, priority=pcfg)
@@ -309,25 +316,31 @@ def main() -> int:
         sizes["progressive" if prog else "baseline"] = {
             "tiles": len(b), "median_B": statistics.median(b), "mean_B": round(statistics.mean(b), 1),
             "p10_B": float(np.percentile(b, 10)), "p90_B": float(np.percentile(b, 90))}
-    lod_canon = run(encode_lod(wl, lod), wl, lod, passes, start, ValueGreedy(), args.storage_gb,
-                    "LoD modeled (wp6/wp23)", with_value=True)
-    lod_items, swaps = lod_with_measured_coast(wl, lod, corpus)
+    lod_canon = run(encode_lod(wl, lod_wp7), wl, lod, passes, start, ValueGreedy(), args.storage_gb,
+                    "LoD, earlier flat coastal tile", with_value=True)
+    lod_items, swaps = lod_with_measured_coast(wl, lod_wp7, corpus)
+    table_items = encode_lod(wl, lod)            # the canonical encoder: sizes from the wp28 table
+    if [it.size for it in table_items] != [it.size for it in lod_items]:
+        raise SystemExit("wp28_coast_tile_bytes.csv does not reproduce from pixels; rerun "
+                         "scripts/wp28_coast_tile_model.py --measure")
     lod_meas = run(lod_items, wl, lod, passes, start, ValueGreedy(), args.storage_gb,
                    "LoD, measured coastal tiles", with_value=True)
     report["coastal_context_tile_q40"] = {"measured_all_coastal_test_tiles": sizes,
-                                          "modeled_LoDConfig_coast_tile_bytes": LoDConfig().coast_tile_bytes,
+                                          "canonical": "each tile's measured size (results/wp28_coast_tile_bytes.csv)",
+                                          "earlier_flat_COAST_TILE_BYTES_WP7": COAST_TILE_BYTES_WP7,
                                           "why_they_differ": "LoDConfig took WP7's 'whole tile' ladder, "
                                           "which sampled 400 random tiles WITH SHIPS (mostly open sea); "
                                           "WP13 measured real coastal tiles at 65.5 kB (q40)"}
     report["LoD_headline_with_measured_coast"] = {
         "modeled": lod_canon, "measured_coast": lod_meas,
+        "size_table_reproduces_from_pixels": True,
         "coastal_tiles_swapped": len(swaps),
         "coastal_MB_modeled": round(sum(a for a, _ in swaps) / 1e6, 2),
         "coastal_MB_measured": round(sum(b for _, b in swaps) / 1e6, 2)}
     print(f"[2b] coastal context tile, q40, all {len(coast_names)} real coastal tiles: baseline median "
           f"{sizes['baseline']['median_B']:.0f} B, progressive {sizes['progressive']['median_B']:.0f} B "
-          f"(modeled {LoDConfig().coast_tile_bytes:.0f} B)")
-    print(f"     LoD ladder (headline encoder): modeled {lod_canon['MB_offered']} MB offered / "
+          f"(earlier flat estimate {COAST_TILE_BYTES_WP7:.0f} B)")
+    print(f"     LoD ladder (headline encoder): earlier flat size {lod_canon['MB_offered']} MB offered / "
           f"{lod_canon['MB_sent']} sent, recall {lod_canon['ship_recall']}  ->  measured coastal tiles "
           f"{lod_meas['MB_offered']} MB offered / {lod_meas['MB_sent']} sent, recall {lod_meas['ship_recall']} "
           f"(capacity {lod_meas['MB_capacity']} MB)")

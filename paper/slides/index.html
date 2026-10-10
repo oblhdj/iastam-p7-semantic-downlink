@@ -115,43 +115,45 @@ const S = [
   <table>
     <tr><th>cfg</th><th>onboard</th><th>recall</th><th>key number</th><th>label</th></tr>
     <tr><td><b>B0</b></td><td>none (raw image)</td><td>—</td><td>60,124 MB/day reference</td><td><span class="tag SIM">SIM</span></td></tr>
-    <tr><td><b>B1</b></td><td>YOLO / tile</td><td><b>0.782</b></td><td>small 0.59 / med 0.94 / large 1.0</td><td><span class="tag REAL">REAL</span></td></tr>
-    <tr><td><b>B2</b></td><td>+ SAHI + fusion</td><td><b>0.745</b></td><td>1.56× compute vs tiling</td><td><span class="tag REAL">REAL</span></td></tr>
-    <tr><td><b>B3</b></td><td>+ semantic + scheduler</td><td><b>0.685</b> <span class="warn">@15% cloud</span></td><td><b>557×</b>, 108 MB/day</td><td><span class="tag SIM">SIM/REAL</span></td></tr>
-    <tr><td><b>B4</b></td><td>+ optional relay</td><td>= B3</td><td>worst latency 11.6→6.2 h</td><td><span class="tag SIM">SIM</span>·<span class="tag TARGET">TARGET</span></td></tr>
+    <tr><td><b>B1</b></td><td>YOLO, one call per scene</td><td><b>0.339</b></td><td>no slicing — small 0.05 / med 0.54 / large 0.86</td><td><span class="tag REAL">REAL</span></td></tr>
+    <tr><td><b>B2</b></td><td>+ SAHI + fusion, same scenes</td><td><b>0.717</b></td><td>small 0.51 · 1.56× compute vs tiling</td><td><span class="tag REAL">REAL</span></td></tr>
+    <tr><td><b>B3</b></td><td>+ semantic + scheduler</td><td><b>0.685</b> <span class="warn">@15% cloud</span></td><td><b>341×</b>, 176 MB/day <span class="warn">coastal tiles measured; thumbnails &amp; crops modeled</span></td><td><span class="tag SIM">SIM/REAL</span></td></tr>
+    <tr><td><b>B4</b></td><td>+ optional relay</td><td>= B3</td><td>worst latency 35.2→10.9 h</td><td><span class="tag SIM">SIM</span>·<span class="tag TARGET">TARGET</span></td></tr>
   </table>
-  <p style="margin-top:12px">B4 is a <b>reroute</b>, not extra capacity — recall & bytes are B3's verbatim; sanity-gated.</p>
-  <p class="src">source: code/results/wp18_campaign.json · traced to wp6_real_table.csv</p>`,
- notes:`This is the B0 to B4 progression the paper promised. Raw image, detector, SAHI, our full semantic pipeline, then an inter-satellite relay. Every configuration ran; B4 only changes latency and energy, never what's delivered.`},
+  <p style="margin-top:12px">B1/B2: the same 150 scenes, 1,164 ships. B3/B4: a simulated 40,000-tile day — a different input. B4 is a <b>reroute</b>, not extra capacity — recall & bytes are B3's verbatim; sanity-gated.</p>
+  <p class="src">source: code/results/wp26_b0_b4.json (B1, B2) · wp18_campaign.json · traced to wp6_real_table.csv</p>`,
+ notes:`This is the B0 to B4 progression the paper promised. Raw image, one detector call on the whole scene, SAHI on the same scenes, our full semantic pipeline, then an inter-satellite relay. Slicing takes recall from about a third to over seventy percent. B1 and B2 share one set of scenes; B3 and B4 are a simulated day. B4 only changes latency and energy, never what's delivered.`},
 
 {html:`<div class="kicker">Headlines (verify against the CSVs)</div><h2>Less data, more mission</h2>
   <div class="grid">
-    <div class="card"><div class="huge">557×</div><div class="l">less data — 60,124 MB → 108 MB/day <span class="tag SIM">SIM/REAL</span></div></div>
+    <div class="card"><div class="huge">341×</div><div class="l">less data — 60,124 MB → 176 MB/day <span class="tag SIM">SIM/REAL</span><br><span class="warn">coastal tiles measured; thumbnails &amp; crops still modeled</span> (earlier all-modeled estimate: 557×)</div></div>
     <div class="card"><div class="n">0.685 <span class="warn" style="font-size:18px">@15% cloud</span></div><div class="l">ships delivered — band <b>0.40–0.82</b> over 0–50% cloud. Never quote bare.</div></div>
     <div class="card"><div class="n">100%</div><div class="l">of what the satellite still knew (downlink eff = 1.0); the detector is the bottleneck, not the link</div></div>
-    <div class="card"><div class="n">+6.3 pts</div><div class="l">vs a <i>fair</i> Φ-sat-2 baseline, for ~7× the bytes (our old "+16.7" used an unfair baseline)</div></div>
+    <div class="card"><div class="n">+6.3 pts</div><div class="l">vs a <i>fair</i> Φ-sat-2 baseline, for ~11× the bytes (our old "+16.7" used an unfair baseline)</div></div>
   </div>
-  <p class="src">source: code/results/wp6_real_table.csv (row “Ours: LoD + value-greedy” vs “…fair (+coastal)”)</p>`,
- notes:`Five hundred fifty-seven times less data, and we still recover sixty-eight-point-five percent of the ships — at an assumed fifteen percent cloud. That is a hundred percent of what the satellite still knew, and six-point-three points better than a fair Phi-sat-2 baseline.`},
+  <p class="src">source: code/results/wp6_real_table.csv (row “Ours: LoD + value-greedy” vs “…fair (+coastal)”) · wp28_coast_tile_model.json</p>`,
+ notes:`Three hundred forty-one times less data, and we still recover sixty-eight-point-five percent of the ships — at an assumed fifteen percent cloud. The coastal tiles in that figure are measured JPEG sizes; thumbnails and crops are still modeled. That is a hundred percent of what the satellite still knew, and six-point-three points better than a fair Phi-sat-2 baseline.`},
 
 {html:`<div class="kicker">Energy & the relay</div><h2>Compute, not the radio, is the cost</h2>
   <div class="grid">
     <div class="card"><div class="n">57.6%</div><div class="l">processing energy saved by the gate (ES_proc) — a power-free time ratio <span class="tag SIM">SIM</span></div></div>
-    <div class="card"><div class="n">8.9 : 1</div><div class="l">once you stop sending pixels, <b>compute dominates the radio</b></div></div>
-    <div class="card"><div class="n">≈ 98%</div><div class="l">ES_total vs a bent pipe (~51 kJ/day vs ~2,851 kJ/day) <span class="tag SIM">SIM</span></div></div>
-    <div class="card"><div class="n">11.6 → 6.2 h</div><div class="l">relay halves worst-case latency <span class="tag SIM">SIM</span>; costs ~+34% comm energy <span class="tag TARGET">TARGET</span></div></div>
+    <div class="card"><div class="n">5.5 : 1</div><div class="l">once you stop sending pixels, <b>compute dominates the radio</b></div></div>
+    <div class="card"><div class="n">≈ 98%</div><div class="l">ES_total vs a bent pipe (~54 kJ/day vs ~2,851 kJ/day) <span class="tag SIM">SIM</span></div></div>
+    <div class="card"><div class="n">35.2 → 10.9 h</div><div class="l">relay cuts worst-case latency (per-item median 7.9 → 3.4 h) <span class="tag SIM">SIM</span>; costs ~+52% comm energy <span class="tag TARGET">TARGET</span></div></div>
   </div>
   <p style="margin-top:12px">The relay is a <b>latency buy, not an energy win</b> (~1.8× comm energy per relayed item).</p>
   <p class="src">source: code/results/wp17_energy_model.json · wp18_campaign.json (B4)</p>`,
- notes:`Energy optimisation belongs on the detector and gate, not the transmitter — once pixels stop flowing, compute outweighs the radio nearly nine to one. The relay is a latency buy: it halves worst-case latency but costs more energy, so we call it that.`},
+ notes:`Energy optimisation belongs on the detector and gate, not the transmitter — once pixels stop flowing, compute outweighs the radio more than five to one. The relay is a latency buy: it cuts worst-case latency from thirty-five hours to eleven but costs more energy, so we call it that.`},
 
 {html:`<div class="kicker">How to read the numbers — the part that wins</div><h2>Honesty & limitations</h2>
   <ul>
     <li><b>Onboard = TARGET.</b> Every timing is a laptop RTX 5060; "runs onboard" is mapped onto flown Myriad-class hardware <span class="tag LIT">LIT</span>, not demonstrated.</li>
     <li><b>Recall is a band.</b> 0.685 @15% cloud; 0.40–0.82 over 0–50%. Cloud moves it more than anything else, and Airbus (0.4% cloud) can't settle it.</li>
     <li><b>We broke our own results.</b> Unfair baseline (+16.7 → +6.3); a coastal setting we called "free" actually costs 4.0 pts on small ships; INT8 rejected (slower, −2.2 pts).</li>
-    <li><b>SAHI is a selective trade, not a free win</b> — a seam-cut ship is usually still detected (1.56× compute, window 768 not 512).</li>
-    <li><b>Dataset:</b> optical Airbus (not DOTA) on synthetic swaths, because a tile is already 768².</li>
+    <li><b>SAHI is a selective trade, not a free win</b> — a seam-cut ship is usually still detected (1.56× compute, window 768 not 512). <b>Negative result:</b> on our stitched scenes SAHI (0.717) does not beat a plain tile-by-tile pass (0.730) — no ship crosses a seam between independent tiles, so overlap has nothing to recover.</li>
+    <li><b>Sizes are partly modeled.</b> Coastal tiles are measured JPEGs; thumbnails and crops are model sizes. Measuring the coastal tile alone moved the headline 557× → 341×.</li>
+    <li><b>Our lead over the fair baseline is a nominal-load claim.</b> Swept over 80 settings: we beat FIFO in all 80, the fair baseline in 74. All six failures are at 160k tiles/day, where the lead is 1.3 pts (6.3 at 40k).</li>
+    <li><b>Dataset:</b> optical Airbus (not DOTA) on synthetic scenes stitched from tiles, because a tile is already 768².</li>
   </ul>
   <p class="src">labels: REAL / SIM / LIT / TARGET / ASSUMPTION — see demo/PAPER_COVERAGE.md</p>`,
  notes:`Everything you saw ran on real data. The one thing we don't claim is flight hardware. And we broke our own results on purpose — the unfair baseline, the coastal setting that wasn't free, INT8. The self-correction is the most distinctive thing here.`},

@@ -102,7 +102,7 @@ def test_synthetic_tiles_get_the_reference_prefilter_context():
 
 def test_packet_uses_sat7_priority_levels_and_sizes():
     from sat7.priority import P0, P1, P2, P3, PriorityConfig, encode_priority
-    from sat7.scheduler import LoDConfig
+    from sat7.scheduler import COAST_TILE_BYTES_MEASURED, LoDConfig
 
     lod = LoDConfig(conf_low=qs.DET_THR, size_model=qs.load_size_model())
     pcfg = PriorityConfig(p1_conf=lod.conf_high)
@@ -119,7 +119,8 @@ def test_packet_uses_sat7_priority_levels_and_sizes():
     assert len(by["P1"]) == 4 and all(it.size == lod.l0_bytes for it in by["P1"])
     assert sorted(it.size for it in by["P2"]) == sorted(
         lod.size_model.l1(L) for L in (20.0, 60.0, 30.0))
-    assert [it.size for it in by["P3"]] == [lod.coast_tile_bytes]       # one shared context tile
+    # one shared context tile; a hand-built workload carries no per-tile size -> the measured mean
+    assert [it.size for it in by["P3"]] == [COAST_TILE_BYTES_MEASURED]
     assert not any(tile_of[it.ships[0]] == 2 for it in items)          # cloud tile sends nothing
 
 

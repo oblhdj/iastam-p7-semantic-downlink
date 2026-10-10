@@ -15,7 +15,7 @@ What runs LIVE, in order, on a 3x3 swath of 768 px tiles (2304 x 2304 px):
   6. the value-greedy downlink order over that packet (sat7.scheduler.ValueGreedy)
 Then, read from committed results (nothing recomputed): the same 9 tile IDs through the same
 packet builder using the REAL detections in code/results/wp1_predictions.csv, and the measured
-headline (557x, B0-B4) from code/results.
+headline (data reduction, B0-B4) from code/results.
 
 HONESTY. The bundled tiles are SYNTHETIC stand-ins (Airbus rules forbid redistributing the real
 ones; see README.md). Every number computed on them is labelled SYNTH: it proves the chain
@@ -51,7 +51,8 @@ from sat7.prefilter import CLOUD, LAND, run_prefilter  # noqa: E402
 from sat7.priority import LEVEL_NAME, P0, PriorityConfig, classify, encode_priority  # noqa: E402
 from sat7.semantic import (EncoderConfig, Ids, Packetizer, TMFraming, decode_downlink,  # noqa: E402
                            encode_image, pack_record, to_items)
-from sat7.scheduler import (RAW_TILE_BYTES, LoDConfig, Ship, SizeModel,  # noqa: E402
+from sat7.scheduler import (COAST_TILE_BYTES_MEASURED, RAW_TILE_BYTES, LoDConfig, Ship,  # noqa: E402
+                            SizeModel,
                             ValueGreedy, Workload, WorkloadConfig, encode_lod)
 
 TILE = 768
@@ -408,14 +409,16 @@ def main() -> int:
           f"{len(ground['contexts'])} contexts, every CRC checked")
     print(f"      on air with CCSDS TM framing + RS(255,223): {TMFraming().on_air_bytes(sem):,} B "
           f"(reported only: the link capacity already carries this overhead)")
-    print(f"    same packet, MODELED sizes (wp23: 40 B record, WP4 power law, 32.4 kB coast tile): {modeled:,.0f} B")
+    print(f"    same packet, MODELED sizes (wp23: 40 B record, WP4 power law; coastal tile at the "
+          f"measured mean {COAST_TILE_BYTES_MEASURED / 1e3:.1f} kB): {modeled:,.0f} B")
     print(f"    RAW (B0 definition)                    {raw:11,} B   = {n_raw_tiles} non-cloud tiles x "
           f"{RAW_TILE_BYTES:,} B (768x768x3, uncompressed)")
     red = 1 - sem / raw if raw else float("nan")
     factor = f"{raw / sem:,.0f}x" if sem else "no bytes sent"
     print(f"    REDUCTION  1 - D_tx/D_raw =            {100 * red:11.3f} %   ({factor})   "
           f"[{live_lbl}; 9 ship-rich tiles -- NOT the headline]")
-    print(f"    same detections, LoD ladder (the scheme behind the 557x headline, modeled): {lod_bytes:,.0f} B")
+    print(f"    same detections, LoD ladder (the scheme behind the headline; crops and thumbnails "
+          f"modeled): {lod_bytes:,.0f} B")
 
     # ------------------------------------------------------------------ [5] scheduler order
     order = ValueGreedy().order(items, 0.0)
@@ -492,15 +495,16 @@ def main() -> int:
               f"{w1x['latency_ms_per_tile']['onnx_fp32_cpu']} ms/tile CPU   [REAL, laptop, wp1_export.json]")
     if "B2" in camp:
         b2 = camp["B2"]
-        print(f"    B2 SAHI+fusion recall {float(b2['recall']['overall']):.3f} at "
-              f"{float(b2['compute_vs_regular_tiling_x']):.2f}x compute (4x4 swaths)   "
-              f"[{b2.get('label', 'REAL')}, wp18_campaign.json]")
+        b1 = camp.get("B1", {})
+        print(f"    B1 one call per scene: recall {float(b1['recall']['overall']):.3f} -> B2 SAHI+fusion "
+              f"{float(b2['recall']['overall']):.3f} at {float(b2['compute_vs_regular_tiling_x']):.2f}x "
+              f"compute, same {b2.get('scenes', '?')} scenes   [{b2.get('label', 'REAL')}, wp26_b0_b4.json]")
     bent = table.get("Bent pipe (raw, FIFO)", {})
     if ours and bent:
         print(f"    B3 LoD + value-greedy: {float(bent['MB_offered']):,.0f} MB raw -> "
               f"{float(ours['MB_sent']):.1f} MB/day = {float(ours['data_reduction_x']):,.0f}x, ship recall "
               f"{float(ours['ship_recall']):.3f} @ assumed 15% cloud (band 0.40-0.82)   "
-              f"[SIM-over-REAL, wp6_real_table.csv]")
+              f"[SIM-over-REAL; coastal tiles measured, thumbnails/crops modeled; wp6_real_table.csv]")
     if "priority" in w23 and "lod" in w23:
         p, q = w23["priority"], w23["lod"]
         print(f"    P0-P3 scheme, same day: {float(p['MB_sent']):.1f} MB vs LoD {float(q['MB_sent']):.1f} MB, ship "

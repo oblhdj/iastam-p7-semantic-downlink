@@ -1,5 +1,14 @@
 # 23 — Paper-faithful modules: first-class SAHI, P0–P3, the joint program, calibratable energy
 
+> **REFRESHED 10 Oct 2026.** Two things changed after this report was written; the module
+> descriptions below are unaffected. (1) A coastal context tile is now charged its **measured** size
+> (each tile's own JPEG q40, `wp28_coast_tile_model.json`) instead of a flat 32.4 kB, so the
+> head-to-head table was regenerated; the earlier all-modeled figures are kept beside it as the
+> earlier estimate. (2) **B1 / B2 are now measured on the same scenes** (`wp26_b0_b4.py`): B1 is one
+> detector call on the whole scene (recall 0.339), B2 is SAHI on those scenes (0.717). The headline
+> is **341×** (176 MB/day, three-day mean; coastal tiles measured, thumbnails and crops modeled);
+> **557×** was the all-modeled estimate.
+
 Phase-3 housekeeping against the accepted paper. `PAPER_COVERAGE.md` named four places where the
 code expressed the paper's intent through a *substitute* rather than the paper's own construct:
 
@@ -12,8 +21,9 @@ code expressed the paper's intent through a *substitute* rather than the paper's
 
 This WP adds the paper's own constructs as first-class, testable `sat7` modules, **without
 displacing** the measured LoD pipeline. Everything here is infrastructure + one head-to-head
-comparison; **no new campaign headline is minted**, and the LoD path still reproduces the 108 MB /
-557× / 0.680 headline exactly (checked below).
+comparison; **no new campaign headline is minted**, and the LoD path still reproduces the headline
+row exactly (checked below) — 108 MB / 557× / 0.680 on the all-modeled sizes when this was written,
+178.5 MB / 0.680 for the same day with measured coastal tiles (341× on the three-day mean).
 
 > Labels unchanged (START_HERE §8). New code emits no REAL number of its own: the slicing/fusion and
 > the P0–P3 sizes are the existing REAL/SIM quantities reused; the joint program's `D` and `T` are
@@ -51,13 +61,17 @@ headline CSV, runs for `lod` only).
 
 ```
 scheme                    recall   dark  MB sent    val  lat_med_h
-LoD ladder (repo)         0.680    0.679   108.5   0.727     4.49     <- reproduces the headline
-P0–P3 (paper Table I)     0.617    0.626    49.9   0.903     4.50
+LoD ladder (repo)         0.680    0.679   178.5   0.727     4.67     <- reproduces the headline row
+P0–P3 (paper Table I)     0.617    0.626    90.5   0.903     4.50
 P0–P3 level histogram (detections): P0 4620 · P1 5927 · P2 4450 · P3 2656
+
+earlier estimate (flat 32.4 kB coastal tile, superseded 10 Oct 2026):
+LoD ladder (repo)         0.680    0.679   108.5   0.727     4.49
+P0–P3 (paper Table I)     0.617    0.626    49.1   0.903     4.50     (49.9 before a duplicated wake crop was removed)
 ```
 
-Read it honestly: **P0–P3 is the leaner, more selective scheme** — it sends 54% fewer bytes at a
-higher value density, but **−6.3 points of recall**, because P0 discards sub-threshold detections and
+Read it honestly: **P0–P3 is the leaner, more selective scheme** — it sends 49% fewer bytes at a
+higher value density (54% on the earlier flat coastal size), but **−6.3 points of recall**, because P0 discards sub-threshold detections and
 the scheme has no blanket-thumbnail safety net (that net is a LoD-specific recovery path; P0–P3
 replaces it with P3 context only on *uncertain* real detections). Which is "better" depends on the
 operating point the paper's constraints pin — which is exactly what the joint program decides. This

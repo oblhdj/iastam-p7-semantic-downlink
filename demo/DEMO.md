@@ -1,7 +1,8 @@
 # IASTAM P7 — DEMO runbook
 
 **What this demo proves:** a satellite can send *information about ships* instead of pixels —
-**557× less data**, 0.685 ship recall (@15% cloud), scheduling provably near-optimal — all on
+**341× less data** (coastal tiles at their measured JPEG size; thumbnails and crops still
+modeled), 0.685 ship recall (@15% cloud), scheduling provably near-optimal — all on
 **real Airbus imagery with models we trained**. It is a **demo, not a prototype**: the pipeline
 runs end-to-end on a laptop; "runs onboard" is presented as a TARGET, not a flown system.
 
@@ -58,12 +59,15 @@ chain prefilter→gate→detector→LoD→scheduler→ground with an integrity c
       needed.) Confirm the B0→B4 table and the honesty block appear.
 - [ ] Slide deck opens: double-click **`paper/slides/index.html`** in a browser; `←/→` navigate,
       `N` toggles speaker notes (the 90-s track), `F` full-screen. Works offline.
-- [ ] **`demo/QA_CARD.md`** is on the podium (0.685+cloud, onboard TARGET, SAHI cost, Airbus-not-DOTA,
+- [ ] **`demo/QA_CARD.md`** is on the podium (0.685+cloud, why 341× not 557×, B1 0.339, onboard
+      TARGET, SAHI cost and its negative result, the sensitivity failures, Airbus-not-DOTA,
       relay=latency, novelty, INT8).
 - [ ] If demoing live: `code/.venv312` exists and `bash demo/run_demo.sh` completes (~1 min). If not,
       you present from the slide deck + `summary.py` — nothing is lost.
-- [ ] Numbers to have cold: **557×**, **0.685 @15% cloud (band 0.40–0.82)**, **+6.3 pts** fair baseline,
-      **11.6 h → 6.2 h** relay. Everything else: "the CSV is authoritative."
+- [ ] Numbers to have cold: **341×** (coastal tiles measured, thumbnails/crops modeled; the earlier
+      all-modeled estimate was 557×), **0.685 @15% cloud (band 0.40–0.82)**, **+6.3 pts** fair
+      baseline at nominal load, **B1 0.339 → B2 0.717** on the same scenes, **35.2 h → 10.9 h**
+      relay (worst case; per-item median 7.9 → 3.4 h). Everything else: "the CSV is authoritative."
 
 ---
 
@@ -94,38 +98,44 @@ chain prefilter→gate→detector→LoD→scheduler→ground with an integrity c
 - **[2] The idea.** "We stopped sending pictures. The satellite finds the ships itself, then
   spends the link on *information* about them — a confident ship costs forty bytes, an uncertain
   one earns a picture."
-- **[3] The result — point at the headline.** "Five hundred fifty-seven times less data, and we
+- **[3] The result — point at the headline.** "Three hundred forty-one times less data, and we
   still recover sixty-eight-point-five percent of the ships — *at an assumed fifteen percent
   cloud*. That is six-point-three points better than a fair Phi-sat-2 baseline."
-- **[4] B0→B4.** "This is the progression our paper promised: raw image, detector, SAHI, our full
-  semantic pipeline, and an inter-satellite relay that cuts worst-case latency from eleven to six
-  hours without changing what's delivered."
+- **[4] B0→B4.** "This is the progression our paper promised: raw image; one detector call on the
+  whole scene, which finds a third of the ships; SAHI on the same scenes, which finds seventy-two
+  percent; our full semantic pipeline; and an inter-satellite relay that cuts worst-case latency
+  from thirty-five hours to eleven without changing what's delivered."
 - **[5] It's honest.** "Every stage you just saw ran on *real* data. The one thing we do *not*
   claim is flight hardware — every timing is a laptop, so 'runs onboard' is a target, not a
   prototype."
 
 ---
 
-## The 3 questions judges will ask — and your answers
+## The questions judges will ask — and your answers
 
-The full set (seven) is in **`demo/QA_CARD.md`** — keep it on the podium. The three that always come:
+The full set is in **`demo/QA_CARD.md`** — keep it on the podium. The four that always come:
 
 | They ask | You say |
 |---|---|
 | "Is 0.685 the real recall?" | "At an assumed **15% cloud**. The band is **0.40–0.82** over 0–50% cloud — cloud fraction moves it more than anything else, so we never quote it bare." |
 | "Does this actually run on a satellite?" | "Not yet — this is a **demo, not a prototype**. Every timing is a laptop RTX 5060. We map that compute+energy onto a flight processor as a **TARGET** (report 22), and we say so." |
-| "You rely on SAHI — isn't it expensive?" | "We measured it: a cut ship is usually still detected (report 13), so blanket SAHI is a poor trade. We argue **selective** slicing. It costs 1.56× compute, not 2.25× (report 16)." |
+| "You rely on SAHI — isn't it expensive?" | "We measured it: a cut ship is usually still detected (report 13), so blanket SAHI is a poor trade. We argue **selective** slicing. It costs 1.56× compute, not 2.25× (report 16). Against one call on the whole scene it lifts recall **0.339 → 0.717**; against a plain tile-by-tile pass it does **not** win on our stitched scenes (0.717 vs 0.730) — no ship crosses a seam between independent tiles — and we report that." |
+| "Your earlier material said 557×." | "That was an all-modeled estimate: it charged every coastal tile a flat 32 kB, a size measured on open-sea tiles. We then measured all 1,415 coastal tiles — median 66.5 kB — and the figure is **341×**. Thumbnails and ship crops are still model sizes, and we say so next to the number." |
 
 ---
 
 ## Where the numbers come from (traceability)
 - Headline table & reduction → `code/results/wp6_real_table.csv` (row *Ours: LoD + value-greedy*).
-- B0→B4 → `code/results/wp18_campaign.json` (sanity gates assert B4 reproduces B3).
+- B0→B4 → `code/results/wp18_campaign.json` (sanity gates assert B4 reproduces B3); its B1 and B2
+  are read from the same-input run `code/results/wp26_b0_b4.json`.
+- Coastal tile sizes behind the 341× → `code/results/wp28_coast_tile_model.json` (and the earlier
+  557× estimate → `code/results/wp6_real_table_modeledcoast.csv`).
 - End-to-end integrity → `code/results/wp11_integration.json` (decision flips @conf_high = 0).
 - Dataset / leakage-free split → `code/results/wp0_stats.json`.
 - Full narrative per work package → `reports/01`–`reports/23`; Phase-3 write-up → `paper/PHASE3_RESULTS.md`.
 
 ## If something breaks
 - No GPU / no dataset → `python demo/summary.py` alone (it's the whole story, from committed data).
-- Weird numbers in old PDFs → ignore them; see the superseded-numbers list in `docs/START_HERE.md §7`.
+- Weird numbers in old PDFs → ignore them; see the superseded-numbers list at the foot of
+  `paper/PHASE3_RESULTS.md` (current to 10 Oct 2026; `docs/START_HERE.md §7` stops earlier).
 - The `.csv`/`.json` files are always authoritative over any prose or slide.

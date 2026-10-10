@@ -44,7 +44,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from .scheduler import (Item, LoDConfig, Ship, Workload, _Ids, _l1, _l2,
-                        _n_false_alarms, _w, encode_lod)
+                        _n_false_alarms, _w, coast_tile_size, encode_lod)
 
 # Level names, in the paper's order. P0 emits no item at all (discard).
 P0, P1, P2, P3 = 0, 1, 2, 3
@@ -156,7 +156,7 @@ def encode_tile_priority(wl: Workload, idx: int, lod: LoDConfig, cfg: PriorityCo
     # P3 context on a coast = the whole tile, the only thing that recovers a ship the detector
     # missed. One tile-wide item covering every escalated ship, like the LoD coastal tile.
     if ctx == "coast" and cfg.coast_context_tile and coastal_context_ids and not gated:
-        items.append(Item(nid(), t, lod.coast_tile_bytes,
+        items.append(Item(nid(), t, coast_tile_size(wl, idx, lod),
                           cfg.context_value * len(coastal_context_ids), "P3",
                           tuple(coastal_context_ids), progressive=True))
     # false alarms: metadata reports the ground cannot pre-filter -> zero-value P1 cost

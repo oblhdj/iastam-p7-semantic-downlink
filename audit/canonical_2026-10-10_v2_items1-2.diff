@@ -1,0 +1,361 @@
+diff --git a/README.md b/README.md
+index 859e20b..080131d 100644
+--- a/README.md
++++ b/README.md
+@@ -132,7 +132,8 @@ This mattered more than any single result, so it is stated plainly:
+   construction, so our advantage is +6.3 points, not +16.7. A dark-vessel rule did the opposite of
+   what we claimed on 13.6% of ships until [report 10](reports/10-failure-modes.md) caught it.
+ - **Assumptions are swept, not assumed.** [Report 11](reports/11-sensitivity.md) sweeps every
+-  invented constant; conclusions hold in 69 of 70 settings, and the one failure is named.
++  invented constant over 80 settings. The scheduler beats FIFO in all 80; our lead over the fair
++  baseline holds in 74, and the six failures are named (see Limitations).
+ - **The thing we are least sure of is the loudest.** 52% of all reported ship loss traces to
+   cloud, which rests on **21 real tiles**. That is why recall is quoted as a band.
+ - **Tooling is disclosed.** Development was assisted by Claude (Anthropic). Every experiment,
+@@ -156,6 +157,14 @@ has nothing to recover — it only re-detects the same ships in windows that str
+ tiles. What B2 is measured against is the whole-scene call (B1, 0.339), where slicing is worth 38
+ points; whether overlap beats plain tiling needs real large scenes, which we do not have.
+ 
++**A second negative result: our lead over the fair baseline does not survive every setting.** The
++sensitivity sweep ([`wp10_sensitivity.csv`](code/results/wp10_sensitivity.csv), 80 settings of the
++invented constants) keeps "value-greedy ≥ FIFO" in all 80, but "ours ≥ the fair Phi-sat-2-style
++baseline" in only **74 of 80**. All six failures are at 160,000 tiles/day, where the lead is just
++**1.3 points** before anything is changed (it is 6.3 points at 40,000 tiles/day, where nothing
++fails): `thumb_value` 0.05 (−0.5 points) and 0.10 (−1.9), `conf_high` 0.90 (−0.02) and 0.99 (−0.4), `conf_low` 0.05 (−1.6) and 0.10 (−0.8). Each of those settings makes the encoder spend more bytes — on thumbnails, on crops
++for confident ships, or on low-confidence detections — which a saturated link cannot afford.
++
+ The headline's byte count mixes two kinds of number: coastal tiles are **measured** (each tile's own
+ JPEG), thumbnails and ship crops are still **modeled** sizes. B1/B2 (150 scenes) and B3/B4 (a
+ simulated 40,000-tile day) run on different inputs, so B2's detection recall and B3's delivered
+diff --git a/demo/DEMO.md b/demo/DEMO.md
+index e55b755..ca32ff8 100644
+--- a/demo/DEMO.md
++++ b/demo/DEMO.md
+@@ -1,7 +1,8 @@
+ # IASTAM P7 — DEMO runbook
+ 
+ **What this demo proves:** a satellite can send *information about ships* instead of pixels —
+-**557× less data**, 0.685 ship recall (@15% cloud), scheduling provably near-optimal — all on
++**341× less data** (coastal tiles at their measured JPEG size; thumbnails and crops still
++modeled), 0.685 ship recall (@15% cloud), scheduling provably near-optimal — all on
+ **real Airbus imagery with models we trained**. It is a **demo, not a prototype**: the pipeline
+ runs end-to-end on a laptop; "runs onboard" is presented as a TARGET, not a flown system.
+ 
+@@ -58,12 +59,15 @@ chain prefilter→gate→detector→LoD→scheduler→ground with an integrity c
+       needed.) Confirm the B0→B4 table and the honesty block appear.
+ - [ ] Slide deck opens: double-click **`paper/slides/index.html`** in a browser; `←/→` navigate,
+       `N` toggles speaker notes (the 90-s track), `F` full-screen. Works offline.
+-- [ ] **`demo/QA_CARD.md`** is on the podium (0.685+cloud, onboard TARGET, SAHI cost, Airbus-not-DOTA,
++- [ ] **`demo/QA_CARD.md`** is on the podium (0.685+cloud, why 341× not 557×, B1 0.339, onboard
++      TARGET, SAHI cost and its negative result, the sensitivity failures, Airbus-not-DOTA,
+       relay=latency, novelty, INT8).
+ - [ ] If demoing live: `code/.venv312` exists and `bash demo/run_demo.sh` completes (~1 min). If not,
+       you present from the slide deck + `summary.py` — nothing is lost.
+-- [ ] Numbers to have cold: **557×**, **0.685 @15% cloud (band 0.40–0.82)**, **+6.3 pts** fair baseline,
+-      **11.6 h → 6.2 h** relay. Everything else: "the CSV is authoritative."
++- [ ] Numbers to have cold: **341×** (coastal tiles measured, thumbnails/crops modeled; the earlier
++      all-modeled estimate was 557×), **0.685 @15% cloud (band 0.40–0.82)**, **+6.3 pts** fair
++      baseline at nominal load, **B1 0.339 → B2 0.717** on the same scenes, **35.2 h → 10.9 h**
++      relay (worst case; per-item median 7.9 → 3.4 h). Everything else: "the CSV is authoritative."
+ 
+ ---
+ 
+@@ -94,38 +98,44 @@ chain prefilter→gate→detector→LoD→scheduler→ground with an integrity c
+ - **[2] The idea.** "We stopped sending pictures. The satellite finds the ships itself, then
+   spends the link on *information* about them — a confident ship costs forty bytes, an uncertain
+   one earns a picture."
+-- **[3] The result — point at the headline.** "Five hundred fifty-seven times less data, and we
++- **[3] The result — point at the headline.** "Three hundred forty-one times less data, and we
+   still recover sixty-eight-point-five percent of the ships — *at an assumed fifteen percent
+   cloud*. That is six-point-three points better than a fair Phi-sat-2 baseline."
+-- **[4] B0→B4.** "This is the progression our paper promised: raw image, detector, SAHI, our full
+-  semantic pipeline, and an inter-satellite relay that cuts worst-case latency from eleven to six
+-  hours without changing what's delivered."
++- **[4] B0→B4.** "This is the progression our paper promised: raw image; one detector call on the
++  whole scene, which finds a third of the ships; SAHI on the same scenes, which finds seventy-two
++  percent; our full semantic pipeline; and an inter-satellite relay that cuts worst-case latency
++  from thirty-five hours to eleven without changing what's delivered."
+ - **[5] It's honest.** "Every stage you just saw ran on *real* data. The one thing we do *not*
+   claim is flight hardware — every timing is a laptop, so 'runs onboard' is a target, not a
+   prototype."
+ 
+ ---
+ 
+-## The 3 questions judges will ask — and your answers
++## The questions judges will ask — and your answers
+ 
+-The full set (seven) is in **`demo/QA_CARD.md`** — keep it on the podium. The three that always come:
++The full set is in **`demo/QA_CARD.md`** — keep it on the podium. The four that always come:
+ 
+ | They ask | You say |
+ |---|---|
+ | "Is 0.685 the real recall?" | "At an assumed **15% cloud**. The band is **0.40–0.82** over 0–50% cloud — cloud fraction moves it more than anything else, so we never quote it bare." |
+ | "Does this actually run on a satellite?" | "Not yet — this is a **demo, not a prototype**. Every timing is a laptop RTX 5060. We map that compute+energy onto a flight processor as a **TARGET** (report 22), and we say so." |
+-| "You rely on SAHI — isn't it expensive?" | "We measured it: a cut ship is usually still detected (report 13), so blanket SAHI is a poor trade. We argue **selective** slicing. It costs 1.56× compute, not 2.25× (report 16)." |
++| "You rely on SAHI — isn't it expensive?" | "We measured it: a cut ship is usually still detected (report 13), so blanket SAHI is a poor trade. We argue **selective** slicing. It costs 1.56× compute, not 2.25× (report 16). Against one call on the whole scene it lifts recall **0.339 → 0.717**; against a plain tile-by-tile pass it does **not** win on our stitched scenes (0.717 vs 0.730) — no ship crosses a seam between independent tiles — and we report that." |
++| "Your earlier material said 557×." | "That was an all-modeled estimate: it charged every coastal tile a flat 32 kB, a size measured on open-sea tiles. We then measured all 1,415 coastal tiles — median 66.5 kB — and the figure is **341×**. Thumbnails and ship crops are still model sizes, and we say so next to the number." |
+ 
+ ---
+ 
+ ## Where the numbers come from (traceability)
+ - Headline table & reduction → `code/results/wp6_real_table.csv` (row *Ours: LoD + value-greedy*).
+-- B0→B4 → `code/results/wp18_campaign.json` (sanity gates assert B4 reproduces B3).
++- B0→B4 → `code/results/wp18_campaign.json` (sanity gates assert B4 reproduces B3); its B1 and B2
++  are read from the same-input run `code/results/wp26_b0_b4.json`.
++- Coastal tile sizes behind the 341× → `code/results/wp28_coast_tile_model.json` (and the earlier
++  557× estimate → `code/results/wp6_real_table_modeledcoast.csv`).
+ - End-to-end integrity → `code/results/wp11_integration.json` (decision flips @conf_high = 0).
+ - Dataset / leakage-free split → `code/results/wp0_stats.json`.
+ - Full narrative per work package → `reports/01`–`reports/23`; Phase-3 write-up → `paper/PHASE3_RESULTS.md`.
+ 
+ ## If something breaks
+ - No GPU / no dataset → `python demo/summary.py` alone (it's the whole story, from committed data).
+-- Weird numbers in old PDFs → ignore them; see the superseded-numbers list in `docs/START_HERE.md §7`.
++- Weird numbers in old PDFs → ignore them; see the superseded-numbers list at the foot of
++  `paper/PHASE3_RESULTS.md` (current to 10 Oct 2026; `docs/START_HERE.md §7` stops earlier).
+ - The `.csv`/`.json` files are always authoritative over any prose or slide.
+diff --git a/demo/PAPER_COVERAGE.md b/demo/PAPER_COVERAGE.md
+index d602b44..002addc 100644
+--- a/demo/PAPER_COVERAGE.md
++++ b/demo/PAPER_COVERAGE.md
+@@ -115,3 +115,7 @@ information preservation → downlink-efficiency curves, [report 05](../reports/
+    **optimality bounds** ([reports 08–09](../reports/08-optimality-gap.md)), and the **leakage-free
+    dataset split** ([report 01](../reports/01-data-integrity.md)). These are among the strongest
+    results and currently have no home in the accepted narrative.
++7. **The lead over the fair baseline is not robust under congestion (negative result).** In the
++   80-setting sensitivity sweep (`wp10_sensitivity.csv`) "value-greedy ≥ FIFO" holds 80 of 80, but
++   "ours ≥ the fair baseline" holds **74 of 80**. All six failures are at 160k tiles/day, where the
++   lead is **1.3 points** (6.3 at 40k, where nothing fails): `thumb_value` 0.05 (−0.5 points) and 0.10 (−1.9), `conf_high` 0.90 (−0.02) and 0.99 (−0.4), `conf_low` 0.05 (−1.6) and 0.10 (−0.8).
+diff --git a/demo/QA_CARD.md b/demo/QA_CARD.md
+index 1d9d32f..2971f5a 100644
+--- a/demo/QA_CARD.md
++++ b/demo/QA_CARD.md
+@@ -10,6 +10,14 @@ At an **assumed 15% cloud**. The honest figure is a **band: 0.40–0.82 over 0
+ fraction moves recall more than any other quantity, and the Airbus set (0.4% cloud) can't settle it.
+ We **never quote 0.685 bare**. `source: wp6_real_table.csv, report 11`.
+ 
++**Q. Your earlier figure was 557×. Why 341× now?**
++557× was an **all-modeled estimate**: it charged every coastal tile a flat 32.4 kB, a size measured
++on open-sea tiles. We measured all 1,415 coastal test tiles as real JPEGs (median **66.5 kB**) and
++charge each its own size: 60,124 MB → **176 MB/day = 341×**, mean of three days. Recall is unchanged
++(0.685). Still modeled: thumbnails and ship crops, 24% of the bytes — we say that next to the
++number. `source: wp6_real_table.csv, wp28_coast_tile_model.json; 557× reproduces from
++wp6_real_table_modeledcoast.csv`.
++
+ **Q. Does this actually run on a satellite?**
+ Not yet — it's a **demo, not a prototype**. Every timing is a laptop RTX 5060, so "runs onboard" is
+ a **TARGET** (report 22). But it's the *class* of model Φ-sat-2 already flies on a ~1 W Myriad 2 VPU
+@@ -21,27 +29,48 @@ rad-tolerance.
+ We measured it. A seam-cut ship is **usually still detected** (report 13), so **blanket SAHI is a
+ poor trade**; we argue **selective** slicing. Cost is **1.56× compute**, not 2.25× (report 16). Window
+ is **768, not the paper's 512** — the result reverses at 512, and we state the window.
++On the same 150 scenes it lifts recall **0.339 → 0.717** over one call on the whole scene (B1 → B2).
++**Negative result, reported:** against a plain tile-by-tile pass with no overlap it does *not* win
++on those scenes — **0.717 vs 0.730**. They are stitched from independent tiles, so no ship crosses a
++seam and the overlap has nothing to recover. `source: wp26_b0_b4.json`.
++
++**Q. B1 is only 0.339? You used to show 0.78.**
++The paper's B1 is YOLO on the **original image, no slicing**. A 3072 px scene has to be shrunk 4× to
++fit the detector, and small ships vanish (recall **0.046** on ships under 32 px). The 0.78 was a
++262-ship sample of the detector on **native 768 px tiles**, one call per tile — nothing to shrink.
++On all 8,173 test ships that reference is **0.766** (precision 0.754); it is *not* the paper's B1
++and we label it so. `source: wp26_b0_b4.json, wp24_detection_eval.json`.
+ 
+ **Q. Why Airbus, not DOTA / xView / HRSID?**
+ The paper permits optical maritime datasets; Airbus is one, **53,195 tiles, leakage-free split**
+ (a naive split would leak 1,617 groups; ours leaks 0 — report 01). Airbus tiles are already 768²,
+-so SAHI is evaluated on **synthetic swaths stitched from tiles**. A large-scene optical set would
+-strengthen B2 — honest limitation, not a hidden one.
++so B1 and B2 are evaluated on **synthetic scenes stitched from tiles** (150 scenes, 1,164 ships). A
++large-scene optical set would strengthen B2 — honest limitation, not a hidden one.
+ 
+ **Q. The relay — does it save energy?**
+ No, and we don't claim it. The relay is a **latency buy, not an energy win**: it costs **~1.8×
+-comm energy per relayed item** (+34% across the B4 mix, TARGET), and in return **halves worst-case
+-latency, 11.6 h → 6.2 h** (SIM). Recall and bytes are unchanged — B4 is a reroute (reports 19–21).
++comm energy per relayed item** (+52% across the B4 mix, TARGET), and in return **cuts worst-case
++latency 35.2 h → 10.9 h** and the per-item median 7.9 h → 3.4 h (SIM). The 35 h is the last
++low-value item of a day that fills 84% of the link; a ship's first report still lands in a median
++4.5 h. Recall and bytes are unchanged — B4 is a reroute (reports 19–21).
++
++**Q. Does your lead over the baseline survive your own sensitivity sweep?**
++Not everywhere, and we say so. Over 80 settings, **value-greedy ≥ FIFO holds in all 80**; **"ours ≥
++the fair baseline" holds in 74**. All six failures are at **160k tiles/day**, where the lead is only
++**1.3 points** to begin with (6.3 at 40k, where nothing fails): `thumb_value` 0.05 and 0.10,
++`conf_high` 0.90 and 0.99, `conf_low` 0.05 and 0.10. Each spends more bytes on a saturated link.
++The +6.3 is a nominal-load claim. `source: wp10_sensitivity.csv`.
+ 
+ **Q. What's the weakest number?**
+ Small-ship recall (**0.50–0.61** at the 0.25 operating cut) — the detector, not the downlink, is
+-the residual loss. And `P_tx` (invented, ASSUMPTION), but it only enters E_comm, which is ~9× smaller
+-than E_proc, so it barely moves anything.
++the residual loss. And `P_tx` (invented, ASSUMPTION), but it only enters E_comm, which is ~5.5×
++smaller than E_proc. And the byte sizes are only partly measured: coastal tiles yes, thumbnails
++and crops no.
+ 
+ **Q. What's actually novel? YOLO and SAHI are off-the-shelf.**
+ Correct — those are building blocks. The novelty is **system/decision level**: the per-object
+ **P0–P3 priority packet** and the **`min(J_direct, J_relay)`** path choice, plus a value-aware
+-multi-pass scheduler that is **within 0.251% of the exact optimum** (report 08). The paper is a
++multi-pass scheduler that is **within 0.88% of the exact optimum** (report 08). The paper is a
+ methodology; Phase 3 is the measurement.
+ 
+ **Q. Why is INT8 not used?**
+@@ -50,5 +79,5 @@ TensorRT). ONNX FP32 is the onboard build. A reported negative result (report 02
+ 
+ ---
+ 
+-**One-line pitch:** *557× less data, 100% of what the satellite still knew, every figure labelled and
++**One-line pitch:** *341× less data, 100% of what the satellite still knew, every figure labelled and
+ every claim we could break, we broke — on real Airbus imagery, measured end to end.*
+diff --git a/demo/quickstart/README.md b/demo/quickstart/README.md
+index bf16ea6..1dab301 100644
+--- a/demo/quickstart/README.md
++++ b/demo/quickstart/README.md
+@@ -20,7 +20,7 @@ What runs live, on a 3×3 swath of 768 px tiles (2304 × 2304 px):
+ | [4] semantic packet vs raw | `sat7.semantic.encode_image` (binary records, JPEG crops of the pixels, CCSDS space packets) + `decode_downlink` | **measured** packet bytes by level, headers + CRC, JPEG headers, the ground decode, modeled bytes beside them, raw bytes, reduction `1 − D_tx/D_raw` |
+ | [5] downlink order | `sat7.scheduler.ValueGreedy` | metadata first, ROI crops next, coastal context last |
+ | [6] reference | the committed REAL detections for the same 9 tile IDs (`wp1_predictions.csv`) through the same P0–P3 rules | what the real tiles give (sizes modeled: no Airbus pixels are bundled) |
+-| [7] canon | read from `code/results/*` | mAP50 0.804, B2 0.745 @ 1.56×, 557×, P0–P3 vs LoD |
++| [7] canon | read from `code/results/*` | mAP50 0.804, B1 0.339 → B2 0.717 @ 1.56× (same scenes), 341× (coastal tiles measured; thumbnails and crops modeled), P0–P3 vs LoD |
+ 
+ It writes `demo/quickstart/_out/swath_annotated.jpg` (detections coloured by P-level, SAHI
+ windows, tile seams; watermarked when the tiles are synthetic), `downlink.bin` (the actual
+@@ -45,11 +45,13 @@ results files, never typed in. This demo adds one more:
+   numbers, but from a 9-tile sample, not the 40k-tile day behind the headline.
+ 
+ The 9 tiles were chosen so that every P-level appears, so they hold far more ships than an
+-average tile. That is why their reduction is **not** the 557× headline: a real day is mostly
+-empty sea, which sends almost nothing. Measured packet streams (9 Oct 2026): synthetic tiles
+-45,681 B (99.68 %, 310×; synthetic coast compresses easily) and the real tiles with `--data`
+-158,034 B (98.88 %, 90×), against 86,552 B the size model would have charged for the same real
+-packet — two real coastal context tiles alone are 133 kB (see `code/results/wp25_semantic_packets.json`).
++average tile. That is why their reduction is **not** the 341× headline: a real day is mostly
++empty sea, which sends almost nothing. Measured packet streams (re-run 10 Oct 2026): synthetic
++tiles 45,681 B (99.68 %, 310×; synthetic coast compresses easily) and the real tiles with `--data`
++158,034 B (98.88 %, 90×). The size model charges 153,948 B for that same real packet now that a
++coastal tile is costed at its measured mean (66.1 kB); on the earlier flat 32.4 kB it charged
++86,552 B — two real coastal context tiles alone are 133 kB (see
++`code/results/wp25_semantic_packets.json`). That gap is what moved the headline from 557× to 341×.
+ 
+ ## Why the tiles are synthetic
+ 
+@@ -126,11 +128,11 @@ weights. They were also trained on Airbus Competition Data under the non-commerc
+   cannot tell a false alarm from a ship. The catalogue runs (wp23) cost a known false alarm as a
+   zero-value 40 B report instead.
+ * **3×3 swath, not 4×4.** SAHI here is 16 windows for 9 tiles. The measured **1.56×** (25 windows
+-  for 16 tiles, `wp18_campaign.json`) is quoted from file in section [7], not from this run.
++  for 16 tiles, `wp26_b0_b4.json`) is quoted from file in section [7], not from this run.
+ * **P3 on coasts.** `sat7.priority.classify` escalates *every* detection above 0.25 on a coastal
+-  tile to P3, confident ones included. Its docstring describes the escalation as being for
+-  *uncertain* coastal ships. The demo reports what the code does; wp23's numbers were produced by
+-  the same code.
++  tile to P3, confident ones included (`PriorityConfig.coast_escalation = "all"`, the measured
++  default; `"uncertain"` escalates only those below the P1 threshold). wp23's numbers were produced
++  with the same default.
+ * **Thresholds** (0.25 cut, 0.670 P1/P2 boundary) and the P-level policy are **ASSUMPTION**, as
+   everywhere in the repo, and swept in report 11 / report 23.
+ 
+diff --git a/paper/PHASE3_RESULTS.md b/paper/PHASE3_RESULTS.md
+index 7103e47..7041dc9 100644
+--- a/paper/PHASE3_RESULTS.md
++++ b/paper/PHASE3_RESULTS.md
+@@ -175,8 +175,8 @@ not extra capacity: recall and bytes are B3's verbatim. **Relay always costs mor
+ * **Sensitivity:** every invented constant swept; value-greedy ≥ FIFO in all 80 settings, and
+   **"ours ≥ the fair baseline" holds in 74 of 80** — all six failures are at 160k tiles/day
+   (`thumb_value` ≥ 0.05, `conf_high` ≥ 0.9, `conf_low` ≤ 0.10), where the margin over the fair
+-  baseline is down to 1.3 points. **Cloud fraction dominates everything** (recall range 0.42) —
+-  quote every recall with its cloud fraction. [report 11]
++  baseline is down to 1.3 points (§10 item 7). **Cloud fraction dominates everything** (recall
++  range 0.42) — quote every recall with its cloud fraction. [report 11]
+ 
+ ## 9. Ablations (paper §VIII-G)
+ 
+@@ -214,6 +214,13 @@ not extra capacity: recall and bytes are B3's verbatim. **Relay always costs mor
+    alone moved the headline from 557× to 341×; the same exercise on the rest would move it again,
+    by less. The day now fills 84 % of the link, so the "downlink is not the bottleneck" statement
+    holds for recall at 40k tiles/day and no longer holds for latency of low-value items.
++7. **Our lead over the fair baseline is not robust under congestion — a second negative result.**
++   Of the 80 swept settings (`wp10_sensitivity.csv`), "value-greedy ≥ FIFO" holds in all 80 and
++   "ours ≥ the fair Phi-sat-2-style baseline" in **74**. All six failures are at 160k tiles/day,
++   where the lead is only **1.3 points** to begin with (6.3 points at 40k, where nothing fails):
++   `thumb_value` 0.05 (−0.5 points) and 0.10 (−1.9), `conf_high` 0.90 (−0.02) and 0.99 (−0.4), `conf_low` 0.05 (−1.6) and 0.10 (−0.8). Each makes the encoder spend more bytes — on thumbnails, on crops for confident ships, or
++   on low-confidence detections — which a saturated link cannot afford. The 6.3-point claim is a
++   nominal-load claim.
+ 
+ ## 11. Conclusion — the central question, answered
+ 
+diff --git a/paper/slides/index.html b/paper/slides/index.html
+index 83e8c72..22b7d2d 100644
+--- a/paper/slides/index.html
++++ b/paper/slides/index.html
+@@ -152,6 +152,7 @@ const S = [
+     <li><b>We broke our own results.</b> Unfair baseline (+16.7 → +6.3); a coastal setting we called "free" actually costs 4.0 pts on small ships; INT8 rejected (slower, −2.2 pts).</li>
+     <li><b>SAHI is a selective trade, not a free win</b> — a seam-cut ship is usually still detected (1.56× compute, window 768 not 512). <b>Negative result:</b> on our stitched scenes SAHI (0.717) does not beat a plain tile-by-tile pass (0.730) — no ship crosses a seam between independent tiles, so overlap has nothing to recover.</li>
+     <li><b>Sizes are partly modeled.</b> Coastal tiles are measured JPEGs; thumbnails and crops are model sizes. Measuring the coastal tile alone moved the headline 557× → 341×.</li>
++    <li><b>Our lead over the fair baseline is a nominal-load claim.</b> Swept over 80 settings: we beat FIFO in all 80, the fair baseline in 74. All six failures are at 160k tiles/day, where the lead is 1.3 pts (6.3 at 40k).</li>
+     <li><b>Dataset:</b> optical Airbus (not DOTA) on synthetic scenes stitched from tiles, because a tile is already 768².</li>
+   </ul>
+   <p class="src">labels: REAL / SIM / LIT / TARGET / ASSUMPTION — see demo/PAPER_COVERAGE.md</p>`,
+diff --git a/paper/video_script.md b/paper/video_script.md
+index 4931645..d4d5c0c 100644
+--- a/paper/video_script.md
++++ b/paper/video_script.md
+@@ -4,8 +4,9 @@
+ sentences; if you must cut, cut from §4 (B0→B4) first — never §6 (the self-correction).
+ 
+ **Delivery.** Read slowly, short sentences, let the numbers sit. Do not read the on-screen text
+-aloud — the viewer reads it. **Put `557×` and the band `0.40–0.82` on screen as text** (numbers
+-heard once are lost). Every figure a card shows is labelled REAL / SIM / LIT / TARGET.
++aloud — the viewer reads it. **Put `341×` and the band `0.40–0.82` on screen as text** (numbers
++heard once are lost). Under `341×`, in small type: *coastal tiles measured; thumbnails and crops
++modeled.* Every figure a card shows is labelled REAL / SIM / LIT / TARGET.
+ 
+ ---
+ 
+@@ -39,19 +40,20 @@ The scheduler picks what fits the next pass, by value per byte.
+ > **ON SCREEN:** a five-row card B0→B4 (from `demo/summary.py` / `wp18_campaign.json`).
+ 
+ Our paper promised a progression, and we measured all of it.
+-Raw image. Then the detector alone — seventy-eight percent of the ships.
+-Add SAHI — seventy-four, at one-and-a-half times the compute.
++Raw image. Then one detector pass over the whole scene — a third of the ships.
++Add SAHI on the same scenes — seventy-two percent, at one-and-a-half times the compute.
+ Add the semantic policy — this is the full system.
+ And an optional inter-satellite relay.
+ 
+ ## 1:08 – 1:28 · The numbers
+-> **ON SCREEN:** `code/results/wp6_real_sweep.png`, then big: **557×** and **0.685 @15% cloud (0.40–0.82)**.
+-> Then `code/results/sim_latency.png` with **11.6 h → 6.2 h**.
++> **ON SCREEN:** `code/results/wp6_real_sweep.png`, then big: **341×** (small type: *coastal tiles
++> measured; thumbnails and crops modeled*) and **0.685 @15% cloud (0.40–0.82)**.
++> Then a text card **35.2 h → 10.9 h** (worst case, with the relay).
+ 
+-Five hundred and fifty-seven times less data than sending the pictures.
++Three hundred and forty-one times less data than sending the pictures.
+ Sixty-eight-point-five percent of the ships — at an assumed fifteen percent cloud —
+ and that is one hundred percent of what the satellite still knew. The link is no longer the
+-bottleneck; the detector is. The relay cuts worst-case latency from eleven-point-six hours to six.
++bottleneck; the detector is. The relay cuts worst-case latency from thirty-five hours to eleven.
+ 
+ ## 1:28 – 1:52 · The honest part *(never cut)*
+ > **ON SCREEN:** split screen "we claimed" / "we measured", strike through the left;
+@@ -84,8 +86,8 @@ Every figure is labelled. It is all open.
+ | 4 | 0:30 | one tile + `code/results/wp4_lod_sizes.png` | the 40 B / 900 B / 2.5 kB ladder |
+ | 5 | 0:48 | B0→B4 card (`demo/summary.py` block or `wp18_campaign.json`) | five rows, labels visible |
+ | 6 | 1:08 | `code/results/wp6_real_sweep.png` | ours vs FIFO vs fair baseline |
+-| 7 | 1:12 | big number card **557×** + **0.685 @15% cloud (band 0.40–0.82)** | hold 3 s |
+-| 8 | 1:20 | `code/results/sim_latency.png` + text **11.6 h → 6.2 h** | the relay |
++| 7 | 1:12 | big number card **341×** + **0.685 @15% cloud (band 0.40–0.82)** | hold 3 s; small type under 341×: coastal tiles measured, thumbnails and crops modeled |
++| 8 | 1:20 | text card **35.2 h → 10.9 h** (source `wp18_campaign.json`, B4) | the relay; `sim_latency.png` is the older synthetic day and no longer matches |
+ | 9 | 1:28 | claimed-vs-measured split screen | make the strike-through visible |
+ | 10 | 1:40 | `code/results/wp10_tornado.png` | point at the cloud bar |
+ | 11 | 1:52 | `code/results/wp11_funnel.png` → repo URL + QR | hold to 2:00 |
+@@ -98,6 +100,6 @@ Cut in this order: the last sentence of §2 ("And the relay…"), then the SAHI
+ - Record narration **first**, then cut visuals to it.
+ - One take per section, not one take for the whole thing.
+ - Phone voice memo in a small carpeted room beats a laptop mic in a big room.
+-- Put `557×` and the band `0.40–0.82` **on screen as text** — the two numbers judges must leave with.
++- Put `341×` and the band `0.40–0.82` **on screen as text** — the two numbers judges must leave with.
+ - No slide/plot exists for energy by design — the 2-min cut stays on data reduction + recall + relay;
+   the energy story lives in the slide deck (`paper/slides/`) and `PHASE3_RESULTS.md §6`.

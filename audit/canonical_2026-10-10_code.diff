@@ -1,0 +1,830 @@
+diff --git a/code/rerun_all.sh b/code/rerun_all.sh
+index e8f51ef..85560c2 100644
+--- a/code/rerun_all.sh
++++ b/code/rerun_all.sh
+@@ -1,6 +1,9 @@
+ #!/usr/bin/env bash
+-# Re-run every result that depends on LoDConfig, after adopting conf_high 0.9 -> 0.670 (WP2).
+-# Non-torch scripts run in .venv (3.14); WP11 needs torch so it runs in .venv312.
++# Re-run every result that depends on LoDConfig. First written after adopting conf_high 0.9 -> 0.670
++# (WP2); extended on 10 Oct 2026 when the coastal context tile went from a flat 32,420 B to each
++# tile's measured size (wp28) and B1/B2 moved to the same-input run (wp26).
++# Non-torch scripts run in .venv (3.14); WP11 and WP18 need torch so they run in .venv312.
++# Run WP11 on an idle machine: it re-measures the stage timings that WP17 reads.
+ set -u
+ PY=./.venv/Scripts/python.exe
+ PY312=./.venv312/Scripts/python.exe
+@@ -12,15 +15,26 @@ run() {
+   "$@" 2>&1 || { echo "!!! FAILED: $*"; fail=$((fail+1)); }
+ }
+ 
++run $PY scripts/wp28_coast_tile_model.py              # add --measure to re-encode the tiles (needs the data)
+ run $PY scripts/wp6_simulate_real.py
+ run $PY scripts/wp6_simulate_real.py --mix dataset --repeats 1 --tag datasetmix
+ run $PY scripts/wp6_simulate_real.py --no-size-model --repeats 1 --tag nosizemodel
++run $PY scripts/wp6_simulate_real.py --coast-model wp7 --tag modeledcoast   # the earlier 557x estimate
+ run $PY scripts/wp7_budget_sweep.py
+ run $PY scripts/wp8_queue_aware.py
+ run $PY scripts/wp5_optimality_gap.py --frac-steps 16
+ run $PY scripts/wp5_joint_bound.py
+ run $PY scripts/wp10_sensitivity.py
+-run $PY312 -W ignore scripts/wp11_integration_demo.py --tiles 400
++run $PY scripts/wp10b_interaction.py
++run $PY scripts/wp14_gate_signal.py
++run $PY scripts/wp23_semantic_compare.py
++run $PY312 -W ignore scripts/wp11_integration_demo.py --tiles 5320
++run $PY scripts/wp17_energy_model.py
++run $PY scripts/wp19_relay_energy.py
++run $PY312 -W ignore scripts/wp18_campaign_runner.py  # reads wp26_b0_b4.json for B1 / B2
++run $PY scripts/wp24_detection_eval.py --live-b1   # needs onnxruntime (not in .venv)
++run $PY scripts/wp25_semantic_packets.py
++run $PY scripts/wp27_comms_direct_vs_relay.py
+ 
+ echo ""
+ echo "=============== DONE: $fail failure(s) ==============="
+diff --git a/code/sat7/joint.py b/code/sat7/joint.py
+index 3b54cc7..2a3ac3d 100644
+--- a/code/sat7/joint.py
++++ b/code/sat7/joint.py
+@@ -38,7 +38,7 @@ from __future__ import annotations
+ from dataclasses import dataclass, field
+ 
+ from .priority import P0, P1, P2, P3, PriorityConfig, classify
+-from .scheduler import LoDConfig, Workload, _l1, _l2, _w
++from .scheduler import LoDConfig, Workload, _l1, _l2, _w, coast_tile_size
+ 
+ 
+ # ----------------------------------------------------------------------------- weights / constraints
+@@ -123,7 +123,7 @@ def build_objects(wl: Workload, lod: LoDConfig | None = None, pcfg: PriorityConf
+     pcfg = pcfg or PriorityConfig()
+     cost = cost or CostModel()
+     objs: list[JointObject] = []
+-    for t, ctx, ids in wl.tiles:
++    for idx, (t, ctx, ids) in enumerate(wl.tiles):
+         if ctx == "cloud":
+             continue
+         for i in ids:
+@@ -132,7 +132,7 @@ def build_objects(wl: Workload, lod: LoDConfig | None = None, pcfg: PriorityConf
+                 continue
+             w = _w(s, lod)
+             meta, roi = lod.l0_bytes, _l1(s, lod)
+-            context = lod.coast_tile_bytes if ctx == "coast" else _l2(s, lod)
++            context = coast_tile_size(wl, idx, lod) if ctx == "coast" else _l2(s, lod)
+             size_at = {P0: 0.0, P1: meta, P2: meta + roi, P3: meta + roi + context}
+             opts = []
+             for lv in levels:
+diff --git a/code/sat7/priority.py b/code/sat7/priority.py
+index c4802d2..b516442 100644
+--- a/code/sat7/priority.py
++++ b/code/sat7/priority.py
+@@ -44,7 +44,7 @@ from dataclasses import dataclass
+ import numpy as np
+ 
+ from .scheduler import (Item, LoDConfig, Ship, Workload, _Ids, _l1, _l2,
+-                        _n_false_alarms, _w, encode_lod)
++                        _n_false_alarms, _w, coast_tile_size, encode_lod)
+ 
+ # Level names, in the paper's order. P0 emits no item at all (discard).
+ P0, P1, P2, P3 = 0, 1, 2, 3
+@@ -156,7 +156,7 @@ def encode_tile_priority(wl: Workload, idx: int, lod: LoDConfig, cfg: PriorityCo
+     # P3 context on a coast = the whole tile, the only thing that recovers a ship the detector
+     # missed. One tile-wide item covering every escalated ship, like the LoD coastal tile.
+     if ctx == "coast" and cfg.coast_context_tile and coastal_context_ids and not gated:
+-        items.append(Item(nid(), t, lod.coast_tile_bytes,
++        items.append(Item(nid(), t, coast_tile_size(wl, idx, lod),
+                           cfg.context_value * len(coastal_context_ids), "P3",
+                           tuple(coastal_context_ids), progressive=True))
+     # false alarms: metadata reports the ground cannot pre-filter -> zero-value P1 cost
+diff --git a/code/sat7/real_workload.py b/code/sat7/real_workload.py
+index 6063ab2..e8a8491 100644
+--- a/code/sat7/real_workload.py
++++ b/code/sat7/real_workload.py
+@@ -12,7 +12,8 @@ ships per tile, their lengths           | when each tile is captured (no timesta
+ detector confidence, misses, false      |   in the data -> uniform over the day)
+   alarms, per tile                      | which ships are "dark" (no AIS in the data)
+ tile context (classic pre-filter)       | how many tiles/day the satellite images
+-payload bytes (WP4 power law)           | the context mix, unless mix="dataset"
++payload bytes (WP4 power law; coastal    | the context mix, unless mix="dataset"
++  tiles: each tile's own JPEG, wp28)    |
+ 
+ The Airbus set is a *ship-finding benchmark*: 59% of its tiles contain a ship and
+ 27% touch a coast, which no real orbit ever sees. So by default we keep the
+@@ -85,9 +86,28 @@ def load_catalogue(results_dir: str | Path) -> tuple[pd.DataFrame, pd.DataFrame]
+         f = pd.read_csv(flags)
+         f = f[f.false_alarm & f.image.isin(set(tiles.image))]
+         tiles.attrs["fa_conf"] = {img: g.conf.to_numpy() for img, g in f.groupby("image")}
++    attach_coast_sizes(tiles, d)
+     return tiles, ships
+ 
+ 
++COAST_SIZES_CSV = "wp28_coast_tile_bytes.csv"
++
++
++def attach_coast_sizes(tiles: pd.DataFrame, results_dir: str | Path) -> pd.DataFrame:
++    """Fold the MEASURED coastal-tile sizes (scripts/wp28_coast_tile_model.py) into the catalogue.
++
++    One number per real coastal tile: its own baseline JPEG q40 + image header + packet headers.
++    ``workload_from_catalogue`` copies it onto every day tile drawn from that image, so the encoders
++    charge a coastal context tile what that tile really costs instead of one flat constant. Without
++    the file nothing is attached and the encoders fall back to the measured mean.
++    """
++    p = Path(results_dir) / COAST_SIZES_CSV
++    if p.exists():
++        c = pd.read_csv(p)
++        tiles.attrs["coast_bytes"] = dict(zip(c.image, c.packet_B.astype(float)))
++    return tiles
++
++
+ def workload_from_catalogue(tiles: pd.DataFrame, ships: pd.DataFrame,
+                             cfg: RealWorkloadConfig | None = None
+                             ) -> tuple[Workload, RealWorkloadStats]:
+@@ -125,6 +145,7 @@ def workload_from_catalogue(tiles: pd.DataFrame, ships: pd.DataFrame,
+     times = np.sort(rng.uniform(0, cfg.hours * 3600, n))
+ 
+     names = tiles.image.to_numpy()
++    coast_table = tiles.attrs.get("coast_bytes")
+     ship_list: list[Ship] = []
+     tile_list: list[tuple[float, str, tuple[int, ...]]] = []
+     fa_list: list[int] = []
+@@ -152,7 +173,10 @@ def workload_from_catalogue(tiles: pd.DataFrame, ships: pd.DataFrame,
+     wl = Workload(ship_list, tile_list,
+                   WorkloadConfig(hours=cfg.hours, tiles_per_day=cfg.tiles_per_day, seed=cfg.seed),
+                   false_alarms=fa_list, gate_empty=gate_list, unconfirmed=unconf_list,
+-                  source="real detections (WP6)", sources=[str(names[r]) for r in picks])
++                  source="real detections (WP6)", sources=[str(names[r]) for r in picks],
++                  coast_bytes=None if coast_table is None else
++                  [coast_table.get(str(names[r])) if c == "coast" else None
++                   for r, c in zip(picks, contexts)])
+     stats = RealWorkloadStats(
+         tiles=n, ships=len(ship_list), dark=sum(s.dark for s in ship_list),
+         detected=sum(s.confidence >= cfg.det_thr for s in ship_list),
+diff --git a/code/sat7/scheduler.py b/code/sat7/scheduler.py
+index 7e91868..37d5745 100644
+--- a/code/sat7/scheduler.py
++++ b/code/sat7/scheduler.py
+@@ -93,6 +93,9 @@ class Workload:
+     source: str = "synthetic"               # "synthetic" | "real detections (WP6)"
+     sources: list[str] | None = None        # per tile: the real image it was drawn from (WP6
+                                             # catalogue), so its pixels can be re-encoded
++    coast_bytes: list[float | None] | None = None   # per tile: MEASURED bytes of that tile as a
++                                            # coastal context tile (wp28: its own baseline JPEG
++                                            # q40 + image header + packets); None where not coastal
+ 
+ 
+ def generate_workload(cfg: WorkloadConfig | None = None) -> Workload:
+@@ -122,6 +125,17 @@ def generate_workload(cfg: WorkloadConfig | None = None) -> Workload:
+ 
+ RAW_TILE_BYTES = 768 * 768 * 3        # 1.77 MB uncompressed RGB tile
+ 
++# The coastal context tile, the largest single product in the budget. Two numbers exist:
++COAST_TILE_BYTES_WP7 = 32_420.0       # the EARLIER MODELED ESTIMATE: WP7's whole-tile q40 ladder,
++                                      # sampled on 400 random ship-bearing tiles (mostly open sea,
++                                      # which compresses well). Behind the 557x figure. Kept so that
++                                      # figure stays reproducible; not the canonical size any more.
++COAST_TILE_BYTES_MEASURED = 66_118.0  # MEASURED (wp28, results/wp28_coast_tile_model.json): mean over
++                                      # all 1,415 real coastal test tiles of baseline JPEG q40 + 18 B
++                                      # image header + CCSDS packet headers/CRC. WP13 had measured
++                                      # 65.5 kB on its own sample. Used where a workload carries no
++                                      # per-tile size (synthetic days); real days use each tile's own.
++
+ 
+ @dataclass
+ class SizeModel:
+@@ -160,14 +174,19 @@ class LoDConfig:
+                                        # header + 2 B CRC = 34 B, measured
+     l1_bytes: float = 900.0            # small image chip      (measured: tight crop, q40)
+     l2_bytes: float = 2_500.0          # ROI incl. wake        (measured: wake crop, q80)
+-    coast_tile_bytes: float = 32_420.0 # compressed coastal / port tile. WP7 moved this from
+-                                       # q60 (42.4 kB, PSNR 40.3 dB) to q40 (32.4 kB, 38.1 dB):
+-                                       # -24% of the single largest item in the budget, +1.2
+-                                       # points under congestion. NOT free: report 14 re-ran the
+-                                       # detector on recompressed coastal tiles and q40 costs
+-                                       # 4.0 points of recall, all on small ships (the earlier
+-                                       # "no recall cost" was a simulator artefact). q30 is
+-                                       # 25.9 kB / 36.8 dB and was rejected (-5.4 points).
++    coast_tile_bytes: float | None = None
++                                       # compressed coastal / port tile (JPEG q40). None = MEASURED:
++                                       # the tile's own measured size when the workload carries one
++                                       # (Workload.coast_bytes, real days), else the measured mean
++                                       # COAST_TILE_BYTES_MEASURED. A number = that flat size for
++                                       # every tile (a sweep, or COAST_TILE_BYTES_WP7 to reproduce
++                                       # the earlier modeled estimate). See coast_tile_size().
++                                       # History: WP7 moved this from q60 to q40 on its whole-tile
++                                       # ladder (42.4 -> 32.4 kB) -- sizes that describe open-sea
++                                       # tiles, about half a real coastal tile (10 Oct 2026). q40 is
++                                       # NOT free: report 14 re-ran the detector on recompressed
++                                       # coastal tiles and it costs 4.0 points of recall, all on
++                                       # small ships; q30 was rejected (-5.4 points).
+     coast_mode: str = "tile"           # "tile"    = whole coastal tile, catches ships the
+                                        #             detector missed (62% of the budget)
+                                        # "mosaic"  = ROI crops around detected ships only
+@@ -262,6 +281,15 @@ class _Ids:
+         return self.n
+ 
+ 
++def coast_tile_size(wl: Workload, idx: int, lod: LoDConfig) -> float:
++    """Bytes of tile `idx` sent as a coastal context tile (see LoDConfig.coast_tile_bytes)."""
++    if lod.coast_tile_bytes is not None:
++        return float(lod.coast_tile_bytes)
++    if wl.coast_bytes is not None and wl.coast_bytes[idx] is not None:
++        return float(wl.coast_bytes[idx])
++    return COAST_TILE_BYTES_MEASURED
++
++
+ def encode_raw(wl: Workload, lod: LoDConfig | None = None) -> list[Item]:
+     """Bent pipe: every non-cloud tile downlinked raw."""
+     lod = lod or LoDConfig()
+@@ -356,7 +384,7 @@ def encode_tile(wl: Workload, idx: int, lod: LoDConfig, nid: "_Ids", rng,
+                                   progressive=True))
+         else:                    # send the tile itself: the only thing that recovers a
+                                  # ship the detector never saw
+-            items.append(Item(nid(), t, lod.coast_tile_bytes,
++            items.append(Item(nid(), t, coast_tile_size(wl, idx, lod),
+                               sum(_w(wl.ships[i], lod) for i in ids), "tile", ids,
+                               progressive=True))
+     elif ctx == "ships":
+diff --git a/code/scripts/wp11_integration_demo.py b/code/scripts/wp11_integration_demo.py
+index 1ec2eb5..d5666a3 100644
+--- a/code/scripts/wp11_integration_demo.py
++++ b/code/scripts/wp11_integration_demo.py
+@@ -43,7 +43,8 @@ import torch
+ 
+ from sat7.orbit import LINK_PRESETS, GroundStation, OrbitConfig, find_passes, make_satellite
+ from sat7.prefilter import CLOUD, LAND, PrefilterConfig, run_prefilter
+-from sat7.real_workload import RealWorkloadConfig, load_size_model, workload_from_catalogue
++from sat7.real_workload import (RealWorkloadConfig, attach_coast_sizes, load_size_model,
++                                workload_from_catalogue)
+ from sat7.scheduler import LoDConfig, ValueGreedy, encode_lod, metrics, simulate
+ from wp3_train_gate import load_gate
+ # Reuse the catalogue's OWN post-processing rather than reimplementing it. The first version
+@@ -247,6 +248,7 @@ def main() -> None:
+     # ------------------------------------------------------------ stage 6: day + downlink
+     print("\n[5/6] scale to a day, encode, schedule over real orbit passes ...")
+     cfg = RealWorkloadConfig(tiles_per_day=args.day_tiles, det_thr=args.det_thr, seed=args.seed)
++    attach_coast_sizes(tiles, ROOT / "results")      # each coastal tile at its measured size (wp28)
+     wl, stats = workload_from_catalogue(tiles, ships, cfg)
+ 
+     # How thin is the pool each context is resampled from? The orbit mix draws a *fixed share*
+diff --git a/code/scripts/wp18_campaign_runner.py b/code/scripts/wp18_campaign_runner.py
+index 11f1efa..e56548c 100644
+--- a/code/scripts/wp18_campaign_runner.py
++++ b/code/scripts/wp18_campaign_runner.py
+@@ -55,7 +55,8 @@ import torch
+ 
+ from sat7.b2_sahi_fusion import SahiConfig, run_sahi
+ from sat7.orbit import LINK_PRESETS, GroundStation, OrbitConfig, find_passes, make_satellite
+-from sat7.real_workload import RealWorkloadConfig, load_size_model, workload_from_catalogue
++from sat7.real_workload import (RealWorkloadConfig, attach_coast_sizes, load_size_model,
++                                workload_from_catalogue)
+ from sat7.scheduler import LoDConfig, ValueGreedy, encode_lod, metrics, simulate
+ from sat7.priority import PriorityConfig, encode_semantic   # P0-P3 scheme (selectable, defaults off)
+ from sat7.relay import LinkParams, RelayConfig, isl_windows, make_relay, route  # B4 (peer-owned)
+@@ -151,6 +152,7 @@ def run_b3(cat_tiles, cat_ships, size_model, day_tiles, det_thr, link, link_shar
+     "lod" (the CSV it pins to is the LoD headline).
+     """
+     tiles = pd.read_csv(cat_tiles)
++    attach_coast_sizes(tiles, Path(cat_tiles).parent)   # each coastal tile at its measured size (wp28)
+     ships = pd.read_csv(cat_ships)
+     cfg = RealWorkloadConfig(tiles_per_day=day_tiles, det_thr=det_thr, seed=seed)
+     wl, stats = workload_from_catalogue(tiles, ships, cfg)
+@@ -306,6 +308,8 @@ def main() -> None:
+     ap.add_argument("--b4-raan", type=float, default=90.0,
+                     help="ASSUMPTION: relay RAAN offset (deg); 90 = complementary coverage (report 20)")
+     ap.add_argument("--seed", type=int, default=0)
++    ap.add_argument("--same-input", type=Path, default=ROOT / "results" / "wp26_b0_b4.json",
++                    help="the same-input B0-B4 run (wp26_b0_b4.py): the canonical B1 and B2")
+     ap.add_argument("--out", type=Path, default=ROOT / "results")
+     args = ap.parse_args()
+ 
+@@ -325,20 +329,57 @@ def main() -> None:
+                      "source": "report 05 (scale-matched to B3's tile count for the reduction factor)"}
+     print(f"B0 raw reference: {B0_RAW_MB_DAY:.0f} MB/day at 40k tiles = {B0_RAW_PER_TILE_MB:.3f} MB/tile [SIM]")
+ 
+-    # B1 ---------------------------------------------------------------------
+-    print(f"B1 YOLO/tile on {args.b1_tiles} real tiles ...", flush=True)
+-    b1 = run_b1(detect_fn, img_dir, lbl_dir, args.b1_tiles, args.seed)
+-    b1.update({"onboard": "detector", "label": "REAL", "status": "ran"})
+-    configs["B1"] = b1
+-    print(f"   recall {b1['recall']['overall']} on {b1['gt_ships']} ships [REAL]")
+-
+-    # B2 ---------------------------------------------------------------------
+-    print(f"B2 SAHI+fusion on {args.b2_swaths} swaths @ {args.b2_window}px via run_sahi ...", flush=True)
+-    b2 = run_b2(detect_fn, args.manifest, args.swath_ships, img_dir, args.b2_swaths, args.b2_window)
+-    b2.update({"onboard": "detector+SAHI", "label": "REAL", "status": "ran"})
+-    configs["B2"] = b2
+-    print(f"   recall {b2['recall']['overall']} on {b2['gt_ships']} ships, "
+-          f"{b2['compute_vs_regular_tiling_x']}x compute [REAL]")
++    # B1 / B2 -- canonical since 10 Oct 2026: the same-input run (wp26_b0_b4.py) -----------------
++    # The paper's B1 is ONE detector call on the original (large) image and its B2 is SAHI on that
++    # same image. wp26 measures both on the same 150 scenes of 4x4 real tiles; this runner reads
++    # them, so the campaign carries one B1 and one B2. What this script used to report under those
++    # names still runs below and is kept as "legacy_small_samples": a detector call per native
++    # 768 px tile (no large image, so not the paper's B1) and SAHI on 2 swaths (47 ships).
++    w26 = json.loads(args.same_input.read_text())
++    q26, chk26, in26 = w26["detection_quality_same_scenes"], w26["checks"], w26["inputs"]
++
++    def same_input(m, onboard, **extra):
++        by = m["recall_by_size"]
++        return {"scenes": m["images"], "scene_px": in26["scene_px"], "gt_ships": m["n_gt"],
++                "detections": m["n_detections_supplied"],
++                "recall": {"overall": m["recall"], "small_<32": by["small_<32"]["recall"],
++                           "medium": by["medium_32-96"]["recall"], "large_>96": by["large_>96"]["recall"]},
++                "precision": m["precision"], "F1": m["F1"], "AP50": m["AP50"],
++                "conf_thr": m["conf_thr"], "iou_thr": m["iou_thr"], **extra,
++                "onboard": onboard, "label": "REAL",
++                "status": "read from results/wp26_b0_b4.json (same-input run)"}
++
++    wins = chk26["3_B2_sahi_fusion"]["windows_per_scene"]
++    b1 = same_input(q26["B1"], "detector, one call on the whole scene",
++                    detector_calls_per_scene=chk26["2_B1_no_slicing"]["detector_calls_per_scene"])
++    b2 = same_input(q26["B2"], "detector+SAHI+fusion", window_px=args.b2_window, windows_per_scene=wins,
++                    compute_vs_regular_tiling_x=round(wins / in26["per_side"] ** 2, 4))
++    configs["B1"], configs["B2"] = b1, b2
++    print(f"B1 one call per {in26['scene_px']} px scene: recall {b1['recall']['overall']}, precision "
++          f"{b1['precision']} on {b1['gt_ships']} ships [REAL, wp26]")
++    print(f"B2 SAHI+fusion, same scenes: recall {b2['recall']['overall']}, precision {b2['precision']}, "
++          f"{b2['compute_vs_regular_tiling_x']}x compute [REAL, wp26]")
++
++    # the two earlier small samples: still measured, no longer called B1 / B2
++    print(f"legacy: detector per native tile on {args.b1_tiles} tiles; SAHI on {args.b2_swaths} swaths ...",
++          flush=True)
++    old_b1 = run_b1(detect_fn, img_dir, lbl_dir, args.b1_tiles, args.seed)
++    old_b2 = run_b2(detect_fn, args.manifest, args.swath_ships, img_dir, args.b2_swaths, args.b2_window)
++    legacy = {
++        "note": "what this runner reported as B1 / B2 until 10 Oct 2026. Different inputs from each other "
++                "and from B3; matched at IoU >= 0.3. Not the paper's B1 / B2 -- kept as measured references.",
++        "native_tiles": {**old_b1, "what": "one detector call per native 768 px tile (no large image)",
++                         "label": "REAL", "full_scale": "results/wp24_detection_eval.json "
++                                                        "B1_committed_all_test_tiles (8,173 ships)"},
++        "swaths": {**old_b2, "what": "SAHI + fusion on stitched swaths", "label": "REAL",
++                   "full_scale": "results/wp24_detection_eval.json swaths.rows.sahi_B2 (716 ships)"},
++        "per_tile_on_the_same_scenes": {
++            "recall": q26["B1_per_tile_reference"]["recall"],
++            "precision": q26["B1_per_tile_reference"]["precision"],
++            "gt_ships": q26["B1_per_tile_reference"]["n_gt"],
++            "what": "one call per 768 px source tile of the wp26 scenes = a 16-window tiling without overlap"}}
++    print(f"   native tiles recall {old_b1['recall']['overall']} ({old_b1['gt_ships']} ships); swaths recall "
++          f"{old_b2['recall']['overall']} ({old_b2['gt_ships']} ships) [REAL, references only]")
+ 
+     # B3 ---------------------------------------------------------------------
+     print(f"B3 semantic policy: real scheduler chain over the stored catalogue ...", flush=True)
+@@ -400,14 +441,15 @@ def main() -> None:
+           f"({b4['worst_case_latency_cut_h']:+}h) [latency SIM, energy TARGET]")
+ 
+     report = {
+-        "label_note": "B0 SIM; B1/B2 REAL (detector on Airbus); B3 SIM-over-REAL (state cloud); "
+-                      "B4 latency SIM, energy TARGET (report 19), lambda ASSUMPTION; energy from "
+-                      "report 17 (ratios).",
+-        "scale": "small-scale validation run (report 18 spec), not a full campaign",
++        "label_note": "B0 SIM; B1/B2 REAL, read from the same-input run wp26 (150 scenes of 4x4 real "
++                      "Airbus tiles); B3 SIM-over-REAL (state cloud; coastal tile bytes measured, other "
++                      "products modeled); B4 latency SIM, energy TARGET (report 19), lambda ASSUMPTION; "
++                      "energy from report 17 (ratios).",
++        "scale": "B1/B2: 150 scenes, 1,164 ships (wp26). B3/B4: one simulated 40,000-tile day. "
++                 "Different inputs -- B1/B2 are comparable with each other, not with B3's delivered recall.",
+         "b0_b4_end_to_end": "RUNS -- B4 wired to sat7.relay.route (report 20 windows/choice + report "
+                             "19 energy); B4 recall/MB are B3's (reroute), latency improved, energy TARGET",
+-        "energy_reference": "report 17: gate saves >=57.6% processing energy; B2 adds 1.56x on "
+-                            "detect; compute dominates comms 8.9:1; quote ratios not joules",
++        "energy_reference": "report 17 / results/wp17_energy_model.json (quote ratios, not joules)",
+         "b4_design_question_resolved": "REROUTE not extra capacity -- scheduler.simulate owns "
+                                        "eviction/capacity/aging upstream; route() changes only latency "
+                                        "and energy. Confirmed by checking, asserted by gate (b).",
+@@ -421,6 +463,7 @@ def main() -> None:
+             "ACTUAL mid-pass delivered latency as the direct baseline -> gate (a) exact; wp20 numbers "
+             "unmoved."),
+         "configs": configs,
++        "legacy_small_samples": legacy,
+         "elapsed_s": round(time.perf_counter() - t0, 1),
+     }
+     (args.out / "wp18_campaign.json").write_text(json.dumps(report, indent=2))
+@@ -429,7 +472,7 @@ def main() -> None:
+     def line(c, res):
+         print(f"{c:5s} {configs[c]['onboard']:40s} {res:38s} {configs[c]['label'][:34]}")
+     line("B0", f"{B0_RAW_MB_DAY:.0f} MB/day raw")
+-    line("B1", f"recall {b1['recall']['overall']} ({b1['gt_ships']} ships)")
++    line("B1", f"recall {b1['recall']['overall']} ({b1['gt_ships']} ships, wp26)")
+     line("B2", f"recall {b2['recall']['overall']} @ {b2['compute_vs_regular_tiling_x']}x")
+     line("B3", f"recall {b3['ship_recall']}, {b3['reduction_vs_B0_x']}x vs B0")
+     line("B4", f"=B3 recall/MB; max lat {b4['latency_h_B3_direct']['max']}->{b4['latency_h_B4_relay']['max']}h")
+diff --git a/code/scripts/wp23_semantic_compare.py b/code/scripts/wp23_semantic_compare.py
+index ffdb7f7..e507c4b 100644
+--- a/code/scripts/wp23_semantic_compare.py
++++ b/code/scripts/wp23_semantic_compare.py
+@@ -33,7 +33,8 @@ import pandas as pd
+ from sat7.joint import (CostModel, JointConstraints, JointWeights, build_objects, pareto, solve)
+ from sat7.orbit import GroundStation, LINK_PRESETS, OrbitConfig, find_passes, make_satellite
+ from sat7.priority import PriorityConfig, encode_semantic, level_histogram
+-from sat7.real_workload import RealWorkloadConfig, load_size_model, workload_from_catalogue
++from sat7.real_workload import (RealWorkloadConfig, attach_coast_sizes, load_size_model,
++                                workload_from_catalogue)
+ from sat7.scheduler import LoDConfig, ValueGreedy, metrics, simulate
+ 
+ 
+@@ -57,6 +58,7 @@ def main() -> None:
+     args = ap.parse_args()
+ 
+     tiles = pd.read_csv(args.cat_tiles)
++    attach_coast_sizes(tiles, Path(args.cat_tiles).parent)   # each coastal tile at its measured size (wp28)
+     ships = pd.read_csv(args.cat_ships)
+     cfg = RealWorkloadConfig(tiles_per_day=args.day_tiles, det_thr=args.det_thr, seed=args.seed)
+     wl, stats = workload_from_catalogue(tiles, ships, cfg)
+diff --git a/code/scripts/wp24_detection_eval.py b/code/scripts/wp24_detection_eval.py
+index db95bc7..4ff5db7 100644
+--- a/code/scripts/wp24_detection_eval.py
++++ b/code/scripts/wp24_detection_eval.py
+@@ -1,9 +1,10 @@
+ """WP24 -- detection evaluation at full scale: precision / recall / F1 / AP for B1, B2 and the SAHI
+ ablations (audit G1, B8, B9).
+ 
+-REAL. Why this exists: the B0->B4 table quotes B1 = 0.782 and B2 = 0.745, but wp18_campaign.json is
+-labelled "small-scale validation run ... not a full campaign" -- 262 and 47 ships -- and both are
+-recall only. The two SAHI ablations the paper lists ("without tile overlap", "without detection
++REAL. Why this exists: until 10 Oct 2026 the B0->B4 table quoted B1 = 0.782 and B2 = 0.745 from
++wp18's small samples -- 262 and 47 ships, recall only (now wp18_campaign.json legacy_small_samples;
++the table's B1 / B2 come from the same-input run wp26). This file is the full-scale reference for
++"the detector on native tiles", which is not the paper's B1. The two SAHI ablations the paper lists ("without tile overlap", "without detection
+ fusion") existed as PerceptionConfig flags but were never measured. This scores all of them on the
+ full data with the standard detection metrics (sat7.evaluation), through the library path the
+ pipeline actually uses (sat7.perception: load_detector -> detect_image -> b2_sahi_fusion):
+@@ -273,13 +274,15 @@ def main() -> int:
+               f"{m['F1']:8.4f}{m['AP50']:8.4f}{m['AP50-95']:9.4f}{m['recall_on_seam']:8.4f}"
+               f"{m['recall_off_seam']:8.4f}{m['FP']:6d}")
+ 
+-    camp = json.loads((res_dir / "wp18_campaign.json").read_text())["configs"]
++    old = json.loads((res_dir / "wp18_campaign.json").read_text())["legacy_small_samples"]
++    camp = {"B1": old["native_tiles"], "B2": old["swaths"]}
+     report["superseded_small_sample"] = {
+         "B1": {"recall": camp["B1"]["recall"]["overall"], "gt_ships": camp["B1"]["gt_ships"]},
+         "B2": {"recall": camp["B2"]["recall"]["overall"], "gt_ships": camp["B2"]["gt_ships"]},
+-        "source": "wp18_campaign.json (small-scale validation run)"}
+-    print(f"\n[vs the quoted small-sample figures] B1 {camp['B1']['recall']['overall']} "
+-          f"(n={camp['B1']['gt_ships']}) -> {b1['recall']} (n={b1['n_gt']});  B2 "
++        "source": "wp18_campaign.json legacy_small_samples (a detector call per native tile; SAHI on 2 "
++                  "swaths) -- what the B0-B4 table called B1 / B2 until 10 Oct 2026"}
++    print(f"\n[vs the earlier small-sample figures] native tiles {camp['B1']['recall']['overall']} "
++          f"(n={camp['B1']['gt_ships']}) -> {b1['recall']} (n={b1['n_gt']});  swaths "
+           f"{camp['B2']['recall']['overall']} (n={camp['B2']['gt_ships']}) -> "
+           f"{swath_out['sahi_B2']['recall']} (n={swath_out['sahi_B2']['n_gt']})")
+     report["elapsed_s"] = round(time.perf_counter() - t_all, 1)
+diff --git a/code/scripts/wp25_semantic_packets.py b/code/scripts/wp25_semantic_packets.py
+index cb76b91..ba8b925 100644
+--- a/code/scripts/wp25_semantic_packets.py
++++ b/code/scripts/wp25_semantic_packets.py
+@@ -51,7 +51,8 @@ from sat7.orbit import LINK_PRESETS, GroundStation, OrbitConfig, find_passes, ma
+ from sat7.priority import PriorityConfig, encode_priority
+ from sat7.scheduler import encode_lod
+ from sat7.real_workload import RealWorkloadConfig, load_catalogue, load_size_model, workload_from_catalogue
+-from sat7.scheduler import FIFO, Item, LoDConfig, NoBuffer, Ship, ValueGreedy, _l1, _l2, metrics, simulate
++from sat7.scheduler import (COAST_TILE_BYTES_WP7, FIFO, Item, LoDConfig, NoBuffer, Ship, ValueGreedy,
++                            _l1, _l2, metrics, simulate)
+ from sat7.semantic import (_IMG_HDR, EncoderConfig, Ids, Packetizer, TMFraming, decode_downlink,
+                            encode_image, encode_jpeg, pack_record)
+ 
+@@ -117,7 +118,7 @@ def summarise(enc, dets, cfg: EncoderConfig, lod: LoDConfig):
+             _pid, _x0, _y0, _w, _h, q, _codec = _IMG_HDR.unpack_from(p.payload, 0)
+             s = Ship(0, 0.0, False, 1.0, False, float(max(dets[p.dets[0]][2], dets[p.dets[0]][3])))
+             if p.kind == "P3" and q == cfg.coast_tile_quality and q != cfg.ctx_quality:
+-                sub, modeled = "P3_coast_tile", lod.coast_tile_bytes
++                sub, modeled = "P3_coast_tile", COAST_TILE_BYTES_WP7     # the earlier flat estimate
+             elif p.kind == "P3":
+                 sub, modeled = "P3_crop", _l2(s, lod)
+             elif q == cfg.ctx_quality and q != cfg.roi_quality:
+@@ -207,9 +208,11 @@ def run(items, wl, lod, passes, start, policy, storage_gb, enc, with_value: bool
+ 
+ 
+ def lod_with_measured_coast(wl, lod, corpus: Corpus, quality: int = 40):
+-    """The LoD ladder (the 557x headline encoder), item for item as scheduler.encode_lod builds it,
+-    with each coastal tile's size replaced by its MEASURED encoding (baseline JPEG q40 -- what WP7 /
+-    WP13 measured -- + an 18 B image header + packet headers). Everything else keeps its model."""
++    """The LoD ladder (the headline encoder), item for item as scheduler.encode_lod builds it, with
++    each coastal tile's size re-measured FROM PIXELS here (baseline JPEG q40 + an 18 B image header +
++    packet headers). `lod` is the earlier flat-size config, so the swaps record old -> measured.
++    The canonical encoder reads the same sizes from results/wp28_coast_tile_bytes.csv; main() checks
++    the two agree byte for byte."""
+     from sat7.scheduler import _Ids, encode_tile
+     pk_over = lambda n: n + 8 * math.ceil(n / (4096 - 2))       # CCSDS headers + CRC per segment
+     nid, rng, items, swaps = _Ids(), np.random.default_rng(wl.cfg.seed + 1), [], []
+@@ -243,6 +246,7 @@ def main() -> int:
+     tiles, ships = load_catalogue(res_dir)
+     corpus = Corpus(args.data, tiles, res_dir / "wp1_predictions.csv")
+     lod = LoDConfig(conf_low=args.det_thr, size_model=load_size_model(res_dir / "wp6_size_model.json"))
++    lod_wp7 = replace(lod, coast_tile_bytes=COAST_TILE_BYTES_WP7)     # the earlier all-modeled sizes
+     pcfg = PriorityConfig(p1_conf=lod.conf_high)
+     start = datetime(2026, 9, 18, tzinfo=timezone.utc)
+     sat = make_satellite(OrbitConfig(epoch=start))
+@@ -257,16 +261,19 @@ def main() -> int:
+               "day": {"tiles": stats.tiles, "ships": stats.ships, "passes": len(passes),
+                       "link_share": args.link_share, "MB_capacity": round(sum(p.capacity_bytes for p in passes) / 1e6, 1)}}
+ 
+-    # ---- 1. canon: the modeled P0-P3 run, as wp23
++    # ---- 1. canon: the P0-P3 run as wp23 does it (ground-truth catalogue; coastal context tiles at
++    #         their measured size, records / crops modeled) and the same run on the earlier flat size
+     canon = run(encode_priority(wl, lod, pcfg), wl, lod, passes, start, ValueGreedy(), args.storage_gb,
+-                "P0-P3 modeled (wp23 method)", with_value=True)
++                "P0-P3 (wp23 method)", with_value=True)
+     w23 = json.loads((res_dir / "wp23_semantic_compare.json").read_text())["semantic_schemes"]["priority"]
+-    canon["wp23_committed"] = {"MB_sent": w23["MB_sent"], "ship_recall": w23["ship_recall"],
+-                               "note": "committed before the dark-wake de-duplication (priority.py)"}
++    canon["wp23_committed"] = {"MB_sent": w23["MB_sent"], "ship_recall": w23["ship_recall"]}
++    canon["earlier_flat_coast_tile"] = run(encode_priority(wl, lod_wp7, pcfg), wl, lod, passes, start,
++                                           ValueGreedy(), args.storage_gb, "P0-P3, flat 32,420 B coastal tile",
++                                           with_value=True)
+     report["canon_modeled"] = canon
+-    print(f"[1] canon modeled P0-P3: {canon['MB_sent']} MB, recall {canon['ship_recall']}  "
+-          f"(wp23 committed {w23['MB_sent']} MB / {w23['ship_recall']}; the difference is the "
+-          f"de-duplicated dark wake crop)")
++    print(f"[1] canon P0-P3 (wp23 method): {canon['MB_sent']} MB, recall {canon['ship_recall']}  "
++          f"(wp23 committed {w23['MB_sent']} MB / {w23['ship_recall']}); on the earlier flat coastal "
++          f"tile {canon['earlier_flat_coast_tile']['MB_sent']} MB")
+ 
+     # ---- 2. the same day, onboard-style from real boxes: modeled vs measured sizes
+     base = EncoderConfig(det_thr=args.det_thr, priority=pcfg)
+@@ -309,25 +316,31 @@ def main() -> int:
+         sizes["progressive" if prog else "baseline"] = {
+             "tiles": len(b), "median_B": statistics.median(b), "mean_B": round(statistics.mean(b), 1),
+             "p10_B": float(np.percentile(b, 10)), "p90_B": float(np.percentile(b, 90))}
+-    lod_canon = run(encode_lod(wl, lod), wl, lod, passes, start, ValueGreedy(), args.storage_gb,
+-                    "LoD modeled (wp6/wp23)", with_value=True)
+-    lod_items, swaps = lod_with_measured_coast(wl, lod, corpus)
++    lod_canon = run(encode_lod(wl, lod_wp7), wl, lod, passes, start, ValueGreedy(), args.storage_gb,
++                    "LoD, earlier flat coastal tile", with_value=True)
++    lod_items, swaps = lod_with_measured_coast(wl, lod_wp7, corpus)
++    table_items = encode_lod(wl, lod)            # the canonical encoder: sizes from the wp28 table
++    if [it.size for it in table_items] != [it.size for it in lod_items]:
++        raise SystemExit("wp28_coast_tile_bytes.csv does not reproduce from pixels; rerun "
++                         "scripts/wp28_coast_tile_model.py --measure")
+     lod_meas = run(lod_items, wl, lod, passes, start, ValueGreedy(), args.storage_gb,
+                    "LoD, measured coastal tiles", with_value=True)
+     report["coastal_context_tile_q40"] = {"measured_all_coastal_test_tiles": sizes,
+-                                          "modeled_LoDConfig_coast_tile_bytes": LoDConfig().coast_tile_bytes,
++                                          "canonical": "each tile's measured size (results/wp28_coast_tile_bytes.csv)",
++                                          "earlier_flat_COAST_TILE_BYTES_WP7": COAST_TILE_BYTES_WP7,
+                                           "why_they_differ": "LoDConfig took WP7's 'whole tile' ladder, "
+                                           "which sampled 400 random tiles WITH SHIPS (mostly open sea); "
+                                           "WP13 measured real coastal tiles at 65.5 kB (q40)"}
+     report["LoD_headline_with_measured_coast"] = {
+         "modeled": lod_canon, "measured_coast": lod_meas,
++        "size_table_reproduces_from_pixels": True,
+         "coastal_tiles_swapped": len(swaps),
+         "coastal_MB_modeled": round(sum(a for a, _ in swaps) / 1e6, 2),
+         "coastal_MB_measured": round(sum(b for _, b in swaps) / 1e6, 2)}
+     print(f"[2b] coastal context tile, q40, all {len(coast_names)} real coastal tiles: baseline median "
+           f"{sizes['baseline']['median_B']:.0f} B, progressive {sizes['progressive']['median_B']:.0f} B "
+-          f"(modeled {LoDConfig().coast_tile_bytes:.0f} B)")
+-    print(f"     LoD ladder (headline encoder): modeled {lod_canon['MB_offered']} MB offered / "
++          f"(earlier flat estimate {COAST_TILE_BYTES_WP7:.0f} B)")
++    print(f"     LoD ladder (headline encoder): earlier flat size {lod_canon['MB_offered']} MB offered / "
+           f"{lod_canon['MB_sent']} sent, recall {lod_canon['ship_recall']}  ->  measured coastal tiles "
+           f"{lod_meas['MB_offered']} MB offered / {lod_meas['MB_sent']} sent, recall {lod_meas['ship_recall']} "
+           f"(capacity {lod_meas['MB_capacity']} MB)")
+diff --git a/code/scripts/wp6_simulate_real.py b/code/scripts/wp6_simulate_real.py
+index 6d18d9f..5c31841 100644
+--- a/code/scripts/wp6_simulate_real.py
++++ b/code/scripts/wp6_simulate_real.py
+@@ -37,7 +37,7 @@ import pandas as pd
+ from sat7.orbit import LINK_PRESETS, GroundStation, OrbitConfig, find_passes, make_satellite
+ from sat7.real_workload import (RealWorkloadConfig, load_catalogue, load_size_model,
+                                 workload_from_catalogue)
+-from sat7.scheduler import (FIFO, LoDConfig, NoBuffer, ValueGreedy, WorkloadConfig,
++from sat7.scheduler import (COAST_TILE_BYTES_WP7, FIFO, LoDConfig, NoBuffer, ValueGreedy, WorkloadConfig,
+                             encode_fixed_patch, encode_lod, encode_raw, generate_workload,
+                             metrics, ship_ci95, simulate)
+ 
+@@ -130,6 +130,10 @@ def main() -> None:
+                          "the calibrated score meaning P=0.9 -- WP2)")
+     ap.add_argument("--no-size-model", action="store_true",
+                     help="ablation: charge every ship the WP4 median instead of its own length")
++    ap.add_argument("--coast-model", choices=["measured", "wp7"], default="measured",
++                    help="size of a coastal context tile: 'measured' = each tile's own JPEG q40 "
++                         "(results/wp28_coast_tile_bytes.csv, canonical); 'wp7' = the earlier flat "
++                         "32,420 B estimate (reproduces the 557x figure; run it with --tag modeledcoast)")
+     ap.add_argument("--results", type=Path, default=ROOT / "results")
+     ap.add_argument("--tag", default="", help="suffix for the output files, so a variant run "
+                     "(--mix dataset, --no-size-model, ...) does not overwrite the main results")
+@@ -140,8 +144,9 @@ def main() -> None:
+     tiles, ships = load_catalogue(out)
+     sm = None if args.no_size_model else load_size_model(out / "wp6_size_model.json")
+     # the onboard detection threshold IS the bottom of the level-of-detail ladder
++    coast_kw = {} if args.coast_model == "measured" else {"coast_tile_bytes": COAST_TILE_BYTES_WP7}
+     lod = LoDConfig(conf_low=args.det_thr if args.conf_low is None else args.conf_low,
+-                    size_model=sm,
++                    size_model=sm, **coast_kw,
+                     **({} if args.conf_high is None else {"conf_high": args.conf_high}))
+ 
+     start = datetime(2026, 9, 18, tzinfo=timezone.utc)
+@@ -157,7 +162,8 @@ def main() -> None:
+     print(f"  day: {st.tiles} tiles, {st.ships} real ships ({st.detected} with conf>={args.det_thr}, "
+           f"{st.dark} flagged dark [ASSUMPTION]), {st.false_alarms} real false alarms")
+     print(f"  contexts: {st.context_counts}")
+-    print(f"  payload: {'per-ship WP4 power law' if sm else 'WP4 medians (ablation)'}")
++    print(f"  payload: {'per-ship WP4 power law' if sm else 'WP4 medians (ablation)'}; coastal tile: "
++          f"{'each tile measured (wp28)' if args.coast_model == 'measured' else 'flat 32,420 B (earlier model)'}")
+     print(f"  {len(passes)} passes in 36 h, {args.link} x {args.link_share} -> {cap_mb:.0f} MB\n")
+ 
+     frames = []
+@@ -189,7 +195,7 @@ def main() -> None:
+ 
+     # ---------------------------------------------------------------- real vs synthetic
+     wsyn = generate_workload(WorkloadConfig(tiles_per_day=args.tiles, seed=args.seed))
+-    dsyn = run_all(wsyn, passes, start, storage, LoDConfig(conf_low=args.det_thr))
++    dsyn = run_all(wsyn, passes, start, storage, LoDConfig(conf_low=args.det_thr, **coast_kw))
+     cmp = pd.concat([df.assign(workload="REAL detections (WP6)"),
+                      dsyn.assign(workload="SYNTHETIC (WP5)")])
+     keep = ["workload", "strategy", "ship_recall", "dark_recall", "latency_med_h", "MB_sent"]
+@@ -218,7 +224,7 @@ def main() -> None:
+         a2 = argparse.Namespace(**vars(args))
+         a2.det_thr = thr
+         w, s2 = build_day(tiles, ships, a2, args.seed, args.tiles)
+-        l2 = LoDConfig(conf_low=thr, size_model=sm)
++        l2 = LoDConfig(conf_low=thr, size_model=sm, **coast_kw)
+         m = metrics(simulate(encode_lod(w, l2), passes, start, ValueGreedy(), storage,
+                              encoder="Ours: LoD + value-greedy"), w, l2)
+         m["det_thr"] = thr
+diff --git a/code/tests/test_quickstart.py b/code/tests/test_quickstart.py
+index 5528987..faa2373 100644
+--- a/code/tests/test_quickstart.py
++++ b/code/tests/test_quickstart.py
+@@ -102,7 +102,7 @@ def test_synthetic_tiles_get_the_reference_prefilter_context():
+ 
+ def test_packet_uses_sat7_priority_levels_and_sizes():
+     from sat7.priority import P0, P1, P2, P3, PriorityConfig, encode_priority
+-    from sat7.scheduler import LoDConfig
++    from sat7.scheduler import COAST_TILE_BYTES_MEASURED, LoDConfig
+ 
+     lod = LoDConfig(conf_low=qs.DET_THR, size_model=qs.load_size_model())
+     pcfg = PriorityConfig(p1_conf=lod.conf_high)
+@@ -119,7 +119,8 @@ def test_packet_uses_sat7_priority_levels_and_sizes():
+     assert len(by["P1"]) == 4 and all(it.size == lod.l0_bytes for it in by["P1"])
+     assert sorted(it.size for it in by["P2"]) == sorted(
+         lod.size_model.l1(L) for L in (20.0, 60.0, 30.0))
+-    assert [it.size for it in by["P3"]] == [lod.coast_tile_bytes]       # one shared context tile
++    # one shared context tile; a hand-built workload carries no per-tile size -> the measured mean
++    assert [it.size for it in by["P3"]] == [COAST_TILE_BYTES_MEASURED]
+     assert not any(tile_of[it.ships[0]] == 2 for it in items)          # cloud tile sends nothing
+ 
+ 
+diff --git a/code/tests/test_real_workload.py b/code/tests/test_real_workload.py
+index d910ee8..82a70a8 100644
+--- a/code/tests/test_real_workload.py
++++ b/code/tests/test_real_workload.py
+@@ -3,8 +3,8 @@ import pandas as pd
+ import pytest
+ 
+ from sat7.real_workload import CONTEXTS, RealWorkloadConfig, workload_from_catalogue
+-from sat7.scheduler import (FIFO, LoDConfig, SizeModel, WorkloadConfig, encode_lod,
+-                            generate_workload, simulate)
++from sat7.scheduler import (COAST_TILE_BYTES_MEASURED, COAST_TILE_BYTES_WP7, FIFO, LoDConfig, SizeModel,
++                            WorkloadConfig, coast_tile_size, encode_lod, generate_workload, simulate)
+ 
+ 
+ def _catalogue():
+@@ -173,3 +173,42 @@ def test_synthetic_workload_is_unchanged_by_the_real_workload_support():
+     items = encode_lod(wl)
+     assert sum(i.kind == "fp" for i in items) > 0
+     assert all(i.size == LoDConfig().l1_bytes for i in items if i.kind == "fp")
++
++
++# ---------------------------------------------------------------- the measured coastal tile (wp28)
++def test_a_coastal_tile_is_charged_its_own_measured_size():
++    tiles, ships = _catalogue()
++    tiles.attrs["coast_bytes"] = {"coasty.jpg": 70_000.0}
++    wl, _ = workload_from_catalogue(tiles, ships, RealWorkloadConfig(tiles_per_day=400, seed=1))
++    for size, (_t, ctx, _ids) in zip(wl.coast_bytes, wl.tiles):
++        assert size == (70_000.0 if ctx == "coast" else None)
++    assert {it.size for it in encode_lod(wl, LoDConfig()) if it.kind == "tile"} == {70_000.0}
++
++
++def test_coastal_size_precedence_is_explicit_then_per_tile_then_the_measured_mean():
++    tiles, ships = _catalogue()
++    plain, _ = workload_from_catalogue(tiles, ships, RealWorkloadConfig(tiles_per_day=400, seed=1))
++    idx = next(i for i, (_t, ctx, _ids) in enumerate(plain.tiles) if ctx == "coast")
++    assert plain.coast_bytes is None                 # no size table attached -> the measured mean
++    assert coast_tile_size(plain, idx, LoDConfig()) == COAST_TILE_BYTES_MEASURED
++    tiles.attrs["coast_bytes"] = {"coasty.jpg": 70_000.0}
++    wl, _ = workload_from_catalogue(tiles, ships, RealWorkloadConfig(tiles_per_day=400, seed=1))
++    assert coast_tile_size(wl, idx, LoDConfig()) == 70_000.0
++    # a number in the config always wins: a sweep, or the earlier flat estimate behind 557x
++    assert coast_tile_size(wl, idx, LoDConfig(coast_tile_bytes=COAST_TILE_BYTES_WP7)) == 32_420.0
++
++
++def test_committed_size_table_matches_the_constant_and_the_packet_format():
++    from pathlib import Path
++
++    from sat7.real_workload import COAST_SIZES_CSV
++    from sat7.semantic import Packetizer
++    path = Path(__file__).resolve().parents[1] / "results" / COAST_SIZES_CSV
++    if not path.exists():
++        pytest.skip("results/wp28_coast_tile_bytes.csv not generated")
++    t = pd.read_csv(path)
++    assert len(t) == t.image.nunique() and (t.packet_B > t.jpeg_q40_baseline_B).all()
++    assert abs(t.packet_B.mean() - COAST_TILE_BYTES_MEASURED) < 0.5
++    row = t.iloc[0]                                  # packet_B is the real CCSDS serialization
++    wire = Packetizer().packetize(0x103, bytes(int(row.jpeg_q40_baseline_B) + 18))
++    assert sum(len(pk) for pk in wire) == row.packet_B
+diff --git a/demo/quickstart/run_demo.py b/demo/quickstart/run_demo.py
+index 3dd4237..c43ebc4 100644
+--- a/demo/quickstart/run_demo.py
++++ b/demo/quickstart/run_demo.py
+@@ -15,7 +15,7 @@ What runs LIVE, in order, on a 3x3 swath of 768 px tiles (2304 x 2304 px):
+   6. the value-greedy downlink order over that packet (sat7.scheduler.ValueGreedy)
+ Then, read from committed results (nothing recomputed): the same 9 tile IDs through the same
+ packet builder using the REAL detections in code/results/wp1_predictions.csv, and the measured
+-headline (557x, B0-B4) from code/results.
++headline (data reduction, B0-B4) from code/results.
+ 
+ HONESTY. The bundled tiles are SYNTHETIC stand-ins (Airbus rules forbid redistributing the real
+ ones; see README.md). Every number computed on them is labelled SYNTH: it proves the chain
+@@ -51,7 +51,8 @@ from sat7.prefilter import CLOUD, LAND, run_prefilter  # noqa: E402
+ from sat7.priority import LEVEL_NAME, P0, PriorityConfig, classify, encode_priority  # noqa: E402
+ from sat7.semantic import (EncoderConfig, Ids, Packetizer, TMFraming, decode_downlink,  # noqa: E402
+                            encode_image, pack_record, to_items)
+-from sat7.scheduler import (RAW_TILE_BYTES, LoDConfig, Ship, SizeModel,  # noqa: E402
++from sat7.scheduler import (COAST_TILE_BYTES_MEASURED, RAW_TILE_BYTES, LoDConfig, Ship,  # noqa: E402
++                            SizeModel,
+                             ValueGreedy, Workload, WorkloadConfig, encode_lod)
+ 
+ TILE = 768
+@@ -408,14 +409,16 @@ def main() -> int:
+           f"{len(ground['contexts'])} contexts, every CRC checked")
+     print(f"      on air with CCSDS TM framing + RS(255,223): {TMFraming().on_air_bytes(sem):,} B "
+           f"(reported only: the link capacity already carries this overhead)")
+-    print(f"    same packet, MODELED sizes (wp23: 40 B record, WP4 power law, 32.4 kB coast tile): {modeled:,.0f} B")
++    print(f"    same packet, MODELED sizes (wp23: 40 B record, WP4 power law; coastal tile at the "
++          f"measured mean {COAST_TILE_BYTES_MEASURED / 1e3:.1f} kB): {modeled:,.0f} B")
+     print(f"    RAW (B0 definition)                    {raw:11,} B   = {n_raw_tiles} non-cloud tiles x "
+           f"{RAW_TILE_BYTES:,} B (768x768x3, uncompressed)")
+     red = 1 - sem / raw if raw else float("nan")
+     factor = f"{raw / sem:,.0f}x" if sem else "no bytes sent"
+     print(f"    REDUCTION  1 - D_tx/D_raw =            {100 * red:11.3f} %   ({factor})   "
+           f"[{live_lbl}; 9 ship-rich tiles -- NOT the headline]")
+-    print(f"    same detections, LoD ladder (the scheme behind the 557x headline, modeled): {lod_bytes:,.0f} B")
++    print(f"    same detections, LoD ladder (the scheme behind the headline; crops and thumbnails "
++          f"modeled): {lod_bytes:,.0f} B")
+ 
+     # ------------------------------------------------------------------ [5] scheduler order
+     order = ValueGreedy().order(items, 0.0)
+@@ -492,15 +495,16 @@ def main() -> int:
+               f"{w1x['latency_ms_per_tile']['onnx_fp32_cpu']} ms/tile CPU   [REAL, laptop, wp1_export.json]")
+     if "B2" in camp:
+         b2 = camp["B2"]
+-        print(f"    B2 SAHI+fusion recall {float(b2['recall']['overall']):.3f} at "
+-              f"{float(b2['compute_vs_regular_tiling_x']):.2f}x compute (4x4 swaths)   "
+-              f"[{b2.get('label', 'REAL')}, wp18_campaign.json]")
++        b1 = camp.get("B1", {})
++        print(f"    B1 one call per scene: recall {float(b1['recall']['overall']):.3f} -> B2 SAHI+fusion "
++              f"{float(b2['recall']['overall']):.3f} at {float(b2['compute_vs_regular_tiling_x']):.2f}x "
++              f"compute, same {b2.get('scenes', '?')} scenes   [{b2.get('label', 'REAL')}, wp26_b0_b4.json]")
+     bent = table.get("Bent pipe (raw, FIFO)", {})
+     if ours and bent:
+         print(f"    B3 LoD + value-greedy: {float(bent['MB_offered']):,.0f} MB raw -> "
+               f"{float(ours['MB_sent']):.1f} MB/day = {float(ours['data_reduction_x']):,.0f}x, ship recall "
+               f"{float(ours['ship_recall']):.3f} @ assumed 15% cloud (band 0.40-0.82)   "
+-              f"[SIM-over-REAL, wp6_real_table.csv]")
++              f"[SIM-over-REAL; coastal tiles measured, thumbnails/crops modeled; wp6_real_table.csv]")
+     if "priority" in w23 and "lod" in w23:
+         p, q = w23["priority"], w23["lod"]
+         print(f"    P0-P3 scheme, same day: {float(p['MB_sent']):.1f} MB vs LoD {float(q['MB_sent']):.1f} MB, ship "
+diff --git a/demo/summary.py b/demo/summary.py
+index c7d3113..7451d6e 100644
+--- a/demo/summary.py
++++ b/demo/summary.py
+@@ -76,7 +76,7 @@ def main() -> None:
+     raw_mb = 60124.0
+     if camp and "configs" in camp and "B0" in camp["configs"]:
+         raw_mb = _f(camp["configs"]["B0"]["raw_volume_MB_day_at_40k"], raw_mb)
+-    sent_mb = _f(ours["MB_sent"]) if ours else 108.0
++    sent_mb = _f(ours["MB_sent"]) if ours else float("nan")
+     print(f"    A small satellite images ~{raw_mb:,.0f} MB of ocean per day.")
+     print(f"    Its radio link carries only a couple hundred MB per day.")
+     print(f"    => ~99.7% of what it sees is thrown away.  The usual fix: compress harder.")
+@@ -87,11 +87,13 @@ def main() -> None:
+         red = _f(ours["data_reduction_x"])
+         rec = _f(ours["ship_recall"])
+         print(f"    Data reduction vs raw : {red:,.0f}x   ({raw_mb:,.0f} MB  ->  {sent_mb:.1f} MB / day)")
++        print("                            coastal tiles at their measured JPEG size; thumbnails and crops modeled")
+         print(f"    Ships delivered       : {rec:.3f}   "
+               f"(!) at an ASSUMED 15% cloud -- band 0.40-0.82 over 0-50% cloud; never quote bare")
+         if fair:
+             dpts = (rec - _f(fair["ship_recall"])) * 100
+-            print(f"    vs fair Phi-sat-2 base: +{dpts:.1f} points of recall for ~7x the bytes")
++            print(f"    vs fair Phi-sat-2 base: +{dpts:.1f} points of recall for "
++                  f"~{sent_mb / _f(fair['MB_sent']):.0f}x the bytes")
+         if bent:
+             print(f"    vs bent-pipe FIFO     : {rec:.3f} vs {_f(bent['ship_recall']):.3f} "
+                   f"at the same byte budget (raw pixels collapse the link)")
+@@ -109,11 +111,11 @@ def main() -> None:
+             line("B0", "none (raw image)", "-", c["B0"].get("label", ""),
+                  f"{_f(c['B0']['raw_volume_MB_day_at_40k']):,.0f} MB/day raw")
+         if "B1" in c:
+-            line("B1", "detector", _f(c["B1"]["recall"]["overall"]), c["B1"].get("label", ""),
+-                 "YOLO on whole tiles")
++            line("B1", "detector, 1 call per scene", _f(c["B1"]["recall"]["overall"]), c["B1"].get("label", ""),
++                 f"no slicing; {_f(c['B1'].get('gt_ships')):,.0f} ships on {_f(c['B1'].get('scenes')):.0f} scenes")
+         if "B2" in c:
+             line("B2", "detector + SAHI + fusion", _f(c["B2"]["recall"]["overall"]),
+-                 c["B2"].get("label", ""), f"{_f(c['B2']['compute_vs_regular_tiling_x']):.2f}x compute")
++                 c["B2"].get("label", ""), f"same scenes; {_f(c['B2']['compute_vs_regular_tiling_x']):.2f}x compute")
+         if "B3" in c:
+             line("B3", "detector+gate+LoD+scheduler", _f(c["B3"]["ship_recall"]),
+                  c["B3"].get("label", ""), f"{_f(c['B3']['reduction_vs_B0_x']):,.0f}x reduction, {_f(c['B3']['MB_sent']):.0f} MB")

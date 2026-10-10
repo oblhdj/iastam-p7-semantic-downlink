@@ -12,16 +12,27 @@
     "dark_recall": 0.6265,
     "latency_med_h": 4.4999,
     "latency_p90_h": 9.4634,
-    "MB_sent": 49.1149,
-    "MB_offered": 49.1149,
+    "MB_sent": 90.5122,
+    "MB_offered": 90.5302,
     "MB_capacity": 209.9013,
     "value_frac": 0.9035,
     "policy": "Value-greedy (ours)",
     "n_items": 23732,
     "wp23_committed": {
-      "MB_sent": 49.9,
+      "MB_sent": 90.5,
+      "ship_recall": 0.6166
+    },
+    "earlier_flat_coast_tile": {
       "ship_recall": 0.6166,
-      "note": "committed before the dark-wake de-duplication (priority.py)"
+      "dark_recall": 0.6265,
+      "latency_med_h": 4.4999,
+      "latency_p90_h": 9.4634,
+      "MB_sent": 49.1149,
+      "MB_offered": 49.1149,
+      "MB_capacity": 209.9013,
+      "value_frac": 0.9035,
+      "policy": "Value-greedy (ours)",
+      "n_items": 23732
     }
   },
   "same_day_detection_based": {
@@ -245,7 +256,8 @@
         "p90_B": 90066.20000000001
       }
     },
-    "modeled_LoDConfig_coast_tile_bytes": 32420.0,
+    "canonical": "each tile's measured size (results/wp28_coast_tile_bytes.csv)",
+    "earlier_flat_COAST_TILE_BYTES_WP7": 32420.0,
     "why_they_differ": "LoDConfig took WP7's 'whole tile' ladder, which sampled 400 random tiles WITH SHIPS (mostly open sea); WP13 measured real coastal tiles at 65.5 kB (q40)"
   },
   "LoD_headline_with_measured_coast": {
@@ -273,6 +285,7 @@
       "policy": "Value-greedy (ours)",
       "n_items": 45264
     },
+    "size_table_reproduces_from_pixels": true,
     "coastal_tiles_swapped": 2060,
     "coastal_MB_modeled": 66.79,
     "coastal_MB_measured": 136.88
@@ -353,8 +366,8 @@
         "dark_recall": 0.6119,
         "latency_med_h": 4.3432,
         "latency_p90_h": 9.3358,
-        "MB_sent": 185.8928,
-        "MB_offered": 190.3772,
+        "MB_sent": 186.7217,
+        "MB_offered": 348.5881,
         "MB_capacity": 209.9013,
         "policy": "Value-greedy (ours)",
         "n_items": 96201
@@ -782,18 +795,18 @@
   "timing_ms_per_tile": {
     "T_enc_onboard_median": {
       "ships": 0.14,
-      "coast": 8.95
+      "coast": 9.1
     },
     "T_enc_onboard_p90": {
       "ships": 0.43,
-      "coast": 12.15
+      "coast": 12.48
     },
     "T_enc_tiles_timed": {
       "ships": 3541,
       "coast": 832
     },
     "T_dec_ground_median": 0.04,
-    "T_dec_ground_p90": 4.65,
+    "T_dec_ground_p90": 4.45,
     "note": "this laptop's CPU (not flight hardware); encode includes the JPEG crops"
   },
   "sample_record_packets": {
@@ -807,5 +820,5 @@
       30
     ]
   },
-  "elapsed_s": 147.5
+  "elapsed_s": 144.5
 }

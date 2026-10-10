@@ -1,8 +1,8 @@
 {
-  "label_note": "B0 SIM; B1/B2 REAL (detector on Airbus); B3 SIM-over-REAL (state cloud); B4 latency SIM, energy TARGET (report 19), lambda ASSUMPTION; energy from report 17 (ratios).",
-  "scale": "small-scale validation run (report 18 spec), not a full campaign",
+  "label_note": "B0 SIM; B1/B2 REAL, read from the same-input run wp26 (150 scenes of 4x4 real Airbus tiles); B3 SIM-over-REAL (state cloud; coastal tile bytes measured, other products modeled); B4 latency SIM, energy TARGET (report 19), lambda ASSUMPTION; energy from report 17 (ratios).",
+  "scale": "B1/B2: 150 scenes, 1,164 ships (wp26). B3/B4: one simulated 40,000-tile day. Different inputs -- B1/B2 are comparable with each other, not with B3's delivered recall.",
   "b0_b4_end_to_end": "RUNS -- B4 wired to sat7.relay.route (report 20 windows/choice + report 19 energy); B4 recall/MB are B3's (reroute), latency improved, energy TARGET",
-  "energy_reference": "report 17: gate saves >=57.6% processing energy; B2 adds 1.56x on detect; compute dominates comms 8.9:1; quote ratios not joules",
+  "energy_reference": "report 17 / results/wp17_energy_model.json (quote ratios, not joules)",
   "b4_design_question_resolved": "REROUTE not extra capacity -- scheduler.simulate owns eviction/capacity/aging upstream; route() changes only latency and energy. Confirmed by checking, asserted by gate (b).",
   "interface_mismatch_found": "B1/B2 emit raw detections but B3 consumes per-tile catalogue frames, and B2's unit is a swath vs B3's per-tile catalogue -- the catalogue-build adapter (run_prefilter + flag_predictions + GT match = wp11 stage 4) is a required step the spec drew as an arrow. report 18 updated to name it; report 12 proved it reproduces the catalogue to 1e-4.",
   "b4_interface_extension": "route_item gained direct_latency_s (peer-added, backward-compatible) so B4 uses B3's ACTUAL mid-pass delivered latency as the direct baseline -> gate (a) exact; wp20 numbers unmoved.",
@@ -16,6 +16,135 @@
       "source": "report 05 (scale-matched to B3's tile count for the reduction factor)"
     },
     "B1": {
+      "scenes": 150,
+      "scene_px": 3072,
+      "gt_ships": 1164,
+      "detections": 579,
+      "recall": {
+        "overall": 0.3385,
+        "small_<32": 0.0462,
+        "medium": 0.5421,
+        "large_>96": 0.8564
+      },
+      "precision": 0.6805,
+      "F1": 0.4521,
+      "AP50": 0.5394,
+      "conf_thr": 0.25,
+      "iou_thr": 0.5,
+      "detector_calls_per_scene": 1.0,
+      "onboard": "detector, one call on the whole scene",
+      "label": "REAL",
+      "status": "read from results/wp26_b0_b4.json (same-input run)"
+    },
+    "B2": {
+      "scenes": 150,
+      "scene_px": 3072,
+      "gt_ships": 1164,
+      "detections": 1199,
+      "recall": {
+        "overall": 0.7174,
+        "small_<32": 0.505,
+        "medium": 0.9242,
+        "large_>96": 0.9901
+      },
+      "precision": 0.6964,
+      "F1": 0.7067,
+      "AP50": 0.7595,
+      "conf_thr": 0.25,
+      "iou_thr": 0.5,
+      "window_px": 768,
+      "windows_per_scene": 25.0,
+      "compute_vs_regular_tiling_x": 1.5625,
+      "onboard": "detector+SAHI+fusion",
+      "label": "REAL",
+      "status": "read from results/wp26_b0_b4.json (same-input run)"
+    },
+    "B3": {
+      "semantic_scheme": "lod",
+      "day_tiles": 40000,
+      "day_ships": 21137,
+      "passes": 6,
+      "ship_recall": 0.6799,
+      "ceiling_recall": 0.6799,
+      "MB_sent": 178.5,
+      "B0_raw_MB_scale_matched": 60124.0,
+      "reduction_vs_B0_x": 336.8,
+      "latency_med_h": 4.67,
+      "cloud_assumption": "link_share 0.25; recall is at the workload's default cloud fraction -- band 0.40-0.82 over 0-50% cloud, never quote bare",
+      "onboard": "detector+gate+lod+scheduler",
+      "label": "SIM-over-REAL",
+      "status": "ran",
+      "run_params": {
+        "day_tiles": 40000,
+        "link_share": 0.25,
+        "seed": 0,
+        "det_thr": 0.25,
+        "mix": "orbit",
+        "conf_high": 0.67,
+        "semantic": "lod",
+        "cloud_caveat": "recall at an assumed 15% cloud fraction; band 0.40-0.82 across 0-50%"
+      },
+      "traceability": {
+        "csv": "results/wp6_real_table.csv",
+        "row": "Ours: LoD + value-greedy",
+        "MB_sent_csv": 176.3,
+        "MB_tol_frac": 0.02,
+        "ship_recall_csv": 0.6851,
+        "recall_tol_abs": 0.01,
+        "reduction_csv_x": 341.1,
+        "note": "MB reproduces to <2%; recall is a day-resampling realization within the documented [0.680, 0.690] spread (START_HERE, reports 05/11)"
+      }
+    },
+    "B4": {
+      "onboard": "+relay/adaptive comms (reroute of B3's plan)",
+      "status": "ran",
+      "label": "latency SIM; energy TARGET (report 19); lambda ASSUMPTION",
+      "design": "REROUTE not extra capacity -> recall & MB-sent are B3's verbatim (asserted)",
+      "n_items_routed": 45264,
+      "n_relayed": 30049,
+      "relay_raan_offset_deg": 90.0,
+      "isl_windows": 46,
+      "lam_E_headline": 0.0,
+      "lam_T_per_s": 0.0002777777777777778,
+      "ship_recall_SIMoverREAL": 0.6798978095283152,
+      "MB_sent_SIM": 178.5,
+      "relay_fraction": 0.664,
+      "latency_h_B3_direct": {
+        "median": 7.89,
+        "p90": 13.06,
+        "max": 35.18
+      },
+      "latency_h_B4_relay": {
+        "median": 3.41,
+        "p90": 6.14,
+        "max": 10.86
+      },
+      "worst_case_latency_cut_h": 24.32,
+      "energy_kJ_TARGET": {
+        "direct_only": 8.47,
+        "b4_mix": 12.88,
+        "note": "joules are report-19 placeholders pending real P_isl/R_isl"
+      },
+      "sanity_gates": {
+        "a_directonly_reproduces_B3": true,
+        "b_reroute_MB_unchanged": true,
+        "c_report20_f0.440_reproduced": true,
+        "f_grid": 0.44,
+        "passed": true
+      },
+      "lam_E_sweep_relay_fraction_ASSUMPTION": {
+        "lam_E=0": 0.664,
+        "lam_E=50": 0.629,
+        "lam_E=150": 0.576,
+        "lam_E=500": 0.102,
+        "lam_E=2000": 0.064
+      },
+      "modeling_asymmetry": "T_direct = B3 actual mid-pass latency; T_relay = window estimate (relay next-pass rise) -> slightly conservative against relay"
+    }
+  },
+  "legacy_small_samples": {
+    "note": "what this runner reported as B1 / B2 until 10 Oct 2026. Different inputs from each other and from B3; matched at IoU >= 0.3. Not the paper's B1 / B2 -- kept as measured references.",
+    "native_tiles": {
       "tiles": 200,
       "gt_ships": 262,
       "raw_detections": 272,
@@ -25,11 +154,11 @@
         "medium": 0.9367,
         "large_>96": 1.0
       },
-      "onboard": "detector",
+      "what": "one detector call per native 768 px tile (no large image)",
       "label": "REAL",
-      "status": "ran"
+      "full_scale": "results/wp24_detection_eval.json B1_committed_all_test_tiles (8,173 ships)"
     },
-    "B2": {
+    "swaths": {
       "swaths": 2,
       "window_px": 768,
       "gt_ships": 47,
@@ -41,90 +170,16 @@
         "large_>96": 1.0
       },
       "compute_vs_regular_tiling_x": 1.5625,
-      "onboard": "detector+SAHI",
+      "what": "SAHI + fusion on stitched swaths",
       "label": "REAL",
-      "status": "ran"
+      "full_scale": "results/wp24_detection_eval.json swaths.rows.sahi_B2 (716 ships)"
     },
-    "B3": {
-      "day_tiles": 40000,
-      "day_ships": 21137,
-      "passes": 6,
-      "ship_recall": 0.6799,
-      "ceiling_recall": 0.6799,
-      "MB_sent": 108.5,
-      "B0_raw_MB_scale_matched": 60124.0,
-      "reduction_vs_B0_x": 554.1,
-      "latency_med_h": 4.49,
-      "cloud_assumption": "link_share 0.25; recall is at the workload's default cloud fraction -- band 0.40-0.82 over 0-50% cloud, never quote bare",
-      "onboard": "detector+gate+LoD+scheduler",
-      "label": "SIM-over-REAL",
-      "status": "ran",
-      "traceability": {
-        "csv": "results/wp6_real_table.csv",
-        "row": "Ours: LoD + value-greedy",
-        "MB_sent_csv": 108.0,
-        "MB_tol_frac": 0.02,
-        "ship_recall_csv": 0.6851,
-        "recall_tol_abs": 0.01,
-        "reduction_csv_x": 557.0,
-        "note": "MB reproduces to <2%; recall is a day-resampling realization within the documented [0.680, 0.690] spread (START_HERE, reports 05/11)"
-      },
-      "run_params": {
-        "day_tiles": 40000,
-        "link_share": 0.25,
-        "seed": 0,
-        "det_thr": 0.25,
-        "mix": "orbit",
-        "conf_high": 0.67,
-        "cloud_caveat": "recall at an assumed 15% cloud fraction; band 0.40-0.82 across 0-50%"
-      }
-    },
-    "B4": {
-      "onboard": "+relay/adaptive comms (reroute of B3's plan)",
-      "status": "ran",
-      "label": "latency SIM; energy TARGET (report 19); lambda ASSUMPTION",
-      "design": "REROUTE not extra capacity -> recall & MB-sent are B3's verbatim (asserted)",
-      "n_items_routed": 45264,
-      "n_relayed": 19731,
-      "relay_raan_offset_deg": 90.0,
-      "isl_windows": 46,
-      "lam_E_headline": 0.0,
-      "lam_T_per_s": 0.0002777777777777778,
-      "ship_recall_SIMoverREAL": 0.6798978095283152,
-      "MB_sent_SIM": 108.5,
-      "relay_fraction": 0.436,
-      "latency_h_B3_direct": {
-        "median": 4.66,
-        "p90": 9.54,
-        "max": 11.58
-      },
-      "latency_h_B4_relay": {
-        "median": 1.99,
-        "p90": 4.51,
-        "max": 6.16
-      },
-      "worst_case_latency_cut_h": 5.42,
-      "energy_kJ_TARGET": {
-        "direct_only": 5.15,
-        "b4_mix": 6.92,
-        "note": "joules are report-19 placeholders pending real P_isl/R_isl"
-      },
-      "sanity_gates": {
-        "a_directonly_reproduces_B3": true,
-        "b_reroute_MB_unchanged": true,
-        "c_report20_f0.440_reproduced": true,
-        "f_grid": 0.44,
-        "passed": true
-      },
-      "lam_E_sweep_relay_fraction_ASSUMPTION": {
-        "lam_E=0": 0.436,
-        "lam_E=50": 0.41,
-        "lam_E=150": 0.315,
-        "lam_E=500": 0.064,
-        "lam_E=2000": 0.064
-      },
-      "modeling_asymmetry": "T_direct = B3 actual mid-pass latency; T_relay = window estimate (relay next-pass rise) -> slightly conservative against relay"
+    "per_tile_on_the_same_scenes": {
+      "recall": 0.7302,
+      "precision": 0.7191,
+      "gt_ships": 1164,
+      "what": "one call per 768 px source tile of the wp26 scenes = a 16-window tiling without overlap"
     }
   },
-  "elapsed_s": 25.4
+  "elapsed_s": 7.2
 }
