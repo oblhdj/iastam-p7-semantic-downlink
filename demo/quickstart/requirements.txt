@@ -1,0 +1,8 @@
+# Quickstart demo only -- CPU, no torch, no CUDA. Python >= 3.10.
+#   python -m pip install -r demo/quickstart/requirements.txt
+numpy>=1.24
+opencv-python-headless>=4.8   # JPEG decode + the classic pre-filter (sat7.prefilter)
+onnxruntime>=1.17             # runs model/best.onnx on CPU (CPUExecutionProvider)
+# sat7.scheduler imports sat7.orbit for a type; these two are pure Python and small:
+sgp4>=2.20
+skyfield>=1.45

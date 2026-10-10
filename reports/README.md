@@ -8,6 +8,38 @@ Numbers live in `../code/results/` as `.csv` / `.json`; these documents narrate 
 report carries a **REFRESHED** banner, the banner is current and the tables below it are not —
 the `.csv` is always authoritative.
 
+> ### ⚠ REFRESHED 10 Oct 2026 — two canonical changes; reports 05–22 narrate the earlier estimate
+>
+> 1. **The coastal context tile is now measured.** Every result up to report 22 charged a coastal
+>    tile a flat 32.4 kB, taken from a size ladder measured on open-sea tiles. Each tile is now
+>    charged its own JPEG q40 size (median 66.5 kB, `wp28_coast_tile_model.json`), and every result
+>    that depends on it was regenerated. Thumbnails and ship crops are still modeled sizes.
+> 2. **B1 / B2 are now the same-input run** (`wp26_b0_b4.py`, 150 scenes, 1,164 ships): B1 is one
+>    detector call on the whole scene, B2 is SAHI on those scenes.
+>
+> The one-sentence summaries below, and the bodies of reports 05–22, still quote the **earlier
+> all-modeled estimate**. It is kept, not deleted: `wp6_real_table_modeledcoast.csv` reproduces it.
+> Current values, from the regenerated files:
+>
+> | quantity | reports 05–22 say (earlier estimate) | current | file |
+> |---|---|---|---|
+> | data reduction vs a bent pipe | 557× (108.0 MB/day) | **341×** (176.3 MB/day) — coastal tiles measured, thumbnails and crops modeled | `wp6_real_table.csv` |
+> | B1 / B2 recall | 0.782 / 0.745 (262- and 47-ship samples, different inputs) | **0.339 / 0.717** (same scenes) | `wp26_b0_b4.json` |
+> | detector on native tiles (not the paper's B1) | 0.782 (262 ships) | 0.766 (8,173 ships) | `wp24_detection_eval.json` |
+> | vs FIFO at 160k tiles/day | 2.26× | 3.59× (1.88× at 80k) | `wp6_real_sweep.csv` |
+> | greedy vs exact optimum, operational scale | 0.251% | 0.884% | `wp5_optimality_gap.csv` |
+> | value of whole-day foresight | ≤0.2% | ≤0.3% | `wp5_joint_bound.csv` |
+> | queue-aware worst-case regret | 1.1 points | 0.2 points | `wp8_queue_aware.csv` |
+> | thumbnail gating re-key | 3.8% of the downlink | 2.3% | `wp14_gate_signal.json` |
+> | "ours ≥ fair baseline" under the sweep | 69 of 70 settings | 74 of 80 (all 6 failures at 160k) | `wp10_sensitivity.csv` |
+> | compute : radio energy | 8.9 : 1 | 5.5 : 1 | `wp17_energy_model.json` |
+> | relay (B4): worst-case latency, share, energy | 11.6→6.2 h, 44%, +34% | 35.2→10.9 h, 66%, +52% | `wp18_campaign.json` |
+> | P0–P3 vs LoD, same day | 49.9 vs 108.5 MB | 90.5 vs 178.5 MB | `wp23_semantic_compare.json` |
+>
+> Unchanged: ship recall 0.685 at 15% cloud, the +6.3 points over the fair baseline at nominal
+> load, detector mAP50 0.804, ES_proc 57.6%. Not regenerated: `wp7_budget_sweep.csv` (it sweeps
+> coastal sizes from the open-sea ladder itself and needs a new coastal measurement, not a rerun).
+
 ## The story in order
 
 | # | report | the one sentence |
@@ -33,7 +65,7 @@ the `.csv` is always authoritative.
 | 19 | [Relay energy](19-relay-energy.md) | `E_relay = E_ISL + E_GS` for B4: **relay always costs more energy than direct (1.8×), so it's a latency buy, not a power saving** — our energy injected into report 20's `route()` gives weighted ES **0.9816** (f=0.44), but ES is ~flat in the relay fraction (0.14-pt spread) |
 | 20 | [Relay path choice](20-relay-path-choice.md) | B4 windows + `min(J_direct, J_relay)`: a complementary-coverage relay **halves worst-case latency (11.5 h → 5.8 h)** — SIM from real orbit propagation; the energy half is TARGET (report 19), and direct-only reproduces the ground-only baseline exactly |
 | 21 | [B0–B4 campaign](21-b0-b4-campaign.md) | the full campaign end to end (closes START_HERE §5.4), B3 pinned to the 108 MB/557× headline row: **B4 is a reroute, not extra capacity** — recall/MB = B3 verbatim (0.680 at 15% cloud / 108.5 MB), relay cuts worst-case latency **11.6 h → 6.2 h** for +34% comm energy (TARGET); all sanity gates pass |
-| 23 | [Paper-faithful modules](23-paper-faithful-modules.md) | first-class SAHI mode + isolated overlap/fusion ablations, the **P0–P3 scheme** (Table I) as a drop-in for the LoD ladder, the joint program **`min αE+βD+γT`** *solved as one program* with a validity bracket, a calibratable energy model, and large-scene (DOTA/HRSID) loaders — infra, no new headline; LoD still reproduces 108 MB/557×, P0–P3 is leaner (49.9 MB) at −6.3 pts recall |
+| 23 | [Paper-faithful modules](23-paper-faithful-modules.md) | first-class SAHI mode + isolated overlap/fusion ablations, the **P0–P3 scheme** (Table I) as a drop-in for the LoD ladder, the joint program **`min αE+βD+γT`** *solved as one program* with a validity bracket, a calibratable energy model, and large-scene (DOTA/HRSID) loaders — infra, no new headline; LoD still reproduces the headline row, P0–P3 is leaner (90.5 vs 178.5 MB with measured coastal tiles; 49.1 vs 108.5 MB on the earlier flat size) at −6.3 pts recall |
 | 22 | [Onboard feasibility](22-onboard-feasibility.md) | **demo, not prototype:** every timing is a laptop, so "runs onboard" is a TARGET — but a 3.15M-param detector + 47k-param gate is the class our baseline **Φ-sat-2 already runs onboard** (Myriad 2, ~1 W), it's a **few-% duty cycle** at 40k tiles/day even on a VPU 6× slower, and the ES_proc energy saving is a hardware-independent time ratio; states what a prototype still owes |
 
 ## If you only read three

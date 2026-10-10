@@ -76,7 +76,7 @@ def main() -> None:
     raw_mb = 60124.0
     if camp and "configs" in camp and "B0" in camp["configs"]:
         raw_mb = _f(camp["configs"]["B0"]["raw_volume_MB_day_at_40k"], raw_mb)
-    sent_mb = _f(ours["MB_sent"]) if ours else 108.0
+    sent_mb = _f(ours["MB_sent"]) if ours else float("nan")
     print(f"    A small satellite images ~{raw_mb:,.0f} MB of ocean per day.")
     print(f"    Its radio link carries only a couple hundred MB per day.")
     print(f"    => ~99.7% of what it sees is thrown away.  The usual fix: compress harder.")
@@ -87,11 +87,13 @@ def main() -> None:
         red = _f(ours["data_reduction_x"])
         rec = _f(ours["ship_recall"])
         print(f"    Data reduction vs raw : {red:,.0f}x   ({raw_mb:,.0f} MB  ->  {sent_mb:.1f} MB / day)")
+        print("                            coastal tiles at their measured JPEG size; thumbnails and crops modeled")
         print(f"    Ships delivered       : {rec:.3f}   "
               f"(!) at an ASSUMED 15% cloud -- band 0.40-0.82 over 0-50% cloud; never quote bare")
         if fair:
             dpts = (rec - _f(fair["ship_recall"])) * 100
-            print(f"    vs fair Phi-sat-2 base: +{dpts:.1f} points of recall for ~7x the bytes")
+            print(f"    vs fair Phi-sat-2 base: +{dpts:.1f} points of recall for "
+                  f"~{sent_mb / _f(fair['MB_sent']):.0f}x the bytes")
         if bent:
             print(f"    vs bent-pipe FIFO     : {rec:.3f} vs {_f(bent['ship_recall']):.3f} "
                   f"at the same byte budget (raw pixels collapse the link)")
@@ -109,11 +111,11 @@ def main() -> None:
             line("B0", "none (raw image)", "-", c["B0"].get("label", ""),
                  f"{_f(c['B0']['raw_volume_MB_day_at_40k']):,.0f} MB/day raw")
         if "B1" in c:
-            line("B1", "detector", _f(c["B1"]["recall"]["overall"]), c["B1"].get("label", ""),
-                 "YOLO on whole tiles")
+            line("B1", "detector, 1 call per scene", _f(c["B1"]["recall"]["overall"]), c["B1"].get("label", ""),
+                 f"no slicing; {_f(c['B1'].get('gt_ships')):,.0f} ships on {_f(c['B1'].get('scenes')):.0f} scenes")
         if "B2" in c:
             line("B2", "detector + SAHI + fusion", _f(c["B2"]["recall"]["overall"]),
-                 c["B2"].get("label", ""), f"{_f(c['B2']['compute_vs_regular_tiling_x']):.2f}x compute")
+                 c["B2"].get("label", ""), f"same scenes; {_f(c['B2']['compute_vs_regular_tiling_x']):.2f}x compute")
         if "B3" in c:
             line("B3", "detector+gate+LoD+scheduler", _f(c["B3"]["ship_recall"]),
                  c["B3"].get("label", ""), f"{_f(c['B3']['reduction_vs_B0_x']):,.0f}x reduction, {_f(c['B3']['MB_sent']):.0f} MB")

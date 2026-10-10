@@ -1,0 +1,824 @@
+{
+  "label": "bytes REAL (measured encodings of real Airbus test tiles); recall/latency SIM-over-REAL; thresholds/values/qualities ASSUMPTION",
+  "day": {
+    "tiles": 40000,
+    "ships": 21137,
+    "passes": 6,
+    "link_share": 0.25,
+    "MB_capacity": 209.9
+  },
+  "canon_modeled": {
+    "ship_recall": 0.6166,
+    "dark_recall": 0.6265,
+    "latency_med_h": 4.4999,
+    "latency_p90_h": 9.4634,
+    "MB_sent": 90.5122,
+    "MB_offered": 90.5302,
+    "MB_capacity": 209.9013,
+    "value_frac": 0.9035,
+    "policy": "Value-greedy (ours)",
+    "n_items": 23732,
+    "wp23_committed": {
+      "MB_sent": 90.5,
+      "ship_recall": 0.6166
+    },
+    "earlier_flat_coast_tile": {
+      "ship_recall": 0.6166,
+      "dark_recall": 0.6265,
+      "latency_med_h": 4.4999,
+      "latency_p90_h": 9.4634,
+      "MB_sent": 49.1149,
+      "MB_offered": 49.1149,
+      "MB_capacity": 209.9013,
+      "value_frac": 0.9035,
+      "policy": "Value-greedy (ours)",
+      "n_items": 23732
+    }
+  },
+  "same_day_detection_based": {
+    "modeled_sizes": {
+      "ship_recall": 0.6521,
+      "dark_recall": 0.6625,
+      "latency_med_h": 4.5006,
+      "latency_p90_h": 9.4611,
+      "MB_sent": 58.7482,
+      "MB_offered": 58.7482,
+      "MB_capacity": 209.9013,
+      "policy": "Value-greedy (ours)",
+      "n_items": 32871
+    },
+    "measured_progressive": {
+      "ship_recall": 0.6521,
+      "dark_recall": 0.6625,
+      "latency_med_h": 4.5006,
+      "latency_p90_h": 9.4611,
+      "MB_sent": 98.7122,
+      "MB_offered": 98.7509,
+      "MB_capacity": 209.9013,
+      "policy": "Value-greedy (ours)",
+      "n_items": 32871
+    },
+    "measured_baseline_jpeg": {
+      "ship_recall": 0.6521,
+      "dark_recall": 0.6625,
+      "latency_med_h": 4.5006,
+      "latency_p90_h": 9.4611,
+      "MB_sent": 106.5392,
+      "MB_offered": 106.5392,
+      "MB_capacity": 209.9013,
+      "policy": "Value-greedy (ours)",
+      "n_items": 32871
+    },
+    "measured_tile_metadata": {
+      "ship_recall": 0.6521,
+      "dark_recall": 0.6625,
+      "latency_med_h": 4.5006,
+      "latency_p90_h": 9.4612,
+      "MB_sent": 98.5426,
+      "MB_offered": 98.5838,
+      "MB_capacity": 209.9013,
+      "policy": "Value-greedy (ours)",
+      "n_items": 23082
+    }
+  },
+  "product_sizes": {
+    "measured_progressive": {
+      "P1": {
+        "count": 18850,
+        "MB": 0.706,
+        "median_B": 38.0,
+        "p90_B": 42.0,
+        "modeled_MB": 0.754,
+        "measured_over_modeled": 0.937,
+        "median_min_fraction": 1.0,
+        "packets": 18850
+      },
+      "P2": {
+        "count": 11932,
+        "MB": 12.215,
+        "median_B": 654.0,
+        "p90_B": 1525.0,
+        "modeled_MB": 12.165,
+        "measured_over_modeled": 1.004,
+        "median_min_fraction": 0.417,
+        "packets": 12408
+      },
+      "P2_wake": {
+        "count": 747,
+        "MB": 2.937,
+        "median_B": 1114,
+        "p90_B": 8149.599999999998,
+        "modeled_MB": 2.322,
+        "measured_over_modeled": 1.265,
+        "median_min_fraction": 0.278,
+        "packets": 1207
+      },
+      "P3_coast_tile": {
+        "count": 1342,
+        "MB": 82.893,
+        "median_B": 63259.5,
+        "p90_B": 92089.0,
+        "modeled_MB": 43.508,
+        "measured_over_modeled": 1.905,
+        "median_min_fraction": 0.08,
+        "packets": 20892
+      },
+      "totals": {
+        "MB_measured": 98.751,
+        "MB_modeled": 58.748,
+        "packet_header_crc_share": 0.0043,
+        "jpeg_header_share": 0.0342,
+        "jpeg_payload_share": 0.9875,
+        "on_air_MB_ccsds_tm": 114.094,
+        "tm_efficiency": 0.8655,
+        "capacity_efficiency_assumed": 0.8
+      }
+    },
+    "measured_baseline_jpeg": {
+      "P1": {
+        "count": 18850,
+        "MB": 0.706,
+        "median_B": 38.0,
+        "p90_B": 42.0,
+        "modeled_MB": 0.754,
+        "measured_over_modeled": 0.937,
+        "median_min_fraction": 1.0,
+        "packets": 18850
+      },
+      "P2": {
+        "count": 11932,
+        "MB": 13.547,
+        "median_B": 744.0,
+        "p90_B": 1653.0,
+        "modeled_MB": 12.165,
+        "measured_over_modeled": 1.114,
+        "median_min_fraction": 1.0,
+        "packets": 12479
+      },
+      "P2_wake": {
+        "count": 747,
+        "MB": 3.143,
+        "median_B": 1195,
+        "p90_B": 8823.999999999985,
+        "modeled_MB": 2.322,
+        "measured_over_modeled": 1.353,
+        "median_min_fraction": 1.0,
+        "packets": 1239
+      },
+      "P3_coast_tile": {
+        "count": 1342,
+        "MB": 89.144,
+        "median_B": 67232.5,
+        "p90_B": 99439.10000000002,
+        "modeled_MB": 43.508,
+        "measured_over_modeled": 2.049,
+        "median_min_fraction": 1.0,
+        "packets": 22422
+      },
+      "totals": {
+        "MB_measured": 106.539,
+        "MB_modeled": 58.748,
+        "packet_header_crc_share": 0.0041,
+        "jpeg_header_share": 0.082,
+        "jpeg_payload_share": 0.9883,
+        "on_air_MB_ccsds_tm": 123.094,
+        "tm_efficiency": 0.8655,
+        "capacity_efficiency_assumed": 0.8
+      }
+    },
+    "measured_tile_metadata": {
+      "P1": {
+        "count": 9061,
+        "MB": 0.539,
+        "median_B": 43,
+        "p90_B": 99.0,
+        "modeled_MB": 0.754,
+        "measured_over_modeled": 0.715,
+        "median_min_fraction": 1.0,
+        "packets": 9061
+      },
+      "P2": {
+        "count": 11932,
+        "MB": 12.215,
+        "median_B": 654.0,
+        "p90_B": 1525.0,
+        "modeled_MB": 12.165,
+        "measured_over_modeled": 1.004,
+        "median_min_fraction": 0.417,
+        "packets": 12408
+      },
+      "P2_wake": {
+        "count": 747,
+        "MB": 2.937,
+        "median_B": 1114,
+        "p90_B": 8149.599999999998,
+        "modeled_MB": 2.322,
+        "measured_over_modeled": 1.265,
+        "median_min_fraction": 0.278,
+        "packets": 1207
+      },
+      "P3_coast_tile": {
+        "count": 1342,
+        "MB": 82.893,
+        "median_B": 63259.5,
+        "p90_B": 92089.0,
+        "modeled_MB": 43.508,
+        "measured_over_modeled": 1.905,
+        "median_min_fraction": 0.08,
+        "packets": 20892
+      },
+      "totals": {
+        "MB_measured": 98.584,
+        "MB_modeled": 58.748,
+        "packet_header_crc_share": 0.0035,
+        "jpeg_header_share": 0.0342,
+        "jpeg_payload_share": 0.9892,
+        "on_air_MB_ccsds_tm": 113.901,
+        "tm_efficiency": 0.8655,
+        "capacity_efficiency_assumed": 0.8
+      }
+    }
+  },
+  "coastal_context_tile_q40": {
+    "measured_all_coastal_test_tiles": {
+      "baseline": {
+        "tiles": 1415,
+        "median_B": 66527,
+        "mean_B": 65967.0,
+        "p10_B": 33585.6,
+        "p90_B": 96612.0
+      },
+      "progressive": {
+        "tiles": 1415,
+        "median_B": 62552,
+        "mean_B": 61378.8,
+        "p10_B": 29333.800000000003,
+        "p90_B": 90066.20000000001
+      }
+    },
+    "canonical": "each tile's measured size (results/wp28_coast_tile_bytes.csv)",
+    "earlier_flat_COAST_TILE_BYTES_WP7": 32420.0,
+    "why_they_differ": "LoDConfig took WP7's 'whole tile' ladder, which sampled 400 random tiles WITH SHIPS (mostly open sea); WP13 measured real coastal tiles at 65.5 kB (q40)"
+  },
+  "LoD_headline_with_measured_coast": {
+    "modeled": {
+      "ship_recall": 0.6799,
+      "dark_recall": 0.6793,
+      "latency_med_h": 4.4895,
+      "latency_p90_h": 9.5121,
+      "MB_sent": 108.5116,
+      "MB_offered": 108.5116,
+      "MB_capacity": 209.9013,
+      "value_frac": 0.7268,
+      "policy": "Value-greedy (ours)",
+      "n_items": 45264
+    },
+    "measured_coast": {
+      "ship_recall": 0.6799,
+      "dark_recall": 0.6793,
+      "latency_med_h": 4.6738,
+      "latency_p90_h": 9.8188,
+      "MB_sent": 178.5387,
+      "MB_offered": 178.6088,
+      "MB_capacity": 209.9013,
+      "value_frac": 0.7268,
+      "policy": "Value-greedy (ours)",
+      "n_items": 45264
+    },
+    "size_table_reproduces_from_pixels": true,
+    "coastal_tiles_swapped": 2060,
+    "coastal_MB_modeled": 66.79,
+    "coastal_MB_measured": 136.88
+  },
+  "policies_measured_packets": {
+    "nominal_40k": {
+      "Value-greedy (ours)": {
+        "ship_recall": 0.6521,
+        "dark_recall": 0.6625,
+        "latency_med_h": 4.5006,
+        "latency_p90_h": 9.4611,
+        "MB_sent": 98.7122,
+        "MB_offered": 98.7509,
+        "MB_capacity": 209.9013,
+        "policy": "Value-greedy (ours)",
+        "n_items": 32871
+      },
+      "FIFO": {
+        "ship_recall": 0.6521,
+        "dark_recall": 0.6625,
+        "latency_med_h": 4.5731,
+        "latency_p90_h": 9.4836,
+        "MB_sent": 98.7509,
+        "MB_offered": 98.7509,
+        "MB_capacity": 209.9013,
+        "policy": "FIFO",
+        "n_items": 32871
+      },
+      "No buffering": {
+        "ship_recall": 0.6062,
+        "dark_recall": 0.6092,
+        "latency_med_h": 4.9978,
+        "latency_p90_h": 9.6583,
+        "MB_sent": 92.1364,
+        "MB_offered": 98.7509,
+        "MB_capacity": 209.9013,
+        "policy": "No buffering",
+        "n_items": 32871
+      }
+    },
+    "congested": {
+      "Value-greedy (ours)": {
+        "ship_recall": 0.6553,
+        "dark_recall": 0.6461,
+        "latency_med_h": 4.3459,
+        "latency_p90_h": 9.3417,
+        "MB_sent": 186.784,
+        "MB_offered": 378.4323,
+        "MB_capacity": 209.9013,
+        "policy": "Value-greedy (ours)",
+        "n_items": 132365
+      },
+      "FIFO": {
+        "ship_recall": 0.3146,
+        "dark_recall": 0.3097,
+        "latency_med_h": 16.2975,
+        "latency_p90_h": 25.4791,
+        "MB_sent": 186.6473,
+        "MB_offered": 378.4323,
+        "MB_capacity": 209.9013,
+        "policy": "FIFO",
+        "n_items": 132365
+      },
+      "No buffering": {
+        "ship_recall": 0.217,
+        "dark_recall": 0.2073,
+        "latency_med_h": 8.4341,
+        "latency_p90_h": 10.9998,
+        "MB_sent": 128.7968,
+        "MB_offered": 378.4323,
+        "MB_capacity": 209.9013,
+        "policy": "No buffering",
+        "n_items": 132365
+      },
+      "tiles": 160000,
+      "canon_modeled_value_greedy": {
+        "ship_recall": 0.6211,
+        "dark_recall": 0.6119,
+        "latency_med_h": 4.3432,
+        "latency_p90_h": 9.3358,
+        "MB_sent": 186.7217,
+        "MB_offered": 348.5881,
+        "MB_capacity": 209.9013,
+        "policy": "Value-greedy (ours)",
+        "n_items": 96201
+      }
+    }
+  },
+  "threshold_sweep_nominal": [
+    {
+      "det_thr": 0.15,
+      "p1_conf": 0.5,
+      "coast_escalation": "all",
+      "MB_per_day": 108.47,
+      "records": 25159,
+      "false_alarm_records": 10438,
+      "rois": 16826,
+      "contexts": 1449,
+      "recall_ceiling": 0.6965,
+      "recall_non_cloud": 0.8339,
+      "ships_with_image_evidence": 0.4788
+    },
+    {
+      "det_thr": 0.15,
+      "p1_conf": 0.5,
+      "coast_escalation": "uncertain",
+      "MB_per_day": 58.72,
+      "records": 25159,
+      "false_alarm_records": 10438,
+      "rois": 15112,
+      "contexts": 805,
+      "recall_ceiling": 0.6965,
+      "recall_non_cloud": 0.8339,
+      "ships_with_image_evidence": 0.373
+    },
+    {
+      "det_thr": 0.15,
+      "p1_conf": 0.67,
+      "coast_escalation": "all",
+      "MB_per_day": 110.26,
+      "records": 25159,
+      "false_alarm_records": 10438,
+      "rois": 18988,
+      "contexts": 1449,
+      "recall_ceiling": 0.6965,
+      "recall_non_cloud": 0.8339,
+      "ships_with_image_evidence": 0.5966
+    },
+    {
+      "det_thr": 0.15,
+      "p1_conf": 0.67,
+      "coast_escalation": "uncertain",
+      "MB_per_day": 67.66,
+      "records": 25159,
+      "false_alarm_records": 10438,
+      "rois": 17751,
+      "contexts": 909,
+      "recall_ceiling": 0.6965,
+      "recall_non_cloud": 0.8339,
+      "ships_with_image_evidence": 0.5164
+    },
+    {
+      "det_thr": 0.15,
+      "p1_conf": 0.8,
+      "coast_escalation": "all",
+      "MB_per_day": 112.83,
+      "records": 25159,
+      "false_alarm_records": 10438,
+      "rois": 20828,
+      "contexts": 1449,
+      "recall_ceiling": 0.6965,
+      "recall_non_cloud": 0.8339,
+      "ships_with_image_evidence": 0.7131
+    },
+    {
+      "det_thr": 0.15,
+      "p1_conf": 0.8,
+      "coast_escalation": "uncertain",
+      "MB_per_day": 79.44,
+      "records": 25159,
+      "false_alarm_records": 10438,
+      "rois": 20046,
+      "contexts": 1041,
+      "recall_ceiling": 0.6965,
+      "recall_non_cloud": 0.8339,
+      "ships_with_image_evidence": 0.6611
+    },
+    {
+      "det_thr": 0.15,
+      "p1_conf": 0.9,
+      "coast_escalation": "all",
+      "MB_per_day": 121.26,
+      "records": 25159,
+      "false_alarm_records": 10438,
+      "rois": 24173,
+      "contexts": 1449,
+      "recall_ceiling": 0.6965,
+      "recall_non_cloud": 0.8339,
+      "ships_with_image_evidence": 0.933
+    },
+    {
+      "det_thr": 0.15,
+      "p1_conf": 0.9,
+      "coast_escalation": "uncertain",
+      "MB_per_day": 114.2,
+      "records": 25159,
+      "false_alarm_records": 10438,
+      "rois": 24028,
+      "contexts": 1369,
+      "recall_ceiling": 0.6965,
+      "recall_non_cloud": 0.8339,
+      "ships_with_image_evidence": 0.9232
+    },
+    {
+      "det_thr": 0.25,
+      "p1_conf": 0.5,
+      "coast_escalation": "all",
+      "MB_per_day": 96.96,
+      "records": 18850,
+      "false_alarm_records": 5067,
+      "rois": 10517,
+      "contexts": 1342,
+      "recall_ceiling": 0.6521,
+      "recall_non_cloud": 0.7808,
+      "ships_with_image_evidence": 0.4434
+    },
+    {
+      "det_thr": 0.25,
+      "p1_conf": 0.5,
+      "coast_escalation": "uncertain",
+      "MB_per_day": 41.13,
+      "records": 18850,
+      "false_alarm_records": 5067,
+      "rois": 8803,
+      "contexts": 608,
+      "recall_ceiling": 0.6521,
+      "recall_non_cloud": 0.7808,
+      "ships_with_image_evidence": 0.3303
+    },
+    {
+      "det_thr": 0.25,
+      "p1_conf": 0.67,
+      "coast_escalation": "all",
+      "MB_per_day": 98.75,
+      "records": 18850,
+      "false_alarm_records": 5067,
+      "rois": 12679,
+      "contexts": 1342,
+      "recall_ceiling": 0.6521,
+      "recall_non_cloud": 0.7808,
+      "ships_with_image_evidence": 0.5692
+    },
+    {
+      "det_thr": 0.25,
+      "p1_conf": 0.67,
+      "coast_escalation": "uncertain",
+      "MB_per_day": 52.44,
+      "records": 18850,
+      "false_alarm_records": 5067,
+      "rois": 11442,
+      "contexts": 747,
+      "recall_ceiling": 0.6521,
+      "recall_non_cloud": 0.7808,
+      "ships_with_image_evidence": 0.4835
+    },
+    {
+      "det_thr": 0.25,
+      "p1_conf": 0.8,
+      "coast_escalation": "all",
+      "MB_per_day": 101.32,
+      "records": 18850,
+      "false_alarm_records": 5067,
+      "rois": 14519,
+      "contexts": 1342,
+      "recall_ceiling": 0.6521,
+      "recall_non_cloud": 0.7808,
+      "ships_with_image_evidence": 0.6935
+    },
+    {
+      "det_thr": 0.25,
+      "p1_conf": 0.8,
+      "coast_escalation": "uncertain",
+      "MB_per_day": 66.58,
+      "records": 18850,
+      "false_alarm_records": 5067,
+      "rois": 13737,
+      "contexts": 914,
+      "recall_ceiling": 0.6521,
+      "recall_non_cloud": 0.7808,
+      "ships_with_image_evidence": 0.638
+    },
+    {
+      "det_thr": 0.25,
+      "p1_conf": 0.9,
+      "coast_escalation": "all",
+      "MB_per_day": 109.75,
+      "records": 18850,
+      "false_alarm_records": 5067,
+      "rois": 17864,
+      "contexts": 1342,
+      "recall_ceiling": 0.6521,
+      "recall_non_cloud": 0.7808,
+      "ships_with_image_evidence": 0.9285
+    },
+    {
+      "det_thr": 0.25,
+      "p1_conf": 0.9,
+      "coast_escalation": "uncertain",
+      "MB_per_day": 102.22,
+      "records": 18850,
+      "false_alarm_records": 5067,
+      "rois": 17719,
+      "contexts": 1256,
+      "recall_ceiling": 0.6521,
+      "recall_non_cloud": 0.7808,
+      "ships_with_image_evidence": 0.9179
+    },
+    {
+      "det_thr": 0.35,
+      "p1_conf": 0.5,
+      "coast_escalation": "all",
+      "MB_per_day": 86.69,
+      "records": 14826,
+      "false_alarm_records": 2353,
+      "rois": 6493,
+      "contexts": 1221,
+      "recall_ceiling": 0.5901,
+      "recall_non_cloud": 0.7066,
+      "ships_with_image_evidence": 0.3849
+    },
+    {
+      "det_thr": 0.35,
+      "p1_conf": 0.5,
+      "coast_escalation": "uncertain",
+      "MB_per_day": 25.36,
+      "records": 14826,
+      "false_alarm_records": 2353,
+      "rois": 4779,
+      "contexts": 389,
+      "recall_ceiling": 0.5901,
+      "recall_non_cloud": 0.7066,
+      "ships_with_image_evidence": 0.26
+    },
+    {
+      "det_thr": 0.35,
+      "p1_conf": 0.67,
+      "coast_escalation": "all",
+      "MB_per_day": 88.48,
+      "records": 14826,
+      "false_alarm_records": 2353,
+      "rois": 8655,
+      "contexts": 1221,
+      "recall_ceiling": 0.5901,
+      "recall_non_cloud": 0.7066,
+      "ships_with_image_evidence": 0.5239
+    },
+    {
+      "det_thr": 0.35,
+      "p1_conf": 0.67,
+      "coast_escalation": "uncertain",
+      "MB_per_day": 40.04,
+      "records": 14826,
+      "false_alarm_records": 2353,
+      "rois": 7418,
+      "contexts": 584,
+      "recall_ceiling": 0.5901,
+      "recall_non_cloud": 0.7066,
+      "ships_with_image_evidence": 0.4292
+    },
+    {
+      "det_thr": 0.35,
+      "p1_conf": 0.8,
+      "coast_escalation": "all",
+      "MB_per_day": 91.05,
+      "records": 14826,
+      "false_alarm_records": 2353,
+      "rois": 10495,
+      "contexts": 1221,
+      "recall_ceiling": 0.5901,
+      "recall_non_cloud": 0.7066,
+      "ships_with_image_evidence": 0.6613
+    },
+    {
+      "det_thr": 0.35,
+      "p1_conf": 0.8,
+      "coast_escalation": "uncertain",
+      "MB_per_day": 55.25,
+      "records": 14826,
+      "false_alarm_records": 2353,
+      "rois": 9713,
+      "contexts": 771,
+      "recall_ceiling": 0.5901,
+      "recall_non_cloud": 0.7066,
+      "ships_with_image_evidence": 0.6
+    },
+    {
+      "det_thr": 0.35,
+      "p1_conf": 0.9,
+      "coast_escalation": "all",
+      "MB_per_day": 99.48,
+      "records": 14826,
+      "false_alarm_records": 2353,
+      "rois": 13840,
+      "contexts": 1221,
+      "recall_ceiling": 0.5901,
+      "recall_non_cloud": 0.7066,
+      "ships_with_image_evidence": 0.9209
+    },
+    {
+      "det_thr": 0.35,
+      "p1_conf": 0.9,
+      "coast_escalation": "uncertain",
+      "MB_per_day": 91.76,
+      "records": 14826,
+      "false_alarm_records": 2353,
+      "rois": 13695,
+      "contexts": 1132,
+      "recall_ceiling": 0.5901,
+      "recall_non_cloud": 0.7066,
+      "ships_with_image_evidence": 0.9093
+    },
+    {
+      "det_thr": 0.5,
+      "p1_conf": 0.5,
+      "coast_escalation": "all",
+      "MB_per_day": 74.01,
+      "records": 11090,
+      "false_alarm_records": 817,
+      "rois": 2757,
+      "contexts": 1053,
+      "recall_ceiling": 0.486,
+      "recall_non_cloud": 0.5819,
+      "ships_with_image_evidence": 0.2532
+    },
+    {
+      "det_thr": 0.5,
+      "p1_conf": 0.5,
+      "coast_escalation": "uncertain",
+      "MB_per_day": 2.12,
+      "records": 11090,
+      "false_alarm_records": 817,
+      "rois": 1043,
+      "contexts": 0,
+      "recall_ceiling": 0.486,
+      "recall_non_cloud": 0.5819,
+      "ships_with_image_evidence": 0.1015
+    },
+    {
+      "det_thr": 0.5,
+      "p1_conf": 0.67,
+      "coast_escalation": "all",
+      "MB_per_day": 75.81,
+      "records": 11090,
+      "false_alarm_records": 817,
+      "rois": 4919,
+      "contexts": 1053,
+      "recall_ceiling": 0.486,
+      "recall_non_cloud": 0.5819,
+      "ships_with_image_evidence": 0.422
+    },
+    {
+      "det_thr": 0.5,
+      "p1_conf": 0.67,
+      "coast_escalation": "uncertain",
+      "MB_per_day": 23.83,
+      "records": 11090,
+      "false_alarm_records": 817,
+      "rois": 3682,
+      "contexts": 349,
+      "recall_ceiling": 0.486,
+      "recall_non_cloud": 0.5819,
+      "ships_with_image_evidence": 0.307
+    },
+    {
+      "det_thr": 0.5,
+      "p1_conf": 0.8,
+      "coast_escalation": "all",
+      "MB_per_day": 78.37,
+      "records": 11090,
+      "false_alarm_records": 817,
+      "rois": 6759,
+      "contexts": 1053,
+      "recall_ceiling": 0.486,
+      "recall_non_cloud": 0.5819,
+      "ships_with_image_evidence": 0.5888
+    },
+    {
+      "det_thr": 0.5,
+      "p1_conf": 0.8,
+      "coast_escalation": "uncertain",
+      "MB_per_day": 41.26,
+      "records": 11090,
+      "false_alarm_records": 817,
+      "rois": 5977,
+      "contexts": 576,
+      "recall_ceiling": 0.486,
+      "recall_non_cloud": 0.5819,
+      "ships_with_image_evidence": 0.5144
+    },
+    {
+      "det_thr": 0.5,
+      "p1_conf": 0.9,
+      "coast_escalation": "all",
+      "MB_per_day": 86.8,
+      "records": 11090,
+      "false_alarm_records": 817,
+      "rois": 10104,
+      "contexts": 1053,
+      "recall_ceiling": 0.486,
+      "recall_non_cloud": 0.5819,
+      "ships_with_image_evidence": 0.904
+    },
+    {
+      "det_thr": 0.5,
+      "p1_conf": 0.9,
+      "coast_escalation": "uncertain",
+      "MB_per_day": 78.57,
+      "records": 11090,
+      "false_alarm_records": 817,
+      "rois": 9959,
+      "contexts": 957,
+      "recall_ceiling": 0.486,
+      "recall_non_cloud": 0.5819,
+      "ships_with_image_evidence": 0.8899
+    }
+  ],
+  "timing_ms_per_tile": {
+    "T_enc_onboard_median": {
+      "ships": 0.14,
+      "coast": 9.1
+    },
+    "T_enc_onboard_p90": {
+      "ships": 0.43,
+      "coast": 12.48
+    },
+    "T_enc_tiles_timed": {
+      "ships": 3541,
+      "coast": 832
+    },
+    "T_dec_ground_median": 0.04,
+    "T_dec_ground_p90": 4.45,
+    "note": "this laptop's CPU (not flight hardware); encode includes the JPEG crops"
+  },
+  "sample_record_packets": {
+    "image": "0002756f7.jpg",
+    "packets_hex": [
+      "0101c000001f42000fa22a000000100e0000f401020d000018020000c200190101000000df37",
+      "0101c001001f4200dc9e2a000000100e0000f4015d0d0000ea010000b700fa0002000000a4ba"
+    ],
+    "record_bytes": [
+      30,
+      30
+    ]
+  },
+  "elapsed_s": 144.5
+}

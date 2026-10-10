@@ -2,7 +2,7 @@
   "label_note": "T_k REAL (laptop RTX 5060, not flight hw); downlink SIM (orbit sim); P_k ASSUMPTION (swept). ES_proc for the default CPU-ONNX build is P-independent. All stage times and MB/day are read LIVE from their source files (see provenance).",
   "stage_times_ms": {
     "preprocess_decode_cpu": 0.71,
-    "classic_prefilter_cpu": 56.281849974766374,
+    "classic_prefilter_cpu": 56.36035000497941,
     "gate_gpu": 0.052,
     "gate_cpu": 0.94,
     "detect_gpu": 10.71106556389845,
@@ -26,8 +26,8 @@
   ],
   "sanity_gate": {
     "check_a_data_reduction": {
-      "model_d_raw/d_sent": 556.96,
-      "wp6_real_table_data_reduction_x": 556.96,
+      "model_d_raw/d_sent": 341.1,
+      "wp6_real_table_data_reduction_x": 341.1,
       "rel_err": 0.0
     },
     "check_b_rate_bound": {
@@ -48,16 +48,16 @@
     "capacity_MB_day": 649.2,
     "R_eff_Mbps": 2.531,
     "R_zenith_Mbps_model": 6.4,
-    "D_sent_MB_day": 107.95,
+    "D_sent_MB_day": 176.27,
     "D_raw_MB_day": 60124.3,
-    "capacity_used_by_semantic": 0.1663,
+    "capacity_used_by_semantic": 0.2715,
     "bent_pipe_days_of_contact_needed": 92.6
   },
   "E_proc_per_tile_J": {
     "cpu_onnx_DEFAULT": {
       "baseline": {
         "preprocess": 0.01988,
-        "gate_or_prefilter": 1.5758917992934585,
+        "gate_or_prefilter": 1.5780898001394235,
         "detect": 1.0808,
         "fuse": 0.0,
         "semantic": 0.014
@@ -69,15 +69,15 @@
         "fuse": 0.0,
         "semantic": 0.014
       },
-      "E_base": 2.6906,
+      "E_base": 2.6928,
       "E_prop": 1.141,
-      "ES_proc": 0.5759,
+      "ES_proc": 0.5763,
       "ES_proc_note": "P_cpu cancels (all-CPU) -> = time ratio, power-independent; LOWER BOUND (gate also skips 40.2% of empty tiles, report 04, uncounted here)"
     },
     "gpu_report12_budget": {
       "baseline": {
         "preprocess": 0.01988,
-        "gate_or_prefilter": 1.5758917992934585,
+        "gate_or_prefilter": 1.5780898001394235,
         "detect": 0.642663933833907,
         "fuse": 0.0,
         "semantic": 0.014
@@ -89,21 +89,21 @@
         "fuse": 0.0,
         "semantic": 0.014
       },
-      "E_base": 2.2524,
+      "E_base": 2.2546,
       "E_prop": 0.6797,
-      "ES_proc": 0.6983,
+      "ES_proc": 0.6985,
       "ES_proc_note": "depends on P_cpu/P_gpu (classic stage is CPU, detector GPU); energy saving < the 6x TIME saving because the eliminated CPU stage draws less than the retained GPU detector"
     }
   },
   "E_per_day_kJ": {
     "tiles_per_day": 40000,
     "E_proc_proposed": 45.64,
-    "E_proc_baseline": 107.62,
-    "E_comm_proposed_semantic": 5.12,
+    "E_proc_baseline": 107.71,
+    "E_comm_proposed_semantic": 8.36,
     "E_comm_bent_pipe_raw": 2850.63,
-    "E_total_proposed": 50.76,
-    "proc_vs_comm_ratio_proposed": 8.92,
-    "ES_total_vs_bent_pipe": 0.9822
+    "E_total_proposed": 54.0,
+    "proc_vs_comm_ratio_proposed": 5.46,
+    "ES_total_vs_bent_pipe": 0.9811
   },
   "sensitivity_P_sweep": {
     "P_cpu": {
@@ -112,12 +112,12 @@
         45.0
       ],
       "ES_proc_gpu": [
-        0.5589,
-        0.7832
+        0.5592,
+        0.7834
       ],
       "ES_total": [
-        0.9896,
-        0.9725
+        0.9885,
+        0.9713
       ]
     },
     "P_gpu": {
@@ -126,12 +126,12 @@
         115.0
       ],
       "ES_proc_gpu": [
-        0.7931,
-        0.5525
+        0.7933,
+        0.5528
       ],
       "ES_total": [
-        0.9822,
-        0.9822
+        0.9811,
+        0.9811
       ]
     },
     "P_tx": {
@@ -140,13 +140,59 @@
         30.0
       ],
       "ES_proc_gpu": [
-        0.6983,
-        0.6983
+        0.6985,
+        0.6985
       ],
       "ES_total": [
-        0.9682,
-        0.9902
+        0.967,
+        0.9891
       ]
+    }
+  },
+  "sahi_variant": {
+    "label": "VARIANT, not the default: the detector is called once per SAHI window instead of once per tile. Stage times REAL (laptop RTX 5060 / CPU, not flight hw); powers ASSUMPTION; fusion time ASSUMPTION (0 ms, never measured) -> every joule here is an ESTIMATE",
+    "config": "cpu_onnx",
+    "applies_to": "a pipeline that slices scenes with SAHI (the paper's B2 / B3). The simulated day takes its detections from one detector call per native 768 px tile, which is what the default block above costs.",
+    "detector_calls_per_tile": 1.5625,
+    "detector_calls_source": "results/wp26_b0_b4.json: 25 windows per scene / 16 tiles per scene (window 768, overlap 0.20)",
+    "gate_calls_per_tile": 1.0,
+    "gate_note": "once per tile, as the gate is trained and run everywhere it runs (wp3, wp3_score_tiles, wp11): one 128 px view of a whole 768 px tile. No per-window gate exists in the repo.",
+    "fuse_cpu_ms": 0.0,
+    "fuse_note": "ASSUMPTION: the global-coordinate lift + cross-window NMS has never been timed anywhere in the repo, so there is no evidence for or against 0 ms",
+    "E_proc_per_tile_J": {
+      "baseline": {
+        "preprocess": 0.01988,
+        "gate_or_prefilter": 1.5780898001394235,
+        "detect": 1.68875,
+        "fuse": 0.0,
+        "semantic": 0.014
+      },
+      "proposed": {
+        "preprocess": 0.01988,
+        "gate_or_prefilter": 0.02632,
+        "detect": 1.68875,
+        "fuse": 0.0,
+        "semantic": 0.014
+      },
+      "E_base": 3.3007,
+      "E_prop": 1.749,
+      "ES_proc": 0.4701
+    },
+    "E_per_day_kJ": {
+      "tiles_per_day": 40000,
+      "E_proc_proposed": 69.96,
+      "E_proc_baseline": 132.03,
+      "E_comm_proposed_semantic": 8.36,
+      "E_total_proposed": 78.32,
+      "proc_vs_comm_ratio_proposed": 8.37,
+      "ES_total_vs_bent_pipe": 0.9725
+    },
+    "sensitivity_if_the_gate_ran_once_per_window": {
+      "note": "NOT how the gate runs; shown only because the choice moves ES_proc",
+      "gate_calls_per_tile": 1.5625,
+      "E_prop_J_per_tile": 1.7638,
+      "E_proc_proposed_kJ_day": 70.55,
+      "ES_proc": 0.4656
     }
   }
 }

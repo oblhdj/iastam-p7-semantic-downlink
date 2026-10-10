@@ -1,0 +1,300 @@
+{
+  "label": "REAL -- trained detector on real Airbus test tiles / wp15 swaths, real labels",
+  "model": "C:\\Users\\Mega-PC\\Desktop\\IASTAM_Problem7\\code\\runs\\ships\\weights\\best.onnx",
+  "backend": "onnxruntime 1.31.0 CPU",
+  "conf_thr": 0.25,
+  "iou_thr": 0.5,
+  "raw_conf": 0.05,
+  "metric_note": "P/R/F1 at conf_thr; AP over all boxes >= 0.05 (ultralytics 101-point AP; the 0.05 dump truncates the tail, so AP is a lower bound on what conf 0.001 would give)",
+  "B1_committed_all_test_tiles": {
+    "images": 5320,
+    "n_gt": 8173,
+    "n_detections_supplied": 17257,
+    "conf_thr": 0.25,
+    "iou_thr": 0.5,
+    "TP": 6259,
+    "FP": 2042,
+    "FN": 1914,
+    "precision": 0.754,
+    "recall": 0.7658,
+    "F1": 0.7599,
+    "recall_by_size": {
+      "small_<32": {
+        "n_gt": 3859,
+        "recall": 0.5688
+      },
+      "medium_32-96": {
+        "n_gt": 2791,
+        "recall": 0.9151
+      },
+      "large_>96": {
+        "n_gt": 1523,
+        "recall": 0.9915
+      }
+    },
+    "AP50": 0.8167,
+    "AP50-95": 0.5718,
+    "recall_WP1_rule": 0.7659
+  },
+  "B1_live": {
+    "images": 5320,
+    "n_gt": 8173,
+    "n_detections_supplied": 17258,
+    "conf_thr": 0.25,
+    "iou_thr": 0.5,
+    "TP": 6258,
+    "FP": 2040,
+    "FN": 1915,
+    "precision": 0.7542,
+    "recall": 0.7657,
+    "F1": 0.7599,
+    "recall_by_size": {
+      "small_<32": {
+        "n_gt": 3859,
+        "recall": 0.5685
+      },
+      "medium_32-96": {
+        "n_gt": 2791,
+        "recall": 0.9151
+      },
+      "large_>96": {
+        "n_gt": 1523,
+        "recall": 0.9915
+      }
+    },
+    "AP50": 0.8166,
+    "AP50-95": 0.5719,
+    "recall_WP1_rule": 0.7658,
+    "vs_committed": {
+      "live_boxes": 17258,
+      "committed_boxes": 17257,
+      "paired": 17250,
+      "max_abs_dconf": 0.208512,
+      "decision_flips": {
+        "det_thr_0.25": 7,
+        "conf_high_0.670": 0
+      }
+    },
+    "seconds": 217.4
+  },
+  "swaths": {
+    "n_swaths": 24,
+    "n_ships": 716,
+    "seconds": 96.3,
+    "rows": {
+      "whole_grid": {
+        "images": 24,
+        "n_gt": 716,
+        "n_detections_supplied": 1338,
+        "conf_thr": 0.25,
+        "iou_thr": 0.5,
+        "TP": 554,
+        "FP": 144,
+        "FN": 162,
+        "precision": 0.7937,
+        "recall": 0.7737,
+        "F1": 0.7836,
+        "recall_by_size": {
+          "small_<32": {
+            "n_gt": 358,
+            "recall": 0.6006
+          },
+          "medium_32-96": {
+            "n_gt": 213,
+            "recall": 0.9155
+          },
+          "large_>96": {
+            "n_gt": 145,
+            "recall": 0.9931
+          }
+        },
+        "AP50": 0.837,
+        "AP50-95": 0.5883,
+        "recall_WP1_rule": 0.7737,
+        "recall_on_seam": 0.9091,
+        "recall_off_seam": 0.7574,
+        "n_on_seam": 77,
+        "detector_calls_per_swath": 16.0,
+        "compute_vs_regular_tiling_x": 1.0,
+        "config": {
+          "mode": "sahi",
+          "window": 768,
+          "overlap": 0.0,
+          "fuse": false,
+          "nms_iou": 0.5,
+          "framing": "none"
+        }
+      },
+      "sahi_B2": {
+        "images": 24,
+        "n_gt": 716,
+        "n_detections_supplied": 1270,
+        "conf_thr": 0.25,
+        "iou_thr": 0.5,
+        "TP": 553,
+        "FP": 170,
+        "FN": 163,
+        "precision": 0.7649,
+        "recall": 0.7723,
+        "F1": 0.7686,
+        "recall_by_size": {
+          "small_<32": {
+            "n_gt": 358,
+            "recall": 0.6117
+          },
+          "medium_32-96": {
+            "n_gt": 213,
+            "recall": 0.892
+          },
+          "large_>96": {
+            "n_gt": 145,
+            "recall": 0.9931
+          }
+        },
+        "AP50": 0.8161,
+        "AP50-95": 0.5686,
+        "recall_WP1_rule": 0.7723,
+        "recall_on_seam": 0.9221,
+        "recall_off_seam": 0.7543,
+        "n_on_seam": 77,
+        "detector_calls_per_swath": 25.0,
+        "compute_vs_regular_tiling_x": 1.5625,
+        "config": {
+          "mode": "sahi",
+          "window": 768,
+          "overlap": 0.2,
+          "fuse": true,
+          "nms_iou": 0.5,
+          "framing": "none"
+        }
+      },
+      "sahi_no_fusion": {
+        "images": 24,
+        "n_gt": 716,
+        "n_detections_supplied": 2426,
+        "conf_thr": 0.25,
+        "iou_thr": 0.5,
+        "TP": 560,
+        "FP": 571,
+        "FN": 156,
+        "precision": 0.4951,
+        "recall": 0.7821,
+        "F1": 0.6064,
+        "recall_by_size": {
+          "small_<32": {
+            "n_gt": 358,
+            "recall": 0.6173
+          },
+          "medium_32-96": {
+            "n_gt": 213,
+            "recall": 0.9155
+          },
+          "large_>96": {
+            "n_gt": 145,
+            "recall": 0.9931
+          }
+        },
+        "AP50": 0.5889,
+        "AP50-95": 0.4232,
+        "recall_WP1_rule": 0.7821,
+        "recall_on_seam": 0.9351,
+        "recall_off_seam": 0.7637,
+        "n_on_seam": 77,
+        "detector_calls_per_swath": 25.0,
+        "compute_vs_regular_tiling_x": 1.5625,
+        "config": {
+          "mode": "sahi",
+          "window": 768,
+          "overlap": 0.2,
+          "fuse": false,
+          "nms_iou": 0.5,
+          "framing": "none"
+        }
+      },
+      "no_overlap": {
+        "images": 24,
+        "n_gt": 716,
+        "n_detections_supplied": 1174,
+        "conf_thr": 0.25,
+        "iou_thr": 0.5,
+        "TP": 520,
+        "FP": 161,
+        "FN": 196,
+        "precision": 0.7636,
+        "recall": 0.7263,
+        "F1": 0.7445,
+        "recall_by_size": {
+          "small_<32": {
+            "n_gt": 358,
+            "recall": 0.5503
+          },
+          "medium_32-96": {
+            "n_gt": 213,
+            "recall": 0.8873
+          },
+          "large_>96": {
+            "n_gt": 145,
+            "recall": 0.9241
+          }
+        },
+        "AP50": 0.7941,
+        "AP50-95": 0.5106,
+        "recall_WP1_rule": 0.7263,
+        "recall_on_seam": 0.7013,
+        "recall_off_seam": 0.7293,
+        "n_on_seam": 77,
+        "detector_calls_per_swath": 25.0,
+        "compute_vs_regular_tiling_x": 1.5625,
+        "config": {
+          "mode": "sahi",
+          "window": 768,
+          "overlap": 0.0,
+          "fuse": true,
+          "nms_iou": 0.5,
+          "framing": "384 px black nodata border (slicer phase = half tile)"
+        }
+      }
+    },
+    "gate_a_global_coordinates": {
+      "boxes": 1338,
+      "exact_match": true
+    },
+    "gate_b_reproduces_wp16": {
+      "rows": {
+        "whole_grid": {
+          "wp16_policy": "whole",
+          "wp16_recall": 0.7737,
+          "here": 0.7737,
+          "abs_diff": 0.0
+        },
+        "sahi_B2": {
+          "wp16_policy": "sahi",
+          "wp16_recall": 0.7723,
+          "here": 0.7723,
+          "abs_diff": 0.0
+        },
+        "no_overlap": {
+          "wp16_policy": "naive",
+          "wp16_recall": 0.7277,
+          "here": 0.7263,
+          "abs_diff": 0.0014
+        }
+      },
+      "tolerance": 0.005,
+      "passed": true,
+      "note": "no_overlap is framed with black nodata, wp16 naive with 384 px cells letterboxed grey: comparable, not identical -- reported, not gated"
+    }
+  },
+  "superseded_small_sample": {
+    "B1": {
+      "recall": 0.7824,
+      "gt_ships": 262
+    },
+    "B2": {
+      "recall": 0.7447,
+      "gt_ships": 47
+    },
+    "source": "wp18_campaign.json legacy_small_samples (a detector call per native tile; SAHI on 2 swaths) -- what the B0-B4 table called B1 / B2 until 10 Oct 2026"
+  },
+  "elapsed_s": 316.1
+}

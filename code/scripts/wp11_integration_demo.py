@@ -43,7 +43,8 @@ import torch
 
 from sat7.orbit import LINK_PRESETS, GroundStation, OrbitConfig, find_passes, make_satellite
 from sat7.prefilter import CLOUD, LAND, PrefilterConfig, run_prefilter
-from sat7.real_workload import RealWorkloadConfig, load_size_model, workload_from_catalogue
+from sat7.real_workload import (RealWorkloadConfig, attach_coast_sizes, load_size_model,
+                                workload_from_catalogue)
 from sat7.scheduler import LoDConfig, ValueGreedy, encode_lod, metrics, simulate
 from wp3_train_gate import load_gate
 # Reuse the catalogue's OWN post-processing rather than reimplementing it. The first version
@@ -247,6 +248,7 @@ def main() -> None:
     # ------------------------------------------------------------ stage 6: day + downlink
     print("\n[5/6] scale to a day, encode, schedule over real orbit passes ...")
     cfg = RealWorkloadConfig(tiles_per_day=args.day_tiles, det_thr=args.det_thr, seed=args.seed)
+    attach_coast_sizes(tiles, ROOT / "results")      # each coastal tile at its measured size (wp28)
     wl, stats = workload_from_catalogue(tiles, ships, cfg)
 
     # How thin is the pool each context is resampled from? The orbit mix draws a *fixed share*

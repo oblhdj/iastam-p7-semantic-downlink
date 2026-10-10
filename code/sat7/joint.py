@@ -38,7 +38,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from .priority import P0, P1, P2, P3, PriorityConfig, classify
-from .scheduler import LoDConfig, Workload, _l1, _l2, _w
+from .scheduler import LoDConfig, Workload, _l1, _l2, _w, coast_tile_size
 
 
 # ----------------------------------------------------------------------------- weights / constraints
@@ -123,7 +123,7 @@ def build_objects(wl: Workload, lod: LoDConfig | None = None, pcfg: PriorityConf
     pcfg = pcfg or PriorityConfig()
     cost = cost or CostModel()
     objs: list[JointObject] = []
-    for t, ctx, ids in wl.tiles:
+    for idx, (t, ctx, ids) in enumerate(wl.tiles):
         if ctx == "cloud":
             continue
         for i in ids:
@@ -132,7 +132,7 @@ def build_objects(wl: Workload, lod: LoDConfig | None = None, pcfg: PriorityConf
                 continue
             w = _w(s, lod)
             meta, roi = lod.l0_bytes, _l1(s, lod)
-            context = lod.coast_tile_bytes if ctx == "coast" else _l2(s, lod)
+            context = coast_tile_size(wl, idx, lod) if ctx == "coast" else _l2(s, lod)
             size_at = {P0: 0.0, P1: meta, P2: meta + roi, P3: meta + roi + context}
             opts = []
             for lv in levels:

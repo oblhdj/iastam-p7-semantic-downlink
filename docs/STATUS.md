@@ -263,7 +263,7 @@ measured; q30 rejected on measurement; thumbnail gating re-keyed onto the learne
 * **`.venv312` is not corrupted.** It runs torch/ultralytics directly, CUDA and all. The
   PYTHONPATH + uv-interpreter workaround in the old notes was never needed — just run:
   ```bash
-  cd "C:\Users\Mega-PC\Desktop\IASTAM_Problem7\code"
+  cd path/to/iastam-p7-semantic-downlink/code
   .venv312/Scripts/python.exe -W ignore scripts\<script>.py
   ```
   Verified: torch 2.11.0+cu128 (CUDA True, RTX 5060), ultralytics 8.4.160, Python 3.12.14.

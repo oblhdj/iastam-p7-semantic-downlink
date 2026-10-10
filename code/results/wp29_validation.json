@@ -1,0 +1,1296 @@
+{
+  "label": "validation of committed results; stage times REAL (laptop), powers ASSUMPTION (none measured: every energy is an ESTIMATE), links and days SIM",
+  "status_meaning": {
+    "PASS": "every check holds; any limits listed are caveats",
+    "PARTIAL": "every check holds, but a limit marked GAP means the requirement is not fully met",
+    "FAIL": "at least one check does not hold"
+  },
+  "checklist": {
+    "6": {
+      "title": "Data reduction uses actual, consistently defined data sizes",
+      "checks": [
+        {
+          "check": "D_raw per tile is H x W x 3 bytes",
+          "ok": true,
+          "RAW_TILE_BYTES": 1769472
+        },
+        {
+          "check": "headline = 100 x (1 - D_tx / D_raw) on the table's own bytes",
+          "ok": true,
+          "D_tx_MB": 176.266,
+          "D_raw_MB": 60124.299,
+          "data_reduction_percent": 99.7068,
+          "factor": 341.1,
+          "table_column": 341.1
+        },
+        {
+          "check": "D_raw is whole tiles (non-cloud tiles x 1,769,472 B), nothing compressed",
+          "ok": true,
+          "tiles_per_day_in_baseline": 33978.7
+        },
+        {
+          "check": "the coastal size table reproduces from pixels (wp25 gate)",
+          "ok": true
+        },
+        {
+          "check": "a coastal tile's charged size is its real serialization (JPEG + 18 B header + CCSDS packets)",
+          "ok": true,
+          "rows_checked": 25
+        },
+        {
+          "check": "scene-level B0 equals pixels + packet headers (wp26 check 1)",
+          "ok": true,
+          "pixels_bytes": 28311552
+        }
+      ],
+      "limits": [
+        "GAP: D_transmitted is only partly ACTUAL: coastal tiles (76.2% of the bytes) are measured JPEGs; thumbnails, chips and crops (23.8%) are model sizes (flat 1,000 B, WP4 power law). On real packets the crop model was within 0.94-1.26x (wp25 measured_over_modeled).",
+        "Two D_raw definitions exist. The headline counts non-cloud tiles only (33,979 of 40,000 per day) with no packet headers; counting every imaged tile gives 70,779 MB and 402x. wp26's B0 counts every tile plus CCSDS headers. The headline uses the smaller baseline, so it understates rather than overstates.",
+        "D_transmitted is one isolated day given 36 h of passes (176.3 MB). The link share sustains 134.5 MB per 24 h, i.e. the day's offer is 130% of it. On consecutive days fewer bytes than that are sent (steady_state block)."
+      ],
+      "status": "PARTIAL",
+      "failed_checks": [],
+      "gaps": 1
+    },
+    "7": {
+      "title": "Detection metrics are based on valid ground truth (or are not claimed as accuracy)",
+      "checks": [
+        {
+          "check": "full-scale evaluation uses every labelled test ship",
+          "ok": true,
+          "n_gt": 8173,
+          "images": 5320,
+          "iou_thr": 0.5,
+          "conf_thr": 0.25
+        },
+        {
+          "check": "the test split shares no near-duplicate group with train/val",
+          "ok": true,
+          "groups_a_naive_split_would_leak": 1617
+        },
+        {
+          "check": "B1..B4 are scored against the same ground truth",
+          "ok": true,
+          "n_gt": 1164,
+          "matching": "threshold-then-match IoU 0.5"
+        },
+        {
+          "check": "precision, recall, F1 and AP are all reported (not recall alone)",
+          "ok": true,
+          "precision": 0.754,
+          "recall": 0.7658,
+          "F1": 0.7599,
+          "AP50": 0.8167
+        },
+        {
+          "check": "without ground truth only counts and confidences are returned",
+          "ok": true,
+          "keys": [
+            "conf_thr",
+            "confidence_all",
+            "confidence_at_or_above_0.25",
+            "ground_truth",
+            "n_at_or_above_thr",
+            "n_detections",
+            "note"
+          ]
+        }
+      ],
+      "limits": [
+        "The day simulations (B3, the 0.685 delivered recall) read the stored catalogue, which matches a box to a ship BEFORE applying the 0.25 cut and at IoU >= 0.3. It finds 0.7249 of the test ships where threshold-then-match at IoU 0.5 finds 0.7658 (wp24). Delivered recall is therefore on the catalogue's rule, not on the wp24 rule; the catalogue was not rebuilt.",
+        "B1 / B2 ground truth is the tile labels shifted onto scenes stitched from independent tiles: valid boxes, but no ship crosses a seam, so these scenes cannot show a seam effect.",
+        "The quickstart's synthetic tiles have no ground truth; its output is labelled SYNTH and reports counts and confidences only."
+      ],
+      "status": "PASS",
+      "failed_checks": [],
+      "gaps": 0
+    },
+    "8": {
+      "title": "Processing / communication energy assumptions are documented",
+      "checks": [
+        {
+          "check": "E_communication = P_tx x bytes x 8 / rate reproduces wp17",
+          "ok": true,
+          "recomputed_kJ": 8.357,
+          "wp17_kJ": 8.36,
+          "P_tx_W": 15.0,
+          "D_MB": 176.27,
+          "rate_Mbps": 2.531
+        },
+        {
+          "check": "E_processing = sum_k P_k x T_k reproduces wp17",
+          "ok": true,
+          "recomputed_kJ": 45.64,
+          "wp17_kJ": 45.64,
+          "J_per_tile": 1.141
+        },
+        {
+          "check": "E_total = E_processing + E_communication",
+          "ok": true,
+          "E_total_kJ": 54.0
+        },
+        {
+          "check": "sat7.energy gives the same per-tile energy as wp17 and the same E_comm",
+          "ok": true,
+          "sat7_energy_E_prop_J": 1.141
+        },
+        {
+          "check": "wp19 ISL energy reproduces from P_isl x bytes x 8 / R_isl",
+          "ok": true,
+          "recomputed_kJ": 6.686,
+          "wp19_kJ": 6.686
+        },
+        {
+          "check": "every power is labelled an assumption in the results files",
+          "ok": true,
+          "wp17_powers_W": {
+            "cpu": 28.0,
+            "gpu": 60.0,
+            "tx": 15.0
+          },
+          "wp19_powers_W": {
+            "tx_ground_ASSUMPTION_wp17": 15.0,
+            "isl_ASSUMPTION_NEW": 12.0
+          }
+        },
+        {
+          "check": "every stage time names its source; the unsourced ones are listed",
+          "ok": true,
+          "unsourced": [
+            "preprocess_decode_cpu (not in any results file)",
+            "semantic_cpu (ASSUMPTION, not a measurement)"
+          ]
+        },
+        {
+          "check": "power assumptions are swept",
+          "ok": true,
+          "ES_total_range": [
+            0.967,
+            0.9891
+          ]
+        },
+        {
+          "check": "the SAHI variant block is the default stages with the detector term x its calls per tile",
+          "ok": true,
+          "detector_calls_per_tile": 1.5625,
+          "recomputed_J_per_tile": 1.749,
+          "block_J_per_tile": 1.749,
+          "block_ES_proc": 0.4701
+        }
+      ],
+      "limits": [
+        "NO power was measured in this project. P_cpu 28 W, P_gpu 60 W, P_tx 15 W and P_isl 12 W are ASSUMPTIONS; stage times are measured on a laptop; so every joule is an ESTIMATE. Only ES_proc for the all-CPU build is free of them (the power cancels: it is a ratio of measured times).",
+        "semantic_cpu = 0.5 ms is an ASSUMPTION in wp17. wp25 has since measured the encoder: 0.14 ms on a ship tile, 9.1 ms on a coastal tile, i.e. about 0.48 ms per tile over the assumed orbit mix -- consistent with the assumption, so wp17 was not regenerated.",
+        "The default E_processing is for ONE detector call per tile, which is what the day simulation runs. The labelled variant results/wp17_energy_model.json -> sahi_variant costs SAHI's 1.5625 calls per tile: 69.96 kJ/day instead of 45.64, ES_proc 47.0% instead of 57.6%, 8.4 : 1 against the radio. In it the gate stays at one call per tile (how it is trained and run; no per-window gate exists) and fusion is charged 0 ms, an ASSUMPTION: it has never been timed.",
+        "wp18 and the docs label the relay's energy 'TARGET'. It is an estimate from assumed P_isl and R_isl, not a design goal; the label is kept as report 19 wrote it."
+      ],
+      "status": "PASS",
+      "failed_checks": [],
+      "gaps": 0
+    },
+    "9": {
+      "title": "Latency includes the stages the experiment requires",
+      "checks": [
+        {
+          "check": "simulated latency = wait for the pass + the item's transmission, from capture",
+          "ok": true,
+          "latency_s": 1000.0,
+          "wait_for_pass_s": 900.0,
+          "transmission_s": 100.0
+        },
+        {
+          "check": "processing, encoding and decoding times are measured and can be added",
+          "ok": true,
+          "processing_s": 0.04025,
+          "encoding_s": {
+            "ships": 0.00014000000000000001,
+            "coast": 0.0091
+          },
+          "decoding_s": 4e-05,
+          "source": {
+            "processing": "results/wp17_energy_model.json stage_times_ms (preprocess + gate + detect x 1), build cpu_onnx",
+            "encoding": "results/wp25_semantic_packets.json timing_ms_per_tile.T_enc_onboard_median",
+            "decoding": "results/wp25_semantic_packets.json timing_ms_per_tile.T_dec_ground_median"
+          }
+        },
+        {
+          "check": "T_total = T_processing + T_encoding + T_communication + T_decoding (median, seconds)",
+          "ok": true,
+          "budgets": {
+            "direct, per ship, three-day mean (wp6_real_table.csv)": {
+              "processing_s": 0.04025,
+              "encoding_s": 0.0091,
+              "communication_s": 16344.79812,
+              "decoding_s": 4e-05,
+              "total_s": 16344.84751,
+              "non_communication_share": 3.02e-06
+            },
+            "direct, real packets (wp27 nominal, direct only)": {
+              "processing_s": 0.04025,
+              "encoding_s": 0.0091,
+              "communication_s": 16202.16,
+              "decoding_s": 4e-05,
+              "total_s": 16202.20939,
+              "non_communication_share": 3.05e-06
+            },
+            "with relay, real packets (wp27 nominal)": {
+              "processing_s": 0.04025,
+              "encoding_s": 0.0091,
+              "communication_s": 7003.44,
+              "decoding_s": 4e-05,
+              "total_s": 7003.48939,
+              "non_communication_share": 7.05e-06
+            },
+            "direct, SAHI processing (1.5625 detector calls per tile)": {
+              "processing_s": 0.061962,
+              "encoding_s": 0.0091,
+              "communication_s": 16344.79812,
+              "decoding_s": 4e-05,
+              "total_s": 16344.869223,
+              "non_communication_share": 4.35e-06
+            }
+          }
+        },
+        {
+          "check": "the onboard stages never queue: a tile is finished before the next one is captured",
+          "ok": true,
+          "per_tile_onboard_s": 0.0711,
+          "tile_interval_s_at_40k": 2.16,
+          "tile_interval_s_at_160k": 0.54
+        },
+        {
+          "check": "ignoring the onboard stages in the simulator cannot move a pass assignment materially",
+          "ok": true,
+          "fraction_of_tiles_within_the_margin_of_a_pass": 4.9e-06
+        }
+      ],
+      "limits": [
+        "Every latency the results files and documents quote is T_communication alone. The other three stages add 71 ms at most (4.4e-06 of the median), so the quoted hours are unchanged; the convention is written in sat7/accounting.py.",
+        "Stage times are a laptop's, not flight hardware's. A processor 10x slower still finishes a tile (0.71 s) before the next arrives at 40,000 tiles/day (2.16 s), not at 160,000 (0.54 s).",
+        "Latencies come from one isolated day. Over six consecutive days the per-ship median is 4.69-5.58 h with value-greedy, and FIFO's grows without bound (steady_state block)."
+      ],
+      "status": "PASS",
+      "failed_checks": [],
+      "gaps": 0
+    },
+    "10": {
+      "title": "Relay energy and latency account for both links",
+      "checks": [
+        {
+          "check": "E_relay = E_ISL + E_GS, both non-zero (wp19)",
+          "ok": true,
+          "E_direct": 8.357,
+          "E_ISL": 6.686,
+          "E_GS": 8.357,
+          "E_relay": 15.043,
+          "relay_over_direct_x": 1.8,
+          "payload_D_MB": 176.27
+        },
+        {
+          "check": "relayed traffic has transmit time and energy on the ISL and on the relay's ground pass (wp27)",
+          "ok": true,
+          "tx_s": {
+            "ground": 0.0,
+            "isl": 167.7,
+            "relay_ground": 128.7
+          },
+          "energy_J": {
+            "ground": 0.0,
+            "isl": 2012.3,
+            "relay_ground": 1930.4
+          }
+        },
+        {
+          "check": "each leg's energy is its own power x its own transmit time (wp27)",
+          "ok": true,
+          "p_isl_W": 12.0,
+          "p_tx_W": 15.0
+        },
+        {
+          "check": "one item traced by hand: ISL time = bytes x 8 / R_isl (wp27 example)",
+          "ok": true,
+          "bytes": 118349,
+          "recomputed_s": 0.4678,
+          "wp27_s": 0.4678
+        },
+        {
+          "check": "live: a relayed item waits for the ISL window AND the relay's ground pass",
+          "ok": true,
+          "path": "relay",
+          "tx_s": {
+            "isl": 0.07905138339920949,
+            "relay_ground": 8.0
+          },
+          "energy_J": {
+            "isl": 0.9486166007905139,
+            "relay_ground": 120.0
+          },
+          "delivered_h": 2.002222222222222,
+          "isl_window_start_h": 0.5,
+          "relay_pass_rise_h": 2.0
+        },
+        {
+          "check": "the relay forwards processed products only, never raw imagery (wp27)",
+          "ok": true
+        },
+        {
+          "check": "the B4 row's energy is joules (P_tx x bytes x 8 / R_gs), not the router's unit-less placeholders",
+          "ok": true,
+          "recomputed_direct_only_kJ": 8.466,
+          "wp18": {
+            "direct_only": 8.47,
+            "b4_mix": 12.88,
+            "note": "joules are report-19 placeholders pending real P_isl/R_isl"
+          }
+        }
+      ],
+      "limits": [
+        "GAP: The canonical B4 row (wp18) uses sat7.relay.route_item: its ENERGY has both legs, but its relay LATENCY is read from window start times (next ISL window, then the relay's next ground pass) with no data volume, rate or capacity, while its direct latency is B3's actual delivery. That is optimistic for the relay; wp27 is the volume- and capacity-aware simulation of both legs.",
+        "P_isl, R_isl and the relay's orbit are ASSUMPTIONS; no relay hardware or real link exists."
+      ],
+      "status": "PARTIAL",
+      "failed_checks": [],
+      "gaps": 1
+    },
+    "11": {
+      "title": "The same inputs and assumptions are used where two things are compared",
+      "checks": [
+        {
+          "check": "B1 vs B2: same scenes, pixels, ground truth, model and matching rule (wp26 check 5)",
+          "ok": true,
+          "fingerprint": "bcaf9ec9630d69e3"
+        },
+        {
+          "check": "ours vs FIFO vs the baselines: same day, same passes, same link share (wp6)",
+          "ok": true,
+          "loads": [
+            5000,
+            10000,
+            20000,
+            40000,
+            80000,
+            160000
+          ]
+        },
+        {
+          "check": "direct vs relay: same items, same ground-link model and power; relay off == the scheduler (wp27)",
+          "ok": true,
+          "deliveries": 32871
+        },
+        {
+          "check": "LoD vs P0-P3: same day and passes (wp23)",
+          "ok": true
+        }
+      ],
+      "limits": [
+        "B1/B2 (1,164 ships on 150 scenes) and B3/B4 (21,137 ships in a simulated day) are different inputs; B2's detection recall and B3's delivered recall are not steps of one curve. Stated in the documents.",
+        "GAP: ES_total compares against a bent pipe that sends ALL raw data: 2,851 kJ/day, which would need 92.6 days of contact per day of imaging. A bent pipe on this link can transmit for at most 34.2 min/day, i.e. 30.8 kJ/day -- LESS than our 54.0 kJ/day. The 98.1% is energy per unit of imagery accounted for, not a saving in the daily energy budget.",
+        "GAP: wp18's B4 gives the direct path its simulated delivery time and the relay path a window estimate (item 10).",
+        "wp17 sends the day's 176.27 MB on 27.2% of the whole link; the scheduler assumes this payload owns 25% of it."
+      ],
+      "status": "PARTIAL",
+      "failed_checks": [],
+      "gaps": 2
+    },
+    "12": {
+      "title": "No numerical claim lacks traceable experimental evidence",
+      "checks": [
+        {
+          "check": "every headline number in the ten judge-facing documents equals its results file",
+          "ok": true,
+          "claims": 48,
+          "claim_document_pairs": 189,
+          "missing": []
+        },
+        {
+          "check": "the earlier 557x estimate is still reproducible from a committed file",
+          "ok": true
+        }
+      ],
+      "limits": [
+        "The ledger covers the headline numbers of ten documents. docs/START_HERE.md, docs/STATUS.md, docs/ARCHITECTURE.md and the bodies of reports 05-22 still narrate the earlier estimate (bannered in reports/README.md) and are not covered.",
+        "GAP: Three claims rest on a modelling assumption rather than a measurement: (a) a progressive product truncated to 10% of its bytes still counts as delivering its ships -- this is what keeps recall flat under congestion and over consecutive days; (b) thumbnail and crop sizes; (c) a 25% link share.",
+        "GAP: '100% of what the satellite still knew' holds for one day given 36 h of passes. The day's offer is 130% of what the share sustains per 24 h; over six consecutive days recall still holds (0.6769-0.6875) only because of assumption (a)."
+      ],
+      "status": "PARTIAL",
+      "failed_checks": [],
+      "gaps": 2
+    }
+  },
+  "steady_state": {
+    "label": "SIM-over-REAL",
+    "days": 6,
+    "tiles_per_day": 40000,
+    "pass_horizon_h": 180,
+    "offered_MB_per_day_mean": 174.8,
+    "runs": {
+      "share_0.25_Value-greedy (ours)": {
+        "link_share": 0.25,
+        "policy": "Value-greedy (ours)",
+        "sustained_capacity_MB_per_24h": 134.5,
+        "offered_over_sustained": 1.299,
+        "per_day": [
+          {
+            "day": 1,
+            "ship_recall": 0.6769,
+            "latency_med_h": 4.69,
+            "latency_p90_h": 9.7,
+            "offered_MB": 177.9,
+            "bytes_delivered_fraction": 0.999
+          },
+          {
+            "day": 2,
+            "ship_recall": 0.6831,
+            "latency_med_h": 4.85,
+            "latency_p90_h": 10.0,
+            "offered_MB": 177.2,
+            "bytes_delivered_fraction": 0.999
+          },
+          {
+            "day": 3,
+            "ship_recall": 0.6858,
+            "latency_med_h": 5.43,
+            "latency_p90_h": 10.35,
+            "offered_MB": 169.4,
+            "bytes_delivered_fraction": 1.0
+          },
+          {
+            "day": 4,
+            "ship_recall": 0.6837,
+            "latency_med_h": 5.1,
+            "latency_p90_h": 9.89,
+            "offered_MB": 174.5,
+            "bytes_delivered_fraction": 0.976
+          },
+          {
+            "day": 5,
+            "ship_recall": 0.6875,
+            "latency_med_h": 5.58,
+            "latency_p90_h": 10.56,
+            "offered_MB": 177.2,
+            "bytes_delivered_fraction": 0.835
+          },
+          {
+            "day": 6,
+            "ship_recall": 0.6798,
+            "latency_med_h": 5.01,
+            "latency_p90_h": 10.88,
+            "offered_MB": 172.9,
+            "bytes_delivered_fraction": 0.823
+          }
+        ]
+      },
+      "share_0.25_FIFO": {
+        "link_share": 0.25,
+        "policy": "FIFO",
+        "sustained_capacity_MB_per_24h": 134.5,
+        "offered_over_sustained": 1.299,
+        "per_day": [
+          {
+            "day": 1,
+            "ship_recall": 0.6769,
+            "latency_med_h": 9.37,
+            "latency_p90_h": 14.23,
+            "offered_MB": 177.9,
+            "bytes_delivered_fraction": 1.0
+          },
+          {
+            "day": 2,
+            "ship_recall": 0.6831,
+            "latency_med_h": 15.86,
+            "latency_p90_h": 20.5,
+            "offered_MB": 177.2,
+            "bytes_delivered_fraction": 1.0
+          },
+          {
+            "day": 3,
+            "ship_recall": 0.6858,
+            "latency_med_h": 23.14,
+            "latency_p90_h": 27.3,
+            "offered_MB": 169.4,
+            "bytes_delivered_fraction": 1.0
+          },
+          {
+            "day": 4,
+            "ship_recall": 0.6837,
+            "latency_med_h": 30.21,
+            "latency_p90_h": 36.52,
+            "offered_MB": 174.5,
+            "bytes_delivered_fraction": 1.0
+          },
+          {
+            "day": 5,
+            "ship_recall": 0.6875,
+            "latency_med_h": 37.03,
+            "latency_p90_h": 41.59,
+            "offered_MB": 177.2,
+            "bytes_delivered_fraction": 1.0
+          },
+          {
+            "day": 6,
+            "ship_recall": 0.4238,
+            "latency_med_h": 42.88,
+            "latency_p90_h": 46.47,
+            "offered_MB": 172.9,
+            "bytes_delivered_fraction": 0.625
+          }
+        ]
+      },
+      "share_0.35_Value-greedy (ours)": {
+        "link_share": 0.35,
+        "policy": "Value-greedy (ours)",
+        "sustained_capacity_MB_per_24h": 188.4,
+        "offered_over_sustained": 0.928,
+        "per_day": [
+          {
+            "day": 1,
+            "ship_recall": 0.6769,
+            "latency_med_h": 4.53,
+            "latency_p90_h": 9.43,
+            "offered_MB": 177.9,
+            "bytes_delivered_fraction": 1.0
+          },
+          {
+            "day": 2,
+            "ship_recall": 0.6831,
+            "latency_med_h": 4.59,
+            "latency_p90_h": 9.59,
+            "offered_MB": 177.2,
+            "bytes_delivered_fraction": 0.999
+          },
+          {
+            "day": 3,
+            "ship_recall": 0.6858,
+            "latency_med_h": 5.12,
+            "latency_p90_h": 9.99,
+            "offered_MB": 169.4,
+            "bytes_delivered_fraction": 1.0
+          },
+          {
+            "day": 4,
+            "ship_recall": 0.6837,
+            "latency_med_h": 4.72,
+            "latency_p90_h": 9.36,
+            "offered_MB": 174.5,
+            "bytes_delivered_fraction": 1.0
+          },
+          {
+            "day": 5,
+            "ship_recall": 0.6875,
+            "latency_med_h": 5.06,
+            "latency_p90_h": 9.88,
+            "offered_MB": 177.2,
+            "bytes_delivered_fraction": 1.0
+          },
+          {
+            "day": 6,
+            "ship_recall": 0.6798,
+            "latency_med_h": 4.45,
+            "latency_p90_h": 9.4,
+            "offered_MB": 172.9,
+            "bytes_delivered_fraction": 0.999
+          }
+        ]
+      }
+    }
+  },
+  "claims_ledger": [
+    {
+      "id": "sahi_variant_E_proc_kJ_per_day",
+      "value": 69.96,
+      "forms": [
+        "70.0 kJ"
+      ],
+      "docs": [
+        "paper/PHASE3_RESULTS.md"
+      ],
+      "source": "wp17_energy_model.json sahi_variant"
+    },
+    {
+      "id": "sahi_variant_ES_proc_percent",
+      "value": 47.010000000000005,
+      "forms": [
+        "47.0 %"
+      ],
+      "docs": [
+        "paper/PHASE3_RESULTS.md"
+      ],
+      "source": "wp17_energy_model.json sahi_variant"
+    },
+    {
+      "id": "sahi_variant_proc_to_comm",
+      "value": 8.37,
+      "forms": [
+        "8.4 : 1"
+      ],
+      "docs": [
+        "paper/PHASE3_RESULTS.md"
+      ],
+      "source": "wp17_energy_model.json sahi_variant"
+    },
+    {
+      "id": "sahi_variant_ES_proc_gate_per_window_percent",
+      "value": 46.56,
+      "forms": [
+        "46.6 %"
+      ],
+      "docs": [
+        "paper/PHASE3_RESULTS.md"
+      ],
+      "source": "wp17_energy_model.json sahi_variant (sensitivity)"
+    },
+    {
+      "id": "sustained_link_share_MB_per_24h",
+      "value": 134.5,
+      "forms": [
+        "134.5 MB"
+      ],
+      "docs": [
+        "README.md",
+        "paper/PHASE3_RESULTS.md",
+        "demo/QA_CARD.md",
+        "demo/DEMO.md"
+      ],
+      "source": "wp29_validation.json steady_state"
+    },
+    {
+      "id": "day_offer_over_sustained_percent",
+      "value": 129.9,
+      "forms": [
+        "130%",
+        "130 %"
+      ],
+      "docs": [
+        "README.md",
+        "paper/PHASE3_RESULTS.md",
+        "demo/QA_CARD.md",
+        "demo/DEMO.md"
+      ],
+      "source": "wp29_validation.json steady_state"
+    },
+    {
+      "id": "six_day_recall_range",
+      "value": [
+        0.6769,
+        0.6875
+      ],
+      "forms": [
+        "0.677–0.688"
+      ],
+      "docs": [
+        "README.md",
+        "paper/PHASE3_RESULTS.md",
+        "demo/QA_CARD.md",
+        "demo/DEMO.md"
+      ],
+      "source": "wp29_validation.json steady_state"
+    },
+    {
+      "id": "six_day_latency_range_h",
+      "value": [
+        4.69,
+        5.58
+      ],
+      "forms": [
+        "4.7–5.6 h"
+      ],
+      "docs": [
+        "demo/QA_CARD.md",
+        "demo/DEMO.md"
+      ],
+      "source": "wp29_validation.json steady_state"
+    },
+    {
+      "id": "fifo_latency_day1_h",
+      "value": 9.37,
+      "forms": [
+        "9.4 h"
+      ],
+      "docs": [
+        "demo/QA_CARD.md",
+        "demo/DEMO.md"
+      ],
+      "source": "wp29_validation.json steady_state"
+    },
+    {
+      "id": "fifo_latency_day6_h",
+      "value": 42.88,
+      "forms": [
+        "42.9 h"
+      ],
+      "docs": [
+        "demo/QA_CARD.md",
+        "demo/DEMO.md"
+      ],
+      "source": "wp29_validation.json steady_state"
+    },
+    {
+      "id": "fifo_recall_day6",
+      "value": 0.4238,
+      "forms": [
+        "0.424"
+      ],
+      "docs": [
+        "demo/QA_CARD.md",
+        "demo/DEMO.md"
+      ],
+      "source": "wp29_validation.json steady_state"
+    },
+    {
+      "id": "link_limited_bent_pipe_kJ_per_day",
+      "value": 30.78,
+      "forms": [
+        "30.8 kJ"
+      ],
+      "docs": [
+        "README.md",
+        "paper/PHASE3_RESULTS.md",
+        "demo/QA_CARD.md"
+      ],
+      "source": "wp17_energy_model.json (P_tx x daily contact time)"
+    },
+    {
+      "id": "non_communication_latency_ms",
+      "value": 71.10249999999999,
+      "forms": [
+        "71 ms"
+      ],
+      "docs": [
+        "paper/PHASE3_RESULTS.md",
+        "demo/PAPER_COVERAGE.md"
+      ],
+      "source": "wp17_energy_model.json + wp25_semantic_packets.json (sat7.accounting)"
+    },
+    {
+      "id": "data_reduction_x",
+      "value": 341.09972017528264,
+      "forms": [
+        "341×"
+      ],
+      "docs": [
+        "README.md",
+        "paper/PHASE3_RESULTS.md",
+        "paper/slides/index.html",
+        "paper/video_script.md",
+        "demo/PAPER_COVERAGE.md",
+        "demo/DEMO.md",
+        "demo/QA_CARD.md",
+        "demo/quickstart/README.md",
+        "reports/README.md",
+        "reports/23-paper-faithful-modules.md"
+      ],
+      "source": "wp6_real_table.csv"
+    },
+    {
+      "id": "earlier_modeled_reduction_x",
+      "value": 556.9561545793727,
+      "forms": [
+        "557×"
+      ],
+      "docs": [
+        "README.md",
+        "paper/PHASE3_RESULTS.md",
+        "paper/slides/index.html",
+        "demo/PAPER_COVERAGE.md",
+        "demo/DEMO.md",
+        "demo/QA_CARD.md",
+        "demo/quickstart/README.md",
+        "reports/README.md",
+        "reports/23-paper-faithful-modules.md"
+      ],
+      "source": "wp6_real_table_modeledcoast.csv"
+    },
+    {
+      "id": "MB_sent_per_day",
+      "value": 176.26604687070287,
+      "forms": [
+        "176.3 MB",
+        "176 MB"
+      ],
+      "docs": [
+        "README.md",
+        "paper/PHASE3_RESULTS.md",
+        "paper/slides/index.html",
+        "demo/QA_CARD.md",
+        "reports/README.md",
+        "reports/23-paper-faithful-modules.md"
+      ],
+      "source": "wp6_real_table.csv"
+    },
+    {
+      "id": "D_raw_MB",
+      "value": 60124.299264,
+      "forms": [
+        "60,124 MB"
+      ],
+      "docs": [
+        "README.md",
+        "paper/PHASE3_RESULTS.md",
+        "paper/slides/index.html",
+        "paper/video_script.md",
+        "demo/QA_CARD.md"
+      ],
+      "source": "wp6_real_table.csv"
+    },
+    {
+      "id": "data_reduction_percent",
+      "value": 99.70683060089111,
+      "forms": [
+        "99.71 %",
+        "99.71%"
+      ],
+      "docs": [
+        "paper/PHASE3_RESULTS.md",
+        "demo/PAPER_COVERAGE.md"
+      ],
+      "source": "wp6_real_table.csv"
+    },
+    {
+      "id": "ship_recall",
+      "value": 0.6850504239541705,
+      "forms": [
+        "0.685"
+      ],
+      "docs": [
+        "README.md",
+        "paper/PHASE3_RESULTS.md",
+        "paper/slides/index.html",
+        "demo/DEMO.md",
+        "demo/QA_CARD.md",
+        "paper/video_script.md"
+      ],
+      "source": "wp6_real_table.csv"
+    },
+    {
+      "id": "lead_over_fair_baseline_pts",
+      "value": 6.347927006053711,
+      "forms": [
+        "+6.3"
+      ],
+      "docs": [
+        "README.md",
+        "paper/PHASE3_RESULTS.md",
+        "paper/slides/index.html",
+        "demo/DEMO.md"
+      ],
+      "source": "wp6_real_table.csv"
+    },
+    {
+      "id": "bytes_vs_fair_baseline_x",
+      "value": 10.840470287251097,
+      "forms": [
+        "~11×"
+      ],
+      "docs": [
+        "README.md",
+        "paper/PHASE3_RESULTS.md",
+        "paper/slides/index.html"
+      ],
+      "source": "wp6_real_table.csv"
+    },
+    {
+      "id": "vs_FIFO_160k_x",
+      "value": 3.5886221637619213,
+      "forms": [
+        "3.59×"
+      ],
+      "docs": [
+        "README.md",
+        "paper/PHASE3_RESULTS.md",
+        "reports/README.md"
+      ],
+      "source": "wp6_real_sweep.csv"
+    },
+    {
+      "id": "vs_FIFO_80k_x",
+      "value": 1.877937037764252,
+      "forms": [
+        "1.88×"
+      ],
+      "docs": [
+        "README.md",
+        "paper/PHASE3_RESULTS.md",
+        "reports/README.md"
+      ],
+      "source": "wp6_real_sweep.csv"
+    },
+    {
+      "id": "greedy_gap_operational",
+      "value": 0.008842639412006968,
+      "forms": [
+        "0.884%",
+        "0.88 %",
+        "0.88%"
+      ],
+      "docs": [
+        "README.md",
+        "paper/PHASE3_RESULTS.md",
+        "demo/QA_CARD.md",
+        "reports/README.md"
+      ],
+      "source": "wp5_optimality_gap.csv"
+    },
+    {
+      "id": "foresight_value_max",
+      "value": 0.0032955615461296,
+      "forms": [
+        "≤ 0.3 %",
+        "≤0.3%"
+      ],
+      "docs": [
+        "paper/PHASE3_RESULTS.md",
+        "reports/README.md"
+      ],
+      "source": "wp5_joint_bound.csv"
+    },
+    {
+      "id": "queue_aware_worst_regret_pts",
+      "value": 0.21369947194300998,
+      "forms": [
+        "0.2 points"
+      ],
+      "docs": [
+        "paper/PHASE3_RESULTS.md",
+        "reports/README.md"
+      ],
+      "source": "wp8_queue_aware.csv"
+    },
+    {
+      "id": "B1_recall_same_scenes",
+      "value": 0.3385,
+      "forms": [
+        "0.339"
+      ],
+      "docs": [
+        "README.md",
+        "paper/PHASE3_RESULTS.md",
+        "paper/slides/index.html",
+        "demo/PAPER_COVERAGE.md",
+        "demo/DEMO.md",
+        "demo/QA_CARD.md",
+        "demo/quickstart/README.md",
+        "reports/README.md",
+        "reports/23-paper-faithful-modules.md"
+      ],
+      "source": "wp26_b0_b4.json"
+    },
+    {
+      "id": "B2_recall_same_scenes",
+      "value": 0.7174,
+      "forms": [
+        "0.717"
+      ],
+      "docs": [
+        "README.md",
+        "paper/PHASE3_RESULTS.md",
+        "paper/slides/index.html",
+        "demo/PAPER_COVERAGE.md",
+        "demo/DEMO.md",
+        "demo/QA_CARD.md",
+        "demo/quickstart/README.md",
+        "reports/README.md",
+        "reports/23-paper-faithful-modules.md"
+      ],
+      "source": "wp26_b0_b4.json"
+    },
+    {
+      "id": "plain_tiling_recall_same_scenes",
+      "value": 0.7302,
+      "forms": [
+        "0.730"
+      ],
+      "docs": [
+        "README.md",
+        "paper/PHASE3_RESULTS.md",
+        "paper/slides/index.html",
+        "demo/PAPER_COVERAGE.md",
+        "demo/DEMO.md",
+        "demo/QA_CARD.md"
+      ],
+      "source": "wp26_b0_b4.json"
+    },
+    {
+      "id": "sahi_compute_x",
+      "value": 1.5625,
+      "forms": [
+        "1.56×"
+      ],
+      "docs": [
+        "README.md",
+        "paper/PHASE3_RESULTS.md",
+        "paper/slides/index.html",
+        "demo/PAPER_COVERAGE.md",
+        "demo/DEMO.md",
+        "demo/QA_CARD.md",
+        "demo/quickstart/README.md"
+      ],
+      "source": "wp26_b0_b4.json"
+    },
+    {
+      "id": "detector_on_native_tiles_recall",
+      "value": 0.7658,
+      "forms": [
+        "0.766"
+      ],
+      "docs": [
+        "README.md",
+        "paper/PHASE3_RESULTS.md",
+        "demo/PAPER_COVERAGE.md",
+        "demo/QA_CARD.md",
+        "reports/README.md"
+      ],
+      "source": "wp24_detection_eval.json"
+    },
+    {
+      "id": "detector_mAP50",
+      "value": 0.8039831583260127,
+      "forms": [
+        "0.804"
+      ],
+      "docs": [
+        "README.md",
+        "paper/PHASE3_RESULTS.md",
+        "demo/PAPER_COVERAGE.md"
+      ],
+      "source": "wp1_metrics.json"
+    },
+    {
+      "id": "dataset_tiles",
+      "value": 53195,
+      "forms": [
+        "53,195"
+      ],
+      "docs": [
+        "README.md",
+        "paper/PHASE3_RESULTS.md",
+        "demo/QA_CARD.md"
+      ],
+      "source": "wp0_stats.json"
+    },
+    {
+      "id": "cloud_band",
+      "value": [
+        0.3957536772974675,
+        0.8189204599448826
+      ],
+      "forms": [
+        "0.40–0.82"
+      ],
+      "docs": [
+        "README.md",
+        "paper/PHASE3_RESULTS.md",
+        "paper/slides/index.html",
+        "demo/DEMO.md",
+        "demo/QA_CARD.md",
+        "paper/video_script.md"
+      ],
+      "source": "wp10_sensitivity.csv"
+    },
+    {
+      "id": "sensitivity_ours_ge_fair",
+      "value": [
+        74,
+        80
+      ],
+      "forms": [
+        "74 of 80",
+        "in 74"
+      ],
+      "docs": [
+        "README.md",
+        "paper/PHASE3_RESULTS.md",
+        "demo/PAPER_COVERAGE.md",
+        "paper/slides/index.html",
+        "demo/QA_CARD.md",
+        "reports/README.md"
+      ],
+      "source": "wp10_sensitivity.csv"
+    },
+    {
+      "id": "lead_over_fair_at_160k_pts",
+      "value": 1.29337392799869,
+      "forms": [
+        "1.3 points",
+        "1.3 pts"
+      ],
+      "docs": [
+        "README.md",
+        "paper/PHASE3_RESULTS.md",
+        "demo/PAPER_COVERAGE.md",
+        "paper/slides/index.html",
+        "demo/QA_CARD.md"
+      ],
+      "source": "wp10_sensitivity.csv"
+    },
+    {
+      "id": "ES_proc_percent",
+      "value": 57.63,
+      "forms": [
+        "57.6 %",
+        "57.6%"
+      ],
+      "docs": [
+        "paper/PHASE3_RESULTS.md",
+        "paper/slides/index.html",
+        "demo/PAPER_COVERAGE.md"
+      ],
+      "source": "wp17_energy_model.json"
+    },
+    {
+      "id": "proc_to_comm_energy",
+      "value": 5.46,
+      "forms": [
+        "5.5 : 1",
+        "5.5:1"
+      ],
+      "docs": [
+        "paper/PHASE3_RESULTS.md",
+        "paper/slides/index.html",
+        "demo/PAPER_COVERAGE.md",
+        "reports/README.md"
+      ],
+      "source": "wp17_energy_model.json"
+    },
+    {
+      "id": "ES_total_percent",
+      "value": 98.11,
+      "forms": [
+        "98.1 %"
+      ],
+      "docs": [
+        "paper/PHASE3_RESULTS.md"
+      ],
+      "source": "wp17_energy_model.json"
+    },
+    {
+      "id": "relay_worst_latency_h",
+      "value": [
+        35.18,
+        10.86
+      ],
+      "forms": [
+        "35.2"
+      ],
+      "docs": [
+        "paper/PHASE3_RESULTS.md",
+        "paper/slides/index.html",
+        "demo/PAPER_COVERAGE.md",
+        "demo/DEMO.md",
+        "demo/QA_CARD.md",
+        "paper/video_script.md",
+        "reports/README.md"
+      ],
+      "source": "wp18_campaign.json"
+    },
+    {
+      "id": "relay_worst_latency_with_relay_h",
+      "value": 10.86,
+      "forms": [
+        "10.9"
+      ],
+      "docs": [
+        "paper/PHASE3_RESULTS.md",
+        "paper/slides/index.html",
+        "demo/PAPER_COVERAGE.md",
+        "demo/DEMO.md",
+        "demo/QA_CARD.md",
+        "paper/video_script.md",
+        "reports/README.md"
+      ],
+      "source": "wp18_campaign.json"
+    },
+    {
+      "id": "relay_item_share_percent",
+      "value": 66.4,
+      "forms": [
+        "66 %",
+        "66%"
+      ],
+      "docs": [
+        "paper/PHASE3_RESULTS.md",
+        "reports/README.md"
+      ],
+      "source": "wp18_campaign.json"
+    },
+    {
+      "id": "relay_comm_energy_increase_percent",
+      "value": 52.066115702479344,
+      "forms": [
+        "+52"
+      ],
+      "docs": [
+        "paper/PHASE3_RESULTS.md",
+        "paper/slides/index.html",
+        "demo/QA_CARD.md",
+        "reports/README.md"
+      ],
+      "source": "wp18_campaign.json"
+    },
+    {
+      "id": "thumbnail_rekey_saving_percent",
+      "value": 2.2752956653766643,
+      "forms": [
+        "2.3 %",
+        "2.3%"
+      ],
+      "docs": [
+        "paper/PHASE3_RESULTS.md",
+        "reports/README.md"
+      ],
+      "source": "wp14_gate_signal.json"
+    },
+    {
+      "id": "P0P3_MB_same_day",
+      "value": 90.5,
+      "forms": [
+        "90.5"
+      ],
+      "docs": [
+        "demo/PAPER_COVERAGE.md",
+        "reports/23-paper-faithful-modules.md",
+        "reports/README.md"
+      ],
+      "source": "wp23_semantic_compare.json"
+    },
+    {
+      "id": "LoD_MB_same_day",
+      "value": 178.5,
+      "forms": [
+        "178.5"
+      ],
+      "docs": [
+        "demo/PAPER_COVERAGE.md",
+        "reports/23-paper-faithful-modules.md",
+        "reports/README.md"
+      ],
+      "source": "wp23_semantic_compare.json"
+    },
+    {
+      "id": "coastal_tile_median_kB",
+      "value": 66.527,
+      "forms": [
+        "66.5 kB"
+      ],
+      "docs": [
+        "paper/PHASE3_RESULTS.md",
+        "demo/DEMO.md",
+        "demo/QA_CARD.md",
+        "reports/README.md"
+      ],
+      "source": "wp28_coast_tile_model.json"
+    },
+    {
+      "id": "modeled_share_of_bytes_percent",
+      "value": 23.75,
+      "forms": [
+        "24 %",
+        "24%"
+      ],
+      "docs": [
+        "paper/PHASE3_RESULTS.md",
+        "demo/QA_CARD.md"
+      ],
+      "source": "wp28_coast_tile_model.json"
+    }
+  ]
+}

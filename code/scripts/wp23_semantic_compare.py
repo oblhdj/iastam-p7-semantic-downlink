@@ -33,7 +33,8 @@ import pandas as pd
 from sat7.joint import (CostModel, JointConstraints, JointWeights, build_objects, pareto, solve)
 from sat7.orbit import GroundStation, LINK_PRESETS, OrbitConfig, find_passes, make_satellite
 from sat7.priority import PriorityConfig, encode_semantic, level_histogram
-from sat7.real_workload import RealWorkloadConfig, load_size_model, workload_from_catalogue
+from sat7.real_workload import (RealWorkloadConfig, attach_coast_sizes, load_size_model,
+                                workload_from_catalogue)
 from sat7.scheduler import LoDConfig, ValueGreedy, metrics, simulate
 
 
@@ -57,6 +58,7 @@ def main() -> None:
     args = ap.parse_args()
 
     tiles = pd.read_csv(args.cat_tiles)
+    attach_coast_sizes(tiles, Path(args.cat_tiles).parent)   # each coastal tile at its measured size (wp28)
     ships = pd.read_csv(args.cat_ships)
     cfg = RealWorkloadConfig(tiles_per_day=args.day_tiles, det_thr=args.det_thr, seed=args.seed)
     wl, stats = workload_from_catalogue(tiles, ships, cfg)

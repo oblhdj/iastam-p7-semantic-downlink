@@ -3,8 +3,8 @@ import pandas as pd
 import pytest
 
 from sat7.real_workload import CONTEXTS, RealWorkloadConfig, workload_from_catalogue
-from sat7.scheduler import (FIFO, LoDConfig, SizeModel, WorkloadConfig, encode_lod,
-                            generate_workload, simulate)
+from sat7.scheduler import (COAST_TILE_BYTES_MEASURED, COAST_TILE_BYTES_WP7, FIFO, LoDConfig, SizeModel,
+                            WorkloadConfig, coast_tile_size, encode_lod, generate_workload, simulate)
 
 
 def _catalogue():
@@ -173,3 +173,42 @@ def test_synthetic_workload_is_unchanged_by_the_real_workload_support():
     items = encode_lod(wl)
     assert sum(i.kind == "fp" for i in items) > 0
     assert all(i.size == LoDConfig().l1_bytes for i in items if i.kind == "fp")
+
+
+# ---------------------------------------------------------------- the measured coastal tile (wp28)
+def test_a_coastal_tile_is_charged_its_own_measured_size():
+    tiles, ships = _catalogue()
+    tiles.attrs["coast_bytes"] = {"coasty.jpg": 70_000.0}
+    wl, _ = workload_from_catalogue(tiles, ships, RealWorkloadConfig(tiles_per_day=400, seed=1))
+    for size, (_t, ctx, _ids) in zip(wl.coast_bytes, wl.tiles):
+        assert size == (70_000.0 if ctx == "coast" else None)
+    assert {it.size for it in encode_lod(wl, LoDConfig()) if it.kind == "tile"} == {70_000.0}
+
+
+def test_coastal_size_precedence_is_explicit_then_per_tile_then_the_measured_mean():
+    tiles, ships = _catalogue()
+    plain, _ = workload_from_catalogue(tiles, ships, RealWorkloadConfig(tiles_per_day=400, seed=1))
+    idx = next(i for i, (_t, ctx, _ids) in enumerate(plain.tiles) if ctx == "coast")
+    assert plain.coast_bytes is None                 # no size table attached -> the measured mean
+    assert coast_tile_size(plain, idx, LoDConfig()) == COAST_TILE_BYTES_MEASURED
+    tiles.attrs["coast_bytes"] = {"coasty.jpg": 70_000.0}
+    wl, _ = workload_from_catalogue(tiles, ships, RealWorkloadConfig(tiles_per_day=400, seed=1))
+    assert coast_tile_size(wl, idx, LoDConfig()) == 70_000.0
+    # a number in the config always wins: a sweep, or the earlier flat estimate behind 557x
+    assert coast_tile_size(wl, idx, LoDConfig(coast_tile_bytes=COAST_TILE_BYTES_WP7)) == 32_420.0
+
+
+def test_committed_size_table_matches_the_constant_and_the_packet_format():
+    from pathlib import Path
+
+    from sat7.real_workload import COAST_SIZES_CSV
+    from sat7.semantic import Packetizer
+    path = Path(__file__).resolve().parents[1] / "results" / COAST_SIZES_CSV
+    if not path.exists():
+        pytest.skip("results/wp28_coast_tile_bytes.csv not generated")
+    t = pd.read_csv(path)
+    assert len(t) == t.image.nunique() and (t.packet_B > t.jpeg_q40_baseline_B).all()
+    assert abs(t.packet_B.mean() - COAST_TILE_BYTES_MEASURED) < 0.5
+    row = t.iloc[0]                                  # packet_B is the real CCSDS serialization
+    wire = Packetizer().packetize(0x103, bytes(int(row.jpeg_q40_baseline_B) + 18))
+    assert sum(len(pk) for pk in wire) == row.packet_B

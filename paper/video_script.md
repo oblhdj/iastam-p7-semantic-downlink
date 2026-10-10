@@ -4,8 +4,9 @@
 sentences; if you must cut, cut from §4 (B0→B4) first — never §6 (the self-correction).
 
 **Delivery.** Read slowly, short sentences, let the numbers sit. Do not read the on-screen text
-aloud — the viewer reads it. **Put `557×` and the band `0.40–0.82` on screen as text** (numbers
-heard once are lost). Every figure a card shows is labelled REAL / SIM / LIT / TARGET.
+aloud — the viewer reads it. **Put `341×` and the band `0.40–0.82` on screen as text** (numbers
+heard once are lost). Under `341×`, in small type: *coastal tiles measured; thumbnails and crops
+modeled.* Every figure a card shows is labelled REAL / SIM / LIT / TARGET.
 
 ---
 
@@ -39,19 +40,20 @@ The scheduler picks what fits the next pass, by value per byte.
 > **ON SCREEN:** a five-row card B0→B4 (from `demo/summary.py` / `wp18_campaign.json`).
 
 Our paper promised a progression, and we measured all of it.
-Raw image. Then the detector alone — seventy-eight percent of the ships.
-Add SAHI — seventy-four, at one-and-a-half times the compute.
+Raw image. Then one detector pass over the whole scene — a third of the ships.
+Add SAHI on the same scenes — seventy-two percent, at one-and-a-half times the compute.
 Add the semantic policy — this is the full system.
 And an optional inter-satellite relay.
 
 ## 1:08 – 1:28 · The numbers
-> **ON SCREEN:** `code/results/wp6_real_sweep.png`, then big: **557×** and **0.685 @15% cloud (0.40–0.82)**.
-> Then `code/results/sim_latency.png` with **11.6 h → 6.2 h**.
+> **ON SCREEN:** `code/results/wp6_real_sweep.png`, then big: **341×** (small type: *coastal tiles
+> measured; thumbnails and crops modeled*) and **0.685 @15% cloud (0.40–0.82)**.
+> Then a text card **35.2 h → 10.9 h** (worst case, with the relay).
 
-Five hundred and fifty-seven times less data than sending the pictures.
+Three hundred and forty-one times less data than sending the pictures.
 Sixty-eight-point-five percent of the ships — at an assumed fifteen percent cloud —
 and that is one hundred percent of what the satellite still knew. The link is no longer the
-bottleneck; the detector is. The relay cuts worst-case latency from eleven-point-six hours to six.
+bottleneck; the detector is. The relay cuts worst-case latency from thirty-five hours to eleven.
 
 ## 1:28 – 1:52 · The honest part *(never cut)*
 > **ON SCREEN:** split screen "we claimed" / "we measured", strike through the left;
@@ -84,8 +86,8 @@ Every figure is labelled. It is all open.
 | 4 | 0:30 | one tile + `code/results/wp4_lod_sizes.png` | the 40 B / 900 B / 2.5 kB ladder |
 | 5 | 0:48 | B0→B4 card (`demo/summary.py` block or `wp18_campaign.json`) | five rows, labels visible |
 | 6 | 1:08 | `code/results/wp6_real_sweep.png` | ours vs FIFO vs fair baseline |
-| 7 | 1:12 | big number card **557×** + **0.685 @15% cloud (band 0.40–0.82)** | hold 3 s |
-| 8 | 1:20 | `code/results/sim_latency.png` + text **11.6 h → 6.2 h** | the relay |
+| 7 | 1:12 | big number card **341×** + **0.685 @15% cloud (band 0.40–0.82)** | hold 3 s; small type under 341×: coastal tiles measured, thumbnails and crops modeled |
+| 8 | 1:20 | text card **35.2 h → 10.9 h** (source `wp18_campaign.json`, B4) | the relay; `sim_latency.png` is the older synthetic day and no longer matches |
 | 9 | 1:28 | claimed-vs-measured split screen | make the strike-through visible |
 | 10 | 1:40 | `code/results/wp10_tornado.png` | point at the cloud bar |
 | 11 | 1:52 | `code/results/wp11_funnel.png` → repo URL + QR | hold to 2:00 |
@@ -98,6 +100,6 @@ Cut in this order: the last sentence of §2 ("And the relay…"), then the SAHI 
 - Record narration **first**, then cut visuals to it.
 - One take per section, not one take for the whole thing.
 - Phone voice memo in a small carpeted room beats a laptop mic in a big room.
-- Put `557×` and the band `0.40–0.82` **on screen as text** — the two numbers judges must leave with.
+- Put `341×` and the band `0.40–0.82` **on screen as text** — the two numbers judges must leave with.
 - No slide/plot exists for energy by design — the 2-min cut stays on data reduction + recall + relay;
   the energy story lives in the slide deck (`paper/slides/`) and `PHASE3_RESULTS.md §6`.

@@ -1,6 +1,9 @@
 # IASTAM 6.0 — Problem 7: Transmitting Information Rather Than Raw Data
 
-> ### ⚠ STALE (18 Sept) — read `../docs/STATUS.md` instead
+> **⚠ SUPERSEDED FOR STATUS (11 Oct 2026).** This README is from **18 Sept 2026**, before the
+> real-data work packages and Phase 3. For current status trust
+> **[`../paper/PHASE3_RESULTS.md`](../paper/PHASE3_RESULTS.md)** and
+> **[`../demo/PAPER_COVERAGE.md`](../demo/PAPER_COVERAGE.md)**.
 > Every performance number below is from the **synthetic** Beta(5,2) workload and is superseded.
 > "LoD + value-greedy **93.0% / 97.6%**" became **0.685** on real detections (WP6); the
 > pre-filter section was re-measured on Airbus and the classic filter **failed as a gate**

@@ -37,7 +37,7 @@ import pandas as pd
 from sat7.orbit import LINK_PRESETS, GroundStation, OrbitConfig, find_passes, make_satellite
 from sat7.real_workload import (RealWorkloadConfig, load_catalogue, load_size_model,
                                 workload_from_catalogue)
-from sat7.scheduler import (FIFO, LoDConfig, NoBuffer, ValueGreedy, WorkloadConfig,
+from sat7.scheduler import (COAST_TILE_BYTES_WP7, FIFO, LoDConfig, NoBuffer, ValueGreedy, WorkloadConfig,
                             encode_fixed_patch, encode_lod, encode_raw, generate_workload,
                             metrics, ship_ci95, simulate)
 
@@ -130,6 +130,10 @@ def main() -> None:
                          "the calibrated score meaning P=0.9 -- WP2)")
     ap.add_argument("--no-size-model", action="store_true",
                     help="ablation: charge every ship the WP4 median instead of its own length")
+    ap.add_argument("--coast-model", choices=["measured", "wp7"], default="measured",
+                    help="size of a coastal context tile: 'measured' = each tile's own JPEG q40 "
+                         "(results/wp28_coast_tile_bytes.csv, canonical); 'wp7' = the earlier flat "
+                         "32,420 B estimate (reproduces the 557x figure; run it with --tag modeledcoast)")
     ap.add_argument("--results", type=Path, default=ROOT / "results")
     ap.add_argument("--tag", default="", help="suffix for the output files, so a variant run "
                     "(--mix dataset, --no-size-model, ...) does not overwrite the main results")
@@ -140,8 +144,9 @@ def main() -> None:
     tiles, ships = load_catalogue(out)
     sm = None if args.no_size_model else load_size_model(out / "wp6_size_model.json")
     # the onboard detection threshold IS the bottom of the level-of-detail ladder
+    coast_kw = {} if args.coast_model == "measured" else {"coast_tile_bytes": COAST_TILE_BYTES_WP7}
     lod = LoDConfig(conf_low=args.det_thr if args.conf_low is None else args.conf_low,
-                    size_model=sm,
+                    size_model=sm, **coast_kw,
                     **({} if args.conf_high is None else {"conf_high": args.conf_high}))
 
     start = datetime(2026, 9, 18, tzinfo=timezone.utc)
@@ -157,7 +162,8 @@ def main() -> None:
     print(f"  day: {st.tiles} tiles, {st.ships} real ships ({st.detected} with conf>={args.det_thr}, "
           f"{st.dark} flagged dark [ASSUMPTION]), {st.false_alarms} real false alarms")
     print(f"  contexts: {st.context_counts}")
-    print(f"  payload: {'per-ship WP4 power law' if sm else 'WP4 medians (ablation)'}")
+    print(f"  payload: {'per-ship WP4 power law' if sm else 'WP4 medians (ablation)'}; coastal tile: "
+          f"{'each tile measured (wp28)' if args.coast_model == 'measured' else 'flat 32,420 B (earlier model)'}")
     print(f"  {len(passes)} passes in 36 h, {args.link} x {args.link_share} -> {cap_mb:.0f} MB\n")
 
     frames = []
@@ -189,7 +195,7 @@ def main() -> None:
 
     # ---------------------------------------------------------------- real vs synthetic
     wsyn = generate_workload(WorkloadConfig(tiles_per_day=args.tiles, seed=args.seed))
-    dsyn = run_all(wsyn, passes, start, storage, LoDConfig(conf_low=args.det_thr))
+    dsyn = run_all(wsyn, passes, start, storage, LoDConfig(conf_low=args.det_thr, **coast_kw))
     cmp = pd.concat([df.assign(workload="REAL detections (WP6)"),
                      dsyn.assign(workload="SYNTHETIC (WP5)")])
     keep = ["workload", "strategy", "ship_recall", "dark_recall", "latency_med_h", "MB_sent"]
@@ -218,7 +224,7 @@ def main() -> None:
         a2 = argparse.Namespace(**vars(args))
         a2.det_thr = thr
         w, s2 = build_day(tiles, ships, a2, args.seed, args.tiles)
-        l2 = LoDConfig(conf_low=thr, size_model=sm)
+        l2 = LoDConfig(conf_low=thr, size_model=sm, **coast_kw)
         m = metrics(simulate(encode_lod(w, l2), passes, start, ValueGreedy(), storage,
                              encoder="Ours: LoD + value-greedy"), w, l2)
         m["det_thr"] = thr

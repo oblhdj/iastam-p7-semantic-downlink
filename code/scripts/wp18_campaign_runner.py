@@ -55,7 +55,8 @@ import torch
 
 from sat7.b2_sahi_fusion import SahiConfig, run_sahi
 from sat7.orbit import LINK_PRESETS, GroundStation, OrbitConfig, find_passes, make_satellite
-from sat7.real_workload import RealWorkloadConfig, load_size_model, workload_from_catalogue
+from sat7.real_workload import (RealWorkloadConfig, attach_coast_sizes, load_size_model,
+                                workload_from_catalogue)
 from sat7.scheduler import LoDConfig, ValueGreedy, encode_lod, metrics, simulate
 from sat7.priority import PriorityConfig, encode_semantic   # P0-P3 scheme (selectable, defaults off)
 from sat7.relay import LinkParams, RelayConfig, isl_windows, make_relay, route  # B4 (peer-owned)
@@ -151,6 +152,7 @@ def run_b3(cat_tiles, cat_ships, size_model, day_tiles, det_thr, link, link_shar
     "lod" (the CSV it pins to is the LoD headline).
     """
     tiles = pd.read_csv(cat_tiles)
+    attach_coast_sizes(tiles, Path(cat_tiles).parent)   # each coastal tile at its measured size (wp28)
     ships = pd.read_csv(cat_ships)
     cfg = RealWorkloadConfig(tiles_per_day=day_tiles, det_thr=det_thr, seed=seed)
     wl, stats = workload_from_catalogue(tiles, ships, cfg)
@@ -306,6 +308,8 @@ def main() -> None:
     ap.add_argument("--b4-raan", type=float, default=90.0,
                     help="ASSUMPTION: relay RAAN offset (deg); 90 = complementary coverage (report 20)")
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--same-input", type=Path, default=ROOT / "results" / "wp26_b0_b4.json",
+                    help="the same-input B0-B4 run (wp26_b0_b4.py): the canonical B1 and B2")
     ap.add_argument("--out", type=Path, default=ROOT / "results")
     args = ap.parse_args()
 
@@ -325,20 +329,57 @@ def main() -> None:
                      "source": "report 05 (scale-matched to B3's tile count for the reduction factor)"}
     print(f"B0 raw reference: {B0_RAW_MB_DAY:.0f} MB/day at 40k tiles = {B0_RAW_PER_TILE_MB:.3f} MB/tile [SIM]")
 
-    # B1 ---------------------------------------------------------------------
-    print(f"B1 YOLO/tile on {args.b1_tiles} real tiles ...", flush=True)
-    b1 = run_b1(detect_fn, img_dir, lbl_dir, args.b1_tiles, args.seed)
-    b1.update({"onboard": "detector", "label": "REAL", "status": "ran"})
-    configs["B1"] = b1
-    print(f"   recall {b1['recall']['overall']} on {b1['gt_ships']} ships [REAL]")
+    # B1 / B2 -- canonical since 10 Oct 2026: the same-input run (wp26_b0_b4.py) -----------------
+    # The paper's B1 is ONE detector call on the original (large) image and its B2 is SAHI on that
+    # same image. wp26 measures both on the same 150 scenes of 4x4 real tiles; this runner reads
+    # them, so the campaign carries one B1 and one B2. What this script used to report under those
+    # names still runs below and is kept as "legacy_small_samples": a detector call per native
+    # 768 px tile (no large image, so not the paper's B1) and SAHI on 2 swaths (47 ships).
+    w26 = json.loads(args.same_input.read_text())
+    q26, chk26, in26 = w26["detection_quality_same_scenes"], w26["checks"], w26["inputs"]
 
-    # B2 ---------------------------------------------------------------------
-    print(f"B2 SAHI+fusion on {args.b2_swaths} swaths @ {args.b2_window}px via run_sahi ...", flush=True)
-    b2 = run_b2(detect_fn, args.manifest, args.swath_ships, img_dir, args.b2_swaths, args.b2_window)
-    b2.update({"onboard": "detector+SAHI", "label": "REAL", "status": "ran"})
-    configs["B2"] = b2
-    print(f"   recall {b2['recall']['overall']} on {b2['gt_ships']} ships, "
-          f"{b2['compute_vs_regular_tiling_x']}x compute [REAL]")
+    def same_input(m, onboard, **extra):
+        by = m["recall_by_size"]
+        return {"scenes": m["images"], "scene_px": in26["scene_px"], "gt_ships": m["n_gt"],
+                "detections": m["n_detections_supplied"],
+                "recall": {"overall": m["recall"], "small_<32": by["small_<32"]["recall"],
+                           "medium": by["medium_32-96"]["recall"], "large_>96": by["large_>96"]["recall"]},
+                "precision": m["precision"], "F1": m["F1"], "AP50": m["AP50"],
+                "conf_thr": m["conf_thr"], "iou_thr": m["iou_thr"], **extra,
+                "onboard": onboard, "label": "REAL",
+                "status": "read from results/wp26_b0_b4.json (same-input run)"}
+
+    wins = chk26["3_B2_sahi_fusion"]["windows_per_scene"]
+    b1 = same_input(q26["B1"], "detector, one call on the whole scene",
+                    detector_calls_per_scene=chk26["2_B1_no_slicing"]["detector_calls_per_scene"])
+    b2 = same_input(q26["B2"], "detector+SAHI+fusion", window_px=args.b2_window, windows_per_scene=wins,
+                    compute_vs_regular_tiling_x=round(wins / in26["per_side"] ** 2, 4))
+    configs["B1"], configs["B2"] = b1, b2
+    print(f"B1 one call per {in26['scene_px']} px scene: recall {b1['recall']['overall']}, precision "
+          f"{b1['precision']} on {b1['gt_ships']} ships [REAL, wp26]")
+    print(f"B2 SAHI+fusion, same scenes: recall {b2['recall']['overall']}, precision {b2['precision']}, "
+          f"{b2['compute_vs_regular_tiling_x']}x compute [REAL, wp26]")
+
+    # the two earlier small samples: still measured, no longer called B1 / B2
+    print(f"legacy: detector per native tile on {args.b1_tiles} tiles; SAHI on {args.b2_swaths} swaths ...",
+          flush=True)
+    old_b1 = run_b1(detect_fn, img_dir, lbl_dir, args.b1_tiles, args.seed)
+    old_b2 = run_b2(detect_fn, args.manifest, args.swath_ships, img_dir, args.b2_swaths, args.b2_window)
+    legacy = {
+        "note": "what this runner reported as B1 / B2 until 10 Oct 2026. Different inputs from each other "
+                "and from B3; matched at IoU >= 0.3. Not the paper's B1 / B2 -- kept as measured references.",
+        "native_tiles": {**old_b1, "what": "one detector call per native 768 px tile (no large image)",
+                         "label": "REAL", "full_scale": "results/wp24_detection_eval.json "
+                                                        "B1_committed_all_test_tiles (8,173 ships)"},
+        "swaths": {**old_b2, "what": "SAHI + fusion on stitched swaths", "label": "REAL",
+                   "full_scale": "results/wp24_detection_eval.json swaths.rows.sahi_B2 (716 ships)"},
+        "per_tile_on_the_same_scenes": {
+            "recall": q26["B1_per_tile_reference"]["recall"],
+            "precision": q26["B1_per_tile_reference"]["precision"],
+            "gt_ships": q26["B1_per_tile_reference"]["n_gt"],
+            "what": "one call per 768 px source tile of the wp26 scenes = a 16-window tiling without overlap"}}
+    print(f"   native tiles recall {old_b1['recall']['overall']} ({old_b1['gt_ships']} ships); swaths recall "
+          f"{old_b2['recall']['overall']} ({old_b2['gt_ships']} ships) [REAL, references only]")
 
     # B3 ---------------------------------------------------------------------
     print(f"B3 semantic policy: real scheduler chain over the stored catalogue ...", flush=True)
@@ -400,14 +441,15 @@ def main() -> None:
           f"({b4['worst_case_latency_cut_h']:+}h) [latency SIM, energy TARGET]")
 
     report = {
-        "label_note": "B0 SIM; B1/B2 REAL (detector on Airbus); B3 SIM-over-REAL (state cloud); "
-                      "B4 latency SIM, energy TARGET (report 19), lambda ASSUMPTION; energy from "
-                      "report 17 (ratios).",
-        "scale": "small-scale validation run (report 18 spec), not a full campaign",
+        "label_note": "B0 SIM; B1/B2 REAL, read from the same-input run wp26 (150 scenes of 4x4 real "
+                      "Airbus tiles); B3 SIM-over-REAL (state cloud; coastal tile bytes measured, other "
+                      "products modeled); B4 latency SIM, energy TARGET (report 19), lambda ASSUMPTION; "
+                      "energy from report 17 (ratios).",
+        "scale": "B1/B2: 150 scenes, 1,164 ships (wp26). B3/B4: one simulated 40,000-tile day. "
+                 "Different inputs -- B1/B2 are comparable with each other, not with B3's delivered recall.",
         "b0_b4_end_to_end": "RUNS -- B4 wired to sat7.relay.route (report 20 windows/choice + report "
                             "19 energy); B4 recall/MB are B3's (reroute), latency improved, energy TARGET",
-        "energy_reference": "report 17: gate saves >=57.6% processing energy; B2 adds 1.56x on "
-                            "detect; compute dominates comms 8.9:1; quote ratios not joules",
+        "energy_reference": "report 17 / results/wp17_energy_model.json (quote ratios, not joules)",
         "b4_design_question_resolved": "REROUTE not extra capacity -- scheduler.simulate owns "
                                        "eviction/capacity/aging upstream; route() changes only latency "
                                        "and energy. Confirmed by checking, asserted by gate (b).",
@@ -421,6 +463,7 @@ def main() -> None:
             "ACTUAL mid-pass delivered latency as the direct baseline -> gate (a) exact; wp20 numbers "
             "unmoved."),
         "configs": configs,
+        "legacy_small_samples": legacy,
         "elapsed_s": round(time.perf_counter() - t0, 1),
     }
     (args.out / "wp18_campaign.json").write_text(json.dumps(report, indent=2))
@@ -429,7 +472,7 @@ def main() -> None:
     def line(c, res):
         print(f"{c:5s} {configs[c]['onboard']:40s} {res:38s} {configs[c]['label'][:34]}")
     line("B0", f"{B0_RAW_MB_DAY:.0f} MB/day raw")
-    line("B1", f"recall {b1['recall']['overall']} ({b1['gt_ships']} ships)")
+    line("B1", f"recall {b1['recall']['overall']} ({b1['gt_ships']} ships, wp26)")
     line("B2", f"recall {b2['recall']['overall']} @ {b2['compute_vs_regular_tiling_x']}x")
     line("B3", f"recall {b3['ship_recall']}, {b3['reduction_vs_B0_x']}x vs B0")
     line("B4", f"=B3 recall/MB; max lat {b4['latency_h_B3_direct']['max']}->{b4['latency_h_B4_relay']['max']}h")

@@ -1,0 +1,425 @@
+diff --git a/code/sat7/energy.py b/code/sat7/energy.py
+index 02ad7d8..8e2101e 100644
+--- a/code/sat7/energy.py
++++ b/code/sat7/energy.py
+@@ -134,8 +134,11 @@ class EnergyModel:
+                 "E_base": sum(base.values()), "E_prop": sum(prop.values())}
+ 
+     def e_comm_direct_J(self, d_bytes: float) -> float:
+-        """E_comm,direct = P_tx * D_tx / R_tx."""
+-        return self.powers_W["tx"] * d_bytes / self.r_tx_bps
++        """E_comm,direct = P_tx * D_tx / R_tx, with D_tx in BITS (d_bytes * 8) and R_tx in bit/s.
++
++        Until 10 Oct 2026 this divided bytes by bit/s, so every joule here was 8x too small against
++        wp17 / wp19, which always converted (5.12 kJ/day for 107.95 MB at 15 W, 2.53 Mbps)."""
++        return self.powers_W["tx"] * d_bytes * 8.0 / self.r_tx_bps
+ 
+     def e_comm_relay_J(self, d_bytes: float, p_isl_W: float = 12.0,
+                        r_isl_bps: float | None = None) -> dict:
+@@ -143,7 +146,7 @@ class EnergyModel:
+         over r_isl_bps; the ground leg is the ordinary direct cost from the relay. p_isl_W is
+         ASSUMPTION (report 19)."""
+         r_isl = r_isl_bps or self.r_tx_bps
+-        e_isl = p_isl_W * d_bytes / r_isl
++        e_isl = p_isl_W * d_bytes * 8.0 / r_isl
+         e_gs = self.e_comm_direct_J(d_bytes)
+         return {"E_ISL_J": e_isl, "E_GS_J": e_gs, "E_relay_J": e_isl + e_gs}
+ 
+@@ -156,17 +159,17 @@ class EnergyModel:
+     def direct_energy_fn(self):
+         """Returns a `direct_energy(d_bytes, p_tx, r_gs_bps)` matching sat7.relay's signature."""
+         def f(d_bytes, p_tx, r_gs_bps):
+-            return {"E_comm_J": p_tx * d_bytes / r_gs_bps, "tx_time_s": d_bytes / r_gs_bps,
++            return {"E_comm_J": p_tx * d_bytes * 8.0 / r_gs_bps, "tx_time_s": d_bytes * 8.0 / r_gs_bps,
+                     "label": "REAL" if "REAL" in self.provenance.get("powers_W", "") else "ASSUMPTION"}
+         return f
+ 
+     def relay_energy_fn(self):
+         """Returns a `relay_energy(d_bytes, p_tx, p_isl, r_gs_bps, r_isl_bps)` for sat7.relay."""
+         def f(d_bytes, p_tx, p_isl, r_gs_bps, r_isl_bps):
+-            e_isl = p_isl * d_bytes / r_isl_bps
+-            e_gs = p_tx * d_bytes / r_gs_bps
++            e_isl = p_isl * d_bytes * 8.0 / r_isl_bps
++            e_gs = p_tx * d_bytes * 8.0 / r_gs_bps
+             return {"E_ISL_J": e_isl, "E_GS_J": e_gs, "E_relay_J": e_isl + e_gs,
+-                    "isl_time_s": d_bytes / r_isl_bps, "gs_time_s": d_bytes / r_gs_bps,
++                    "isl_time_s": d_bytes * 8.0 / r_isl_bps, "gs_time_s": d_bytes * 8.0 / r_gs_bps,
+                     "label": "REAL" if "REAL" in self.provenance.get("powers_W", "") else "ASSUMPTION"}
+         return f
+ 
+diff --git a/code/sat7/perception.py b/code/sat7/perception.py
+index 120f1b2..87ff0df 100644
+--- a/code/sat7/perception.py
++++ b/code/sat7/perception.py
+@@ -27,9 +27,14 @@ no numbers of its own.
+ """
+ from __future__ import annotations
+ 
++import ast
++import time
+ from dataclasses import dataclass
++from pathlib import Path
+ 
+-from .b2_sahi_fusion import SahiConfig, fuse, nms, plan_slices
++import numpy as np
++
++from .b2_sahi_fusion import SahiConfig, fuse, plan_slices
+ 
+ # the three slicing ablations the paper lists (PAPER_COVERAGE section 6), as named modes rather
+ # than forks. "without SAHI" is simply mode="whole"; the other two are flags on the sahi mode.
+@@ -46,6 +51,8 @@ class PerceptionConfig:
+     The two sahi ablations are flags, not separate code, so a sweep toggles them directly:
+       overlap=0.0   -> "without tile overlap"  (abutting windows, seams uncovered)
+       fuse=False    -> "without detection fusion" (global coords, but cross-window duplicates kept)
++    `fuse`/`nms_iou` act on the sahi mode only: a whole frame is one window, so there is nothing
++    to fuse and the detector's own output is returned as-is.
+     """
+     mode: str = "whole"
+     window: int = 768          # SAHI slice size (px). 768 = detector-native (wp16 default); 512 = paper
+@@ -76,15 +83,18 @@ def detect_image(image, detect_fn, cfg: PerceptionConfig | None = None):
+     """
+     cfg = cfg or PerceptionConfig()
+     if cfg.mode == "whole":
+-        # one window == the whole frame, origin (0, 0): fusion is a no-op but we route through the
+-        # same lift+NMS so a single dead box and a SAHI box are handled identically downstream.
++        # one window == the whole frame, origin (0, 0): the lift is the identity and there is no
++        # second window to duplicate a box, so the detector's own output IS the B1 answer. No
++        # cross-window NMS here (audit B2): a second NMS at nms_iou=0.5 on top of the detector's
++        # own NMS (0.7) would merge distinct, overlapping ships the detector deliberately kept,
++        # making "whole" differ from the raw detector output that B1 / wp1_predictions report.
++        # The same reason wp16 does not fuse its non-overlapping tilings.
+         h, w = image.shape[:2]
+         slices = [(0, 0, w, h)]
+         per_slice = detect_fn([image])
+         _check(per_slice, slices)
+-        boxes = [(float(d[0]), float(d[1]), float(d[2]), float(d[3]), float(d[4]))
+-                 for d in per_slice[0] if float(d[4]) >= cfg.min_conf]
+-        return nms(boxes, cfg.nms_iou) if cfg.fuse else boxes
++        return [(float(d[0]), float(d[1]), float(d[2]), float(d[3]), float(d[4]))
++                for d in per_slice[0] if float(d[4]) >= cfg.min_conf]
+ 
+     scfg = cfg.to_sahi()
+     h, w = image.shape[:2]
+@@ -121,26 +131,171 @@ def _check(per_slice, slices) -> None:
+         raise ValueError(f"detect_fn returned {len(per_slice)} results for {len(slices)} crops")
+ 
+ 
+-def make_yolo_detect_fn(model, imgsz: int = 768, conf: float = 0.25, device=None):
++def make_yolo_detect_fn(model, imgsz: int = 768, conf: float = 0.25, device=None,
++                        iou: float = 0.70):
+     """The YOLO `detect_fn` B1/B2 share: crops -> per-crop (cx, cy, w, h, conf).
+ 
+     Lifted verbatim from wp18_campaign_runner.make_detect_fn so the perception stage owns its own
+     detector adapter instead of the campaign script. ultralytics/torch is imported lazily only to
+     resolve the device default, so importing this module never pulls in torch; passing an explicit
+-    `device` avoids even that. `model` is an already-loaded ultralytics YOLO.
++    `device` avoids even that. `model` is an already-loaded ultralytics YOLO. `iou` is the detector's
++    own NMS threshold (0.70 = ultralytics' predict default, what every wp script ran with).
+     """
+     if device is None:
+         import torch                                   # lazy: only when the caller wants auto-device
+         device = 0 if torch.cuda.is_available() else "cpu"
+ 
+     def detect_fn(crops):
+-        res = model.predict(crops, imgsz=imgsz, conf=conf, device=device, verbose=False)
++        res = model.predict(crops, imgsz=imgsz, conf=conf, iou=iou, device=device, verbose=False)
+         return [[(float(b[0]), float(b[1]), float(b[2]), float(b[3]), float(c))
+                  for b, c in zip(r.boxes.xywh.cpu().numpy(), r.boxes.conf.cpu().numpy())]
+                 for r in res]
+     return detect_fn
+ 
+ 
++# ------------------------------------------------------------------ torch-free detector (ONNX)
++# The trained detector, exported by wp1 as ONNX FP32 (measured lossless vs PyTorch in every size
++# bucket, results/wp1_export.json), run through onnxruntime on CPU: no torch, no CUDA. Its
++# post-processing mirrors ultralytics' predict so boxes are comparable with wp1_predictions.csv
++# (verified: 40/40 boxes paired on 9 real test tiles, max |dconf| 3.4e-4, 0 decision flips --
++# demo/quickstart/README.md): ultralytics LetterBox (centre pad, grey 114) -> RGB/255 -> score >
++# conf -> greedy NMS (suppress IoU > iou, torchvision rule) -> at most 300 boxes -> undo the
++# letterbox -> clip to the crop. A 768x768 crop letterboxes to itself, so tiles and SAHI windows
++# take the exact path that was verified.
++
++DEFAULT_RAW_CONF = 0.05   # the raw dump threshold wp1_predictions.csv was written at; the onboard
++                          # 0.25 cut is applied downstream, so P0 / sub-threshold boxes stay visible
++DEFAULT_NMS_IOU = 0.70    # ultralytics predict default
++
++
++def letterbox(img: np.ndarray, size: int, color: int = 114):
++    """Ultralytics LetterBox(auto=False, center=True, scaleup=True): resize keeping aspect, pad to
++    size x size. Returns (padded, gain, (pad_left, pad_top))."""
++    import cv2
++    h, w = img.shape[:2]
++    r = min(size / h, size / w)
++    new_w, new_h = int(round(w * r)), int(round(h * r))
++    dw, dh = (size - new_w) / 2, (size - new_h) / 2
++    if (w, h) != (new_w, new_h):
++        img = cv2.resize(img, (new_w, new_h), interpolation=cv2.INTER_LINEAR)
++    top, bottom = int(round(dh - 0.1)), int(round(dh + 0.1))
++    left, right = int(round(dw - 0.1)), int(round(dw + 0.1))
++    if top or bottom or left or right:
++        img = cv2.copyMakeBorder(img, top, bottom, left, right, cv2.BORDER_CONSTANT,
++                                 value=(color, color, color))
++    return img, r, (left, top)
++
++
++def nms_xyxy(xyxy: np.ndarray, scores: np.ndarray, thr: float) -> np.ndarray:
++    """Greedy NMS, highest score first; a box is suppressed when IoU > thr (torchvision rule)."""
++    x0, y0, x1, y1 = xyxy.T
++    areas = (x1 - x0) * (y1 - y0)
++    order = np.argsort(-scores, kind="stable")
++    keep = []
++    while order.size:
++        i, rest = order[0], order[1:]
++        keep.append(i)
++        iw = np.clip(np.minimum(x1[i], x1[rest]) - np.maximum(x0[i], x0[rest]), 0, None)
++        ih = np.clip(np.minimum(y1[i], y1[rest]) - np.maximum(y0[i], y0[rest]), 0, None)
++        inter = iw * ih
++        iou = inter / np.maximum(areas[i] + areas[rest] - inter, 1e-9)
++        order = rest[iou <= thr]
++    return np.asarray(keep, dtype=int)
++
++
++def decode_yolo(out: np.ndarray, conf: float, iou: float, w: int, h: int, max_det: int = 300,
++                max_nms: int = 30000, gain: float = 1.0, pad: tuple[float, float] = (0.0, 0.0)):
++    """YOLOv8 head output (4 + n_classes, anchors) -> [(cx, cy, w, h, conf)] in crop pixels.
++
++    `gain`/`pad` undo the letterbox (ultralytics scale_boxes); the boxes are then clipped to the
++    w x h crop. Class-agnostic: the repo's detector has one class (ship) and the box convention
++    carries no class id.
++    """
++    scores = out[4:].max(0)
++    keep = scores > conf
++    if not keep.any():
++        return []
++    cx, cy, bw, bh = (out[k][keep] for k in range(4))
++    s = scores[keep]
++    xyxy = np.stack([cx - bw / 2, cy - bh / 2, cx + bw / 2, cy + bh / 2], 1)
++    if len(s) > max_nms:
++        top = np.argsort(-s)[:max_nms]
++        xyxy, s = xyxy[top], s[top]
++    idx = nms_xyxy(xyxy, s, iou)[:max_det]
++    xyxy, s = xyxy[idx].copy(), s[idx]
++    xyxy[:, [0, 2]] -= pad[0]
++    xyxy[:, [1, 3]] -= pad[1]
++    xyxy /= gain
++    xyxy[:, [0, 2]] = xyxy[:, [0, 2]].clip(0, w)
++    xyxy[:, [1, 3]] = xyxy[:, [1, 3]].clip(0, h)
++    return [(float((a + c) / 2), float((b + d) / 2), float(c - a), float(d - b), float(sc))
++            for (a, b, c, d), sc in zip(xyxy, s)]
++
++
++class OnnxDetector:
++    """The trained detector as an ONNX FP32 file on CPU; a `detect_fn` (list of BGR crops in,
++    per-crop (cx, cy, w, h, conf) out), so it drops into detect_image / run_sahi unchanged."""
++
++    def __init__(self, path, conf: float = DEFAULT_RAW_CONF, iou: float = DEFAULT_NMS_IOU):
++        import onnxruntime as ort                       # lazy: importing sat7 never needs it
++        self.path = Path(path)
++        self.ort_version = ort.__version__
++        self.sess = ort.InferenceSession(str(self.path), providers=["CPUExecutionProvider"])
++        inp = self.sess.get_inputs()[0]
++        self.input = inp.name
++        self.size = int(inp.shape[2]) if isinstance(inp.shape[2], int) else 768
++        n_out = self.sess.get_outputs()[0].shape[1]
++        if isinstance(n_out, int) and n_out != 5:
++            raise ValueError(f"{self.path.name}: {n_out - 4} classes; this adapter expects the repo's "
++                             f"single-class (ship) detector -- the box convention carries no class id")
++        meta = self.sess.get_modelmeta().custom_metadata_map
++        try:
++            names = ast.literal_eval(meta.get("names", "{}"))
++            self.names = {int(k): str(v) for k, v in names.items()} or {0: "ship"}
++        except (ValueError, SyntaxError, AttributeError):
++            self.names = {0: "ship"}
++        self.conf, self.iou = conf, iou
++        self.calls, self.ms = 0, 0.0
++
++    def __call__(self, crops):
++        return [self.detect(c) for c in crops]
++
++    def detect(self, bgr: np.ndarray) -> list[tuple]:
++        if bgr.ndim != 3 or bgr.shape[2] != 3 or bgr.shape[0] == 0 or bgr.shape[1] == 0:
++            raise ValueError(f"expected a non-empty H x W x 3 BGR crop, got shape {bgr.shape}")
++        h, w = bgr.shape[:2]
++        img, gain, pad = letterbox(bgr, self.size)
++        x = np.ascontiguousarray(img[..., ::-1].transpose(2, 0, 1))[None].astype(np.float32) / 255.0
++        t = time.perf_counter()
++        out = self.sess.run(None, {self.input: x})[0][0]
++        self.ms += 1e3 * (time.perf_counter() - t)
++        self.calls += 1
++        return decode_yolo(out, self.conf, self.iou, w, h, gain=gain, pad=pad)
++
++
++def load_detector(weights, conf: float = DEFAULT_RAW_CONF, iou: float = DEFAULT_NMS_IOU,
++                  imgsz: int = 768, device=None):
++    """The configured detector as a `detect_fn`, from its file: `.onnx` -> onnxruntime on CPU (no
++    torch); `.pt` -> ultralytics (torch, GPU if available). Both expose `.names` ({class id: name}).
++
++    The weights are not in git (code/runs/ is ignored); a CPU copy of the ONNX export ships with
++    the quickstart demo at demo/quickstart/model/best.onnx.
++    """
++    p = Path(weights)
++    if not p.exists():
++        raise FileNotFoundError(f"detector weights not found: {p} (code/runs/ is not in git; the "
++                                f"ONNX copy is demo/quickstart/model/best.onnx)")
++    if p.suffix.lower() == ".onnx":
++        return OnnxDetector(p, conf=conf, iou=iou)
++    if p.suffix.lower() == ".pt":
++        from ultralytics import YOLO                     # lazy: torch only on this branch
++        model = YOLO(str(p))
++        fn = make_yolo_detect_fn(model, imgsz=imgsz, conf=conf, device=device, iou=iou)
++        fn.names = dict(model.names)
++        return fn
++    raise ValueError(f"unsupported weights format {p.suffix!r}: use .onnx (CPU) or .pt (ultralytics)")
++
++
+ if __name__ == "__main__":
+     # Self-check without a detector (mirrors b2_sahi_fusion's): a stub detect_fn that reports one
+     # fixed box per crop lets us prove each mode's geometry and each ablation's effect.
+diff --git a/code/sat7/priority.py b/code/sat7/priority.py
+index e9a5f5a..c4802d2 100644
+--- a/code/sat7/priority.py
++++ b/code/sat7/priority.py
+@@ -15,9 +15,16 @@ mode="priority"|"lod")`; both are first-class and directly comparable on one wor
+ 
+ How a detection's level is chosen (paper section IV "adaptive semantic priority"): by the project's
+ own confidence-aware principle, not inverted. A *confident* ship needs only its report (P1); an
+-*uncertain* one earns a visual crop so the ground can verify (P2); an uncertain ship *on a coast*,
+-where the detector is weakest and a miss is most likely, earns the surrounding context too (P3); and
+-anything below the detector's own operating threshold is not a detection at all -> P0, discarded.
++*uncertain* one earns a visual crop so the ground can verify (P2); a ship *on a coast*, where the
++detector is weakest and a miss is most likely, earns the surrounding context too (P3); and anything
++below the detector's own operating threshold is not a detection at all -> P0, discarded.
++
++The coastal rule is `PriorityConfig.coast_escalation`. The default "all" escalates EVERY coastal
++detection that cleared the cut -- confident ones included -- because the context tile exists to
++recover the ships the detector MISSED next to them, not to verify the one it saw (this is what the
++code always did and what wp23 measured; an earlier version of this docstring said "uncertain"
++only, which was wrong -- audit C3). "uncertain" escalates only the coastal detections below
++p1_conf, sending fewer context tiles. A dark (no-AIS) vessel is bumped one level (capped at P3).
+ This reuses the WP2-calibrated `conf_high=0.670` as the P1/P2 boundary so the two schemes share the
+ same operating point and the comparison is fair.
+ 
+@@ -55,7 +62,9 @@ class PriorityConfig:
+     # --- level boundaries (on calibrated confidence; share the LoD operating point) --------------
+     p1_conf: float = 0.670     # >= this: confident -> P1 metadata only (== LoDConfig.conf_high)
+     # between det_thr and p1_conf: uncertain -> at least P2 (metadata + ROI)
+-    coast_to_p3: bool = True   # an uncertain detection on a coastal tile escalates P2 -> P3
++    coast_to_p3: bool = True   # coastal detections escalate to P3 (which ones: coast_escalation)
++    coast_escalation: str = "all"   # "all": every coastal detection (the measured default) |
++                                    # "uncertain": only coastal detections below p1_conf
+     dark_bump: bool = True     # a dark (no-AIS) vessel escalates one level (capped at P3)
+     # --- incremental values (value ALREADY credited to the P1 report is the ship's weight) -------
+     #     kept small and in step with the LoD extras (thumb_value, dark_wake_value) so value_frac
+@@ -81,7 +90,7 @@ def classify(ship: Ship, ctx: str, cfg: PriorityConfig, lod: LoDConfig) -> int:
+     if ship.confidence < lod.conf_low:
+         return P0
+     level = P1 if ship.confidence >= cfg.p1_conf else P2
+-    if cfg.coast_to_p3 and ctx == "coast" and level < P3:
++    if cfg.coast_to_p3 and ctx == "coast" and (cfg.coast_escalation == "all" or level == P2):
+         level = P3
+     if cfg.dark_bump and ship.dark:
+         level = min(P3, level + 1)
+@@ -127,12 +136,17 @@ def encode_tile_priority(wl: Workload, idx: int, lod: LoDConfig, cfg: PriorityCo
+             w = _w(s, lod)
+             # P1: the structured metadata report (reveals the ship; carries its full weight)
+             items.append(Item(nid(), t, lod.l0_bytes, w, "P1", (i,)))
++            # off a coast, a dark vessel escalated to P3 gets the L2 (ROI + wake) crop as its ROI --
++            # and the P3 context is that same L2 footprint. Sending both shipped identical pixels
++            # twice (0.77 MB of the 49.9 MB day, measured 9 Oct 2026): one item carries both now.
++            wake_is_context = s.dark and level >= P3 and not (ctx == "coast" and cfg.coast_context_tile)
+             if level >= P2:
+                 # P2: a compressed ROI crop. L1 (tight chip) for a plain ship, L2 (ROI + wake) when
+                 # we are escalating for a dark vessel -- the extra evidence the dark flag warrants.
+                 roi_bytes = _l2(s, lod) if (s.dark and level >= P3) else _l1(s, lod)
+-                items.append(Item(nid(), t, roi_bytes, cfg.roi_value, "P2", (i,), progressive=True))
+-            if level >= P3:
++                value = cfg.roi_value + (cfg.context_value if wake_is_context else 0.0)
++                items.append(Item(nid(), t, roi_bytes, value, "P2", (i,), progressive=True))
++            if level >= P3 and not wake_is_context:
+                 if ctx == "coast" and cfg.coast_context_tile:
+                     coastal_context_ids.append(i)       # fold into one tile-wide context below
+                 else:
+diff --git a/code/sat7/relay.py b/code/sat7/relay.py
+index 812ed2d..a93082f 100644
+--- a/code/sat7/relay.py
++++ b/code/sat7/relay.py
+@@ -34,7 +34,8 @@ from .orbit import OrbitConfig, R_EARTH, make_satellite
+ @dataclass
+ class RelayConfig:
+     """Second satellite + ISL geometry. Same construction as the primary (SGP4, reproducible)."""
+-    orbit: OrbitConfig = field(default_factory=lambda: OrbitConfig(raan_deg=30.0))
++    orbit: OrbitConfig = field(default_factory=lambda: OrbitConfig(raan_deg=90.0))  # the plane every
++                                       # result uses (wp18-wp20, wp26, wp27); was 30.0, used nowhere
+     grazing_km: float = 100.0          # line of sight must clear Earth + this atmospheric margin
+     max_range_km: float | None = None  # optional ISL link-range cap (None = pure line-of-sight)
+ 
+@@ -149,6 +150,11 @@ def route_item(item_bytes: float, t_now: datetime, direct_passes, isl_wins, rela
+                deadline_s: float | None = None) -> dict:
+     """Per-item path choice: J = lam_E*E + lam_T*T, choose min(J_direct, J_relay).
+ 
++    A WINDOW-LEVEL ESTIMATE [SIM]: latencies are read from window START times alone -- no data
++    volume, no link rate, no capacity on the ISL or on the relay's ground pass (audit E3). It is kept
++    because report 20 and wp18's B4 were computed with it; sat7.comms.simulate_comms is the
++    capacity- and duration-aware simulator and should carry anything quoted from here on.
++
+     T (latency to the item reaching the ground, seconds) is SIM -- read from the propagated windows
+     (this track's half of J). E is TARGET -- whatever the injected energy callables return; the
+     energy track (report 19) supplies the real `direct_energy`/`relay_energy`, placeholders by
+diff --git a/code/sat7/scheduler.py b/code/sat7/scheduler.py
+index 61c46ec..7e91868 100644
+--- a/code/sat7/scheduler.py
++++ b/code/sat7/scheduler.py
+@@ -40,6 +40,10 @@ class Item:
+     kind: str                          # "L0", "L1", "L2", "tile", "thumb", "raw", "patch", "fp"
+     ships: tuple[int, ...] = ()        # ids of true ships this item reveals
+     progressive: bool = False
++    min_fraction: float = 0.1          # smallest share of a progressive item worth sending: below
++                                       # it the ground cannot reconstruct an image (audit D2). 0.1
++                                       # is the modeled default; sat7.semantic sets the measured end
++                                       # of a progressive JPEG's first scan for real items.
+ 
+     @property
+     def density(self) -> float:
+@@ -87,6 +91,8 @@ class Workload:
+                                             # stage found that the network did NOT confirm.
+                                             # High = the network probably missed something.
+     source: str = "synthetic"               # "synthetic" | "real detections (WP6)"
++    sources: list[str] | None = None        # per tile: the real image it was drawn from (WP6
++                                            # catalogue), so its pixels can be re-encoded
+ 
+ 
+ def generate_workload(cfg: WorkloadConfig | None = None) -> Workload:
+@@ -149,15 +155,19 @@ class LoDConfig:
+     When ``size_model`` is set and the ship's real length is known (WP6), the chip and
+     ROI sizes come from the fitted power law instead of these medians.
+     """
+-    l0_bytes: float = 40.0             # lat, lon, length, heading, confidence
++    l0_bytes: float = 40.0             # ASSUMPTION: lat, lon, length, heading, confidence. The
++                                       # serialized record (sat7.semantic) is 26 B + 6 B packet
++                                       # header + 2 B CRC = 34 B, measured
+     l1_bytes: float = 900.0            # small image chip      (measured: tight crop, q40)
+     l2_bytes: float = 2_500.0          # ROI incl. wake        (measured: wake crop, q80)
+     coast_tile_bytes: float = 32_420.0 # compressed coastal / port tile. WP7 moved this from
+                                        # q60 (42.4 kB, PSNR 40.3 dB) to q40 (32.4 kB, 38.1 dB):
+-                                       # -24% of the single largest item in the budget, no
+-                                       # recall cost, +1.2 points under congestion. q30 is
+-                                       # 25.9 kB / 36.8 dB and tested, but adopting it needs
+-                                       # a detector-on-recompressed-tiles check first.
++                                       # -24% of the single largest item in the budget, +1.2
++                                       # points under congestion. NOT free: report 14 re-ran the
++                                       # detector on recompressed coastal tiles and q40 costs
++                                       # 4.0 points of recall, all on small ships (the earlier
++                                       # "no recall cost" was a simulator artefact). q30 is
++                                       # 25.9 kB / 36.8 dB and was rejected (-5.4 points).
+     coast_mode: str = "tile"           # "tile"    = whole coastal tile, catches ships the
+                                        #             detector missed (62% of the budget)
+                                        # "mosaic"  = ROI crops around detected ships only
+@@ -418,7 +428,7 @@ class Policy(ABC):
+             if it.size <= left:
+                 out.append((it, 1.0))
+                 left -= it.size
+-            elif self.truncate and it.progressive and left >= 0.1 * it.size:
++            elif self.truncate and it.progressive and left >= it.min_fraction * it.size:
+                 out.append((it, left / it.size))
+                 left = 0.0
+             elif self.stop_when_full:

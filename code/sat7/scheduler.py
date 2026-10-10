@@ -40,6 +40,10 @@ class Item:
     kind: str                          # "L0", "L1", "L2", "tile", "thumb", "raw", "patch", "fp"
     ships: tuple[int, ...] = ()        # ids of true ships this item reveals
     progressive: bool = False
+    min_fraction: float = 0.1          # smallest share of a progressive item worth sending: below
+                                       # it the ground cannot reconstruct an image (audit D2). 0.1
+                                       # is the modeled default; sat7.semantic sets the measured end
+                                       # of a progressive JPEG's first scan for real items.
 
     @property
     def density(self) -> float:
@@ -87,6 +91,11 @@ class Workload:
                                             # stage found that the network did NOT confirm.
                                             # High = the network probably missed something.
     source: str = "synthetic"               # "synthetic" | "real detections (WP6)"
+    sources: list[str] | None = None        # per tile: the real image it was drawn from (WP6
+                                            # catalogue), so its pixels can be re-encoded
+    coast_bytes: list[float | None] | None = None   # per tile: MEASURED bytes of that tile as a
+                                            # coastal context tile (wp28: its own baseline JPEG
+                                            # q40 + image header + packets); None where not coastal
 
 
 def generate_workload(cfg: WorkloadConfig | None = None) -> Workload:
@@ -115,6 +124,17 @@ def generate_workload(cfg: WorkloadConfig | None = None) -> Workload:
 # ----------------------------------------------------------------------------- encoders
 
 RAW_TILE_BYTES = 768 * 768 * 3        # 1.77 MB uncompressed RGB tile
+
+# The coastal context tile, the largest single product in the budget. Two numbers exist:
+COAST_TILE_BYTES_WP7 = 32_420.0       # the EARLIER MODELED ESTIMATE: WP7's whole-tile q40 ladder,
+                                      # sampled on 400 random ship-bearing tiles (mostly open sea,
+                                      # which compresses well). Behind the 557x figure. Kept so that
+                                      # figure stays reproducible; not the canonical size any more.
+COAST_TILE_BYTES_MEASURED = 66_118.0  # MEASURED (wp28, results/wp28_coast_tile_model.json): mean over
+                                      # all 1,415 real coastal test tiles of baseline JPEG q40 + 18 B
+                                      # image header + CCSDS packet headers/CRC. WP13 had measured
+                                      # 65.5 kB on its own sample. Used where a workload carries no
+                                      # per-tile size (synthetic days); real days use each tile's own.
 
 
 @dataclass
@@ -149,15 +169,24 @@ class LoDConfig:
     When ``size_model`` is set and the ship's real length is known (WP6), the chip and
     ROI sizes come from the fitted power law instead of these medians.
     """
-    l0_bytes: float = 40.0             # lat, lon, length, heading, confidence
+    l0_bytes: float = 40.0             # ASSUMPTION: lat, lon, length, heading, confidence. The
+                                       # serialized record (sat7.semantic) is 26 B + 6 B packet
+                                       # header + 2 B CRC = 34 B, measured
     l1_bytes: float = 900.0            # small image chip      (measured: tight crop, q40)
     l2_bytes: float = 2_500.0          # ROI incl. wake        (measured: wake crop, q80)
-    coast_tile_bytes: float = 32_420.0 # compressed coastal / port tile. WP7 moved this from
-                                       # q60 (42.4 kB, PSNR 40.3 dB) to q40 (32.4 kB, 38.1 dB):
-                                       # -24% of the single largest item in the budget, no
-                                       # recall cost, +1.2 points under congestion. q30 is
-                                       # 25.9 kB / 36.8 dB and tested, but adopting it needs
-                                       # a detector-on-recompressed-tiles check first.
+    coast_tile_bytes: float | None = None
+                                       # compressed coastal / port tile (JPEG q40). None = MEASURED:
+                                       # the tile's own measured size when the workload carries one
+                                       # (Workload.coast_bytes, real days), else the measured mean
+                                       # COAST_TILE_BYTES_MEASURED. A number = that flat size for
+                                       # every tile (a sweep, or COAST_TILE_BYTES_WP7 to reproduce
+                                       # the earlier modeled estimate). See coast_tile_size().
+                                       # History: WP7 moved this from q60 to q40 on its whole-tile
+                                       # ladder (42.4 -> 32.4 kB) -- sizes that describe open-sea
+                                       # tiles, about half a real coastal tile (10 Oct 2026). q40 is
+                                       # NOT free: report 14 re-ran the detector on recompressed
+                                       # coastal tiles and it costs 4.0 points of recall, all on
+                                       # small ships; q30 was rejected (-5.4 points).
     coast_mode: str = "tile"           # "tile"    = whole coastal tile, catches ships the
                                        #             detector missed (62% of the budget)
                                        # "mosaic"  = ROI crops around detected ships only
@@ -250,6 +279,15 @@ class _Ids:
     def __call__(self) -> int:
         self.n += 1
         return self.n
+
+
+def coast_tile_size(wl: Workload, idx: int, lod: LoDConfig) -> float:
+    """Bytes of tile `idx` sent as a coastal context tile (see LoDConfig.coast_tile_bytes)."""
+    if lod.coast_tile_bytes is not None:
+        return float(lod.coast_tile_bytes)
+    if wl.coast_bytes is not None and wl.coast_bytes[idx] is not None:
+        return float(wl.coast_bytes[idx])
+    return COAST_TILE_BYTES_MEASURED
 
 
 def encode_raw(wl: Workload, lod: LoDConfig | None = None) -> list[Item]:
@@ -346,7 +384,7 @@ def encode_tile(wl: Workload, idx: int, lod: LoDConfig, nid: "_Ids", rng,
                                   progressive=True))
         else:                    # send the tile itself: the only thing that recovers a
                                  # ship the detector never saw
-            items.append(Item(nid(), t, lod.coast_tile_bytes,
+            items.append(Item(nid(), t, coast_tile_size(wl, idx, lod),
                               sum(_w(wl.ships[i], lod) for i in ids), "tile", ids,
                               progressive=True))
     elif ctx == "ships":
@@ -418,7 +456,7 @@ class Policy(ABC):
             if it.size <= left:
                 out.append((it, 1.0))
                 left -= it.size
-            elif self.truncate and it.progressive and left >= 0.1 * it.size:
+            elif self.truncate and it.progressive and left >= it.min_fraction * it.size:
                 out.append((it, left / it.size))
                 left = 0.0
             elif self.stop_when_full:

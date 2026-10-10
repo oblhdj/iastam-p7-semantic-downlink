@@ -1,0 +1,5 @@
+# Dashboard demo (demo/dashboard.py) -- CPU, no torch, no CUDA, no dataset. Python >= 3.10.
+#   python -m pip install -r demo/requirements-dashboard.txt
+#   streamlit run demo/dashboard.py
+-r quickstart/requirements.txt     # numpy, opencv, onnxruntime, sgp4, skyfield: the live pipeline
+streamlit>=1.50                    # the interface (brings pandas and altair, which draw the charts)

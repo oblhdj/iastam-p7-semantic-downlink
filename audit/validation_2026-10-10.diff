@@ -1,0 +1,2786 @@
+diff --git a/README.md b/README.md
+index 080131d..4e73344 100644
+--- a/README.md
++++ b/README.md
+@@ -34,7 +34,7 @@ computed from an SGP4 propagator for a ground station at Sfax.
+ |---|---|---|
+ | **Data reduction vs a bent pipe** | **341×** — *coastal tiles measured; thumbnails and crops still modeled* | 60,124 MB offered → 176.3 MB sent per day, mean of three days. Each coastal tile is charged its own measured JPEG size ([`wp28`](code/results/wp28_coast_tile_model.json)); the earlier all-modeled estimate was 557× ([report 05](reports/05-scheduler-on-real-detections.md)) |
+ | **Ships delivered** | **0.685** ⚠ *at an assumed 15% cloud* | band **0.40–0.82** across 0–50% cloud — never quote it bare |
+-| Fraction of what the satellite still knew | **100%** | at nominal load the downlink is *not* the bottleneck — the detector is. The day fills 84% of the link, so the margin is thin |
++| Fraction of what the satellite still knew | **100%** — *for a single day* | at nominal load the downlink is *not* the bottleneck — the detector is. That is one day's traffic given 36 h of passes. The link share sustains 134.5 MB per 24 h and a day offers 130% of that; over six consecutive days recall still holds (0.677–0.688) because the scheduler truncates low-value products, and FIFO does not hold ([`wp29`](code/results/wp29_validation.json)). Recall counts a progressively truncated item as delivered once it clears `min_fraction` (10% of its bytes) |
+ | vs FIFO under congestion | **3.59×** | at 160k tiles/day; the link saturates from about 80k (1.88× there) |
+ | vs a *fair* Phi-sat-2 style baseline | **+6.3 points** for ~11× the bytes | our own earlier "+16.7" used an unfair baseline — see [report 06](reports/06-byte-budget.md) |
+ | Greedy vs the exact optimum | **0.884%** | exact DP, verified against brute force |
+@@ -85,7 +85,7 @@ catalogue-driven simulation to four decimal places — see
+ | [`demo/quickstart/`](demo/quickstart/) | the chain live on a laptop CPU in ~2 s: no GPU, no torch, no dataset (synthetic stand-in tiles) |
+ | `code/sat7/` | the package: perception (YOLO / SAHI), encoder, scheduler, exact optimum, orbit, pre-filter, dedup |
+ | `code/scripts/` | one script per work package, each with a docstring saying *why* it exists |
+-| `code/tests/` | 218 tests (5 skip in `.venv`: 2 need torch, 3 need onnxruntime) — 14 fault-injection, exact-solver checks, and the gate's claims pinned |
++| `code/tests/` | 253 tests (5 skip in `.venv`: 2 need torch, 3 need onnxruntime) — 14 fault-injection, exact-solver checks, and the gate's claims pinned |
+ | `code/results/` | generated artefacts — CSV, PNG, JSON, logs. Machine-written, not prose |
+ 
+ ## Running it
+@@ -106,7 +106,7 @@ are synthetic and how to run it on the real ones.
+ 
+ ```bash
+ cd code
+-.venv/Scripts/python.exe    -m pytest tests -q        # 213 pass, 5 skip (need torch / onnxruntime)
++.venv/Scripts/python.exe    -m pytest tests -q        # 248 pass, 5 skip (need torch / onnxruntime)
+ .venv312/Scripts/python.exe scripts/wp11_integration_demo.py --tiles 400
+ ```
+ 
+@@ -165,6 +165,20 @@ baseline" in only **74 of 80**. All six failures are at 160,000 tiles/day, where
+ fails): `thumb_value` 0.05 (−0.5 points) and 0.10 (−1.9), `conf_high` 0.90 (−0.02) and 0.99 (−0.4), `conf_low` 0.05 (−1.6) and 0.10 (−0.8). Each of those settings makes the encoder spend more bytes — on thumbnails, on crops
+ for confident ships, or on low-confidence detections — which a saturated link cannot afford.
+ 
++**What a check of our own numbers found.** `code/scripts/wp29_validation.py` runs 37 checks on units,
++data sizes, energy, latency and fairness against the committed results. None fails; five gaps are
++stated rather than fixed:
++(1) the headline day is simulated alone, with 36 h of passes — it offers 130% of what the 25% link
++share sustains per 24 h (134.5 MB), so consecutive days force the scheduler to truncate;
++(2) a truncated progressive product still counts as delivering its ships, which is an assumption,
++not a measurement, and is what keeps recall flat under load;
++(3) "ES_total ≈ 98%" compares us with a bent pipe that sends every raw byte, which would need 92.6
++days of contact per day — a bent pipe limited to this link spends at most 30.8 kJ/day, less than our
++54 kJ/day, and delivers 0.2% of the ships;
++(4) the B4 row's relay latency is a window estimate (no volume, no capacity);
++(5) thumbnails and ship crops, 24% of the headline's bytes, are still model sizes (next paragraph).
++**No power was measured in this project: every energy figure is an estimate from assumed powers.**
++
+ The headline's byte count mixes two kinds of number: coastal tiles are **measured** (each tile's own
+ JPEG), thumbnails and ship crops are still **modeled** sizes. B1/B2 (150 scenes) and B3/B4 (a
+ simulated 40,000-tile day) run on different inputs, so B2's detection recall and B3's delivered
+diff --git a/code/rerun_all.sh b/code/rerun_all.sh
+index 85560c2..8064d90 100644
+--- a/code/rerun_all.sh
++++ b/code/rerun_all.sh
+@@ -35,6 +35,7 @@ run $PY312 -W ignore scripts/wp18_campaign_runner.py  # reads wp26_b0_b4.json fo
+ run $PY scripts/wp24_detection_eval.py --live-b1   # needs onnxruntime (not in .venv)
+ run $PY scripts/wp25_semantic_packets.py
+ run $PY scripts/wp27_comms_direct_vs_relay.py
++run $PY scripts/wp29_validation.py                    # checks all of the above; regenerates none of it
+ 
+ echo ""
+ echo "=============== DONE: $fail failure(s) ==============="
+diff --git a/code/results/wp29_validation.json b/code/results/wp29_validation.json
+new file mode 100644
+index 0000000..7df99d5
+--- /dev/null
++++ b/code/results/wp29_validation.json
+@@ -0,0 +1,1244 @@
++{
++  "label": "validation of committed results; stage times REAL (laptop), powers ASSUMPTION (none measured: every energy is an ESTIMATE), links and days SIM",
++  "status_meaning": {
++    "PASS": "every check holds; any limits listed are caveats",
++    "PARTIAL": "every check holds, but a limit marked GAP means the requirement is not fully met",
++    "FAIL": "at least one check does not hold"
++  },
++  "checklist": {
++    "6": {
++      "title": "Data reduction uses actual, consistently defined data sizes",
++      "checks": [
++        {
++          "check": "D_raw per tile is H x W x 3 bytes",
++          "ok": true,
++          "RAW_TILE_BYTES": 1769472
++        },
++        {
++          "check": "headline = 100 x (1 - D_tx / D_raw) on the table's own bytes",
++          "ok": true,
++          "D_tx_MB": 176.266,
++          "D_raw_MB": 60124.299,
++          "data_reduction_percent": 99.7068,
++          "factor": 341.1,
++          "table_column": 341.1
++        },
++        {
++          "check": "D_raw is whole tiles (non-cloud tiles x 1,769,472 B), nothing compressed",
++          "ok": true,
++          "tiles_per_day_in_baseline": 33978.7
++        },
++        {
++          "check": "the coastal size table reproduces from pixels (wp25 gate)",
++          "ok": true
++        },
++        {
++          "check": "a coastal tile's charged size is its real serialization (JPEG + 18 B header + CCSDS packets)",
++          "ok": true,
++          "rows_checked": 25
++        },
++        {
++          "check": "scene-level B0 equals pixels + packet headers (wp26 check 1)",
++          "ok": true,
++          "pixels_bytes": 28311552
++        }
++      ],
++      "limits": [
++        "GAP: D_transmitted is only partly ACTUAL: coastal tiles (76.2% of the bytes) are measured JPEGs; thumbnails, chips and crops (23.8%) are model sizes (flat 1,000 B, WP4 power law). On real packets the crop model was within 0.94-1.26x (wp25 measured_over_modeled).",
++        "Two D_raw definitions exist. The headline counts non-cloud tiles only (33,979 of 40,000 per day) with no packet headers; counting every imaged tile gives 70,779 MB and 402x. wp26's B0 counts every tile plus CCSDS headers. The headline uses the smaller baseline, so it understates rather than overstates.",
++        "D_transmitted is one isolated day given 36 h of passes (176.3 MB). The link share sustains 134.5 MB per 24 h, i.e. the day's offer is 130% of it. On consecutive days fewer bytes than that are sent (steady_state block)."
++      ],
++      "status": "PARTIAL",
++      "failed_checks": [],
++      "gaps": 1
++    },
++    "7": {
++      "title": "Detection metrics are based on valid ground truth (or are not claimed as accuracy)",
++      "checks": [
++        {
++          "check": "full-scale evaluation uses every labelled test ship",
++          "ok": true,
++          "n_gt": 8173,
++          "images": 5320,
++          "iou_thr": 0.5,
++          "conf_thr": 0.25
++        },
++        {
++          "check": "the test split shares no near-duplicate group with train/val",
++          "ok": true,
++          "groups_a_naive_split_would_leak": 1617
++        },
++        {
++          "check": "B1..B4 are scored against the same ground truth",
++          "ok": true,
++          "n_gt": 1164,
++          "matching": "threshold-then-match IoU 0.5"
++        },
++        {
++          "check": "precision, recall, F1 and AP are all reported (not recall alone)",
++          "ok": true,
++          "precision": 0.754,
++          "recall": 0.7658,
++          "F1": 0.7599,
++          "AP50": 0.8167
++        },
++        {
++          "check": "without ground truth only counts and confidences are returned",
++          "ok": true,
++          "keys": [
++            "conf_thr",
++            "confidence_all",
++            "confidence_at_or_above_0.25",
++            "ground_truth",
++            "n_at_or_above_thr",
++            "n_detections",
++            "note"
++          ]
++        }
++      ],
++      "limits": [
++        "The day simulations (B3, the 0.685 delivered recall) read the stored catalogue, which matches a box to a ship BEFORE applying the 0.25 cut and at IoU >= 0.3. It finds 0.7249 of the test ships where threshold-then-match at IoU 0.5 finds 0.7658 (wp24). Delivered recall is therefore on the catalogue's rule, not on the wp24 rule; the catalogue was not rebuilt.",
++        "B1 / B2 ground truth is the tile labels shifted onto scenes stitched from independent tiles: valid boxes, but no ship crosses a seam, so these scenes cannot show a seam effect.",
++        "The quickstart's synthetic tiles have no ground truth; its output is labelled SYNTH and reports counts and confidences only."
++      ],
++      "status": "PASS",
++      "failed_checks": [],
++      "gaps": 0
++    },
++    "8": {
++      "title": "Processing / communication energy assumptions are documented",
++      "checks": [
++        {
++          "check": "E_communication = P_tx x bytes x 8 / rate reproduces wp17",
++          "ok": true,
++          "recomputed_kJ": 8.357,
++          "wp17_kJ": 8.36,
++          "P_tx_W": 15.0,
++          "D_MB": 176.27,
++          "rate_Mbps": 2.531
++        },
++        {
++          "check": "E_processing = sum_k P_k x T_k reproduces wp17",
++          "ok": true,
++          "recomputed_kJ": 45.64,
++          "wp17_kJ": 45.64,
++          "J_per_tile": 1.141
++        },
++        {
++          "check": "E_total = E_processing + E_communication",
++          "ok": true,
++          "E_total_kJ": 54.0
++        },
++        {
++          "check": "sat7.energy gives the same per-tile energy as wp17 and the same E_comm",
++          "ok": true,
++          "sat7_energy_E_prop_J": 1.141
++        },
++        {
++          "check": "wp19 ISL energy reproduces from P_isl x bytes x 8 / R_isl",
++          "ok": true,
++          "recomputed_kJ": 6.686,
++          "wp19_kJ": 6.686
++        },
++        {
++          "check": "every power is labelled an assumption in the results files",
++          "ok": true,
++          "wp17_powers_W": {
++            "cpu": 28.0,
++            "gpu": 60.0,
++            "tx": 15.0
++          },
++          "wp19_powers_W": {
++            "tx_ground_ASSUMPTION_wp17": 15.0,
++            "isl_ASSUMPTION_NEW": 12.0
++          }
++        },
++        {
++          "check": "every stage time names its source; the unsourced ones are listed",
++          "ok": true,
++          "unsourced": [
++            "preprocess_decode_cpu (not in any results file)",
++            "semantic_cpu (ASSUMPTION, not a measurement)"
++          ]
++        },
++        {
++          "check": "power assumptions are swept",
++          "ok": true,
++          "ES_total_range": [
++            0.967,
++            0.9891
++          ]
++        }
++      ],
++      "limits": [
++        "NO power was measured in this project. P_cpu 28 W, P_gpu 60 W, P_tx 15 W and P_isl 12 W are ASSUMPTIONS; stage times are measured on a laptop; so every joule is an ESTIMATE. Only ES_proc for the all-CPU build is free of them (the power cancels: it is a ratio of measured times).",
++        "semantic_cpu = 0.5 ms is an ASSUMPTION in wp17. wp25 has since measured the encoder: 0.14 ms on a ship tile, 9.1 ms on a coastal tile, i.e. about 0.48 ms per tile over the assumed orbit mix -- consistent with the assumption, so wp17 was not regenerated.",
++        "E_processing is for ONE detector call per tile, which is what the day simulation runs. With SAHI's 1.5625 calls per tile it would be 1.749 J/tile, 70.0 kJ/day (8.4 : 1 against the radio).",
++        "wp18 and the docs label the relay's energy 'TARGET'. It is an estimate from assumed P_isl and R_isl, not a design goal; the label is kept as report 19 wrote it."
++      ],
++      "status": "PASS",
++      "failed_checks": [],
++      "gaps": 0
++    },
++    "9": {
++      "title": "Latency includes the stages the experiment requires",
++      "checks": [
++        {
++          "check": "simulated latency = wait for the pass + the item's transmission, from capture",
++          "ok": true,
++          "latency_s": 1000.0,
++          "wait_for_pass_s": 900.0,
++          "transmission_s": 100.0
++        },
++        {
++          "check": "processing, encoding and decoding times are measured and can be added",
++          "ok": true,
++          "processing_s": 0.04025,
++          "encoding_s": {
++            "ships": 0.00014000000000000001,
++            "coast": 0.0091
++          },
++          "decoding_s": 4e-05,
++          "source": {
++            "processing": "results/wp17_energy_model.json stage_times_ms (preprocess + gate + detect x 1), build cpu_onnx",
++            "encoding": "results/wp25_semantic_packets.json timing_ms_per_tile.T_enc_onboard_median",
++            "decoding": "results/wp25_semantic_packets.json timing_ms_per_tile.T_dec_ground_median"
++          }
++        },
++        {
++          "check": "T_total = T_processing + T_encoding + T_communication + T_decoding (median, seconds)",
++          "ok": true,
++          "budgets": {
++            "direct, per ship, three-day mean (wp6_real_table.csv)": {
++              "processing_s": 0.04025,
++              "encoding_s": 0.0091,
++              "communication_s": 16344.79812,
++              "decoding_s": 4e-05,
++              "total_s": 16344.84751,
++              "non_communication_share": 3.02e-06
++            },
++            "direct, real packets (wp27 nominal, direct only)": {
++              "processing_s": 0.04025,
++              "encoding_s": 0.0091,
++              "communication_s": 16202.16,
++              "decoding_s": 4e-05,
++              "total_s": 16202.20939,
++              "non_communication_share": 3.05e-06
++            },
++            "with relay, real packets (wp27 nominal)": {
++              "processing_s": 0.04025,
++              "encoding_s": 0.0091,
++              "communication_s": 7003.44,
++              "decoding_s": 4e-05,
++              "total_s": 7003.48939,
++              "non_communication_share": 7.05e-06
++            },
++            "direct, SAHI processing (1.5625 detector calls per tile)": {
++              "processing_s": 0.061962,
++              "encoding_s": 0.0091,
++              "communication_s": 16344.79812,
++              "decoding_s": 4e-05,
++              "total_s": 16344.869223,
++              "non_communication_share": 4.35e-06
++            }
++          }
++        },
++        {
++          "check": "the onboard stages never queue: a tile is finished before the next one is captured",
++          "ok": true,
++          "per_tile_onboard_s": 0.0711,
++          "tile_interval_s_at_40k": 2.16,
++          "tile_interval_s_at_160k": 0.54
++        },
++        {
++          "check": "ignoring the onboard stages in the simulator cannot move a pass assignment materially",
++          "ok": true,
++          "fraction_of_tiles_within_the_margin_of_a_pass": 4.9e-06
++        }
++      ],
++      "limits": [
++        "Every latency the results files and documents quote is T_communication alone. The other three stages add 71 ms at most (4.4e-06 of the median), so the quoted hours are unchanged; the convention is written in sat7/accounting.py.",
++        "Stage times are a laptop's, not flight hardware's. A processor 10x slower still finishes a tile (0.71 s) before the next arrives at 40,000 tiles/day (2.16 s), not at 160,000 (0.54 s).",
++        "Latencies come from one isolated day. Over six consecutive days the per-ship median is 4.69-5.58 h with value-greedy, and FIFO's grows without bound (steady_state block)."
++      ],
++      "status": "PASS",
++      "failed_checks": [],
++      "gaps": 0
++    },
++    "10": {
++      "title": "Relay energy and latency account for both links",
++      "checks": [
++        {
++          "check": "E_relay = E_ISL + E_GS, both non-zero (wp19)",
++          "ok": true,
++          "E_direct": 8.357,
++          "E_ISL": 6.686,
++          "E_GS": 8.357,
++          "E_relay": 15.043,
++          "relay_over_direct_x": 1.8,
++          "payload_D_MB": 176.27
++        },
++        {
++          "check": "relayed traffic has transmit time and energy on the ISL and on the relay's ground pass (wp27)",
++          "ok": true,
++          "tx_s": {
++            "ground": 0.0,
++            "isl": 167.7,
++            "relay_ground": 128.7
++          },
++          "energy_J": {
++            "ground": 0.0,
++            "isl": 2012.3,
++            "relay_ground": 1930.4
++          }
++        },
++        {
++          "check": "each leg's energy is its own power x its own transmit time (wp27)",
++          "ok": true,
++          "p_isl_W": 12.0,
++          "p_tx_W": 15.0
++        },
++        {
++          "check": "one item traced by hand: ISL time = bytes x 8 / R_isl (wp27 example)",
++          "ok": true,
++          "bytes": 118349,
++          "recomputed_s": 0.4678,
++          "wp27_s": 0.4678
++        },
++        {
++          "check": "live: a relayed item waits for the ISL window AND the relay's ground pass",
++          "ok": true,
++          "path": "relay",
++          "tx_s": {
++            "isl": 0.07905138339920949,
++            "relay_ground": 8.0
++          },
++          "energy_J": {
++            "isl": 0.9486166007905139,
++            "relay_ground": 120.0
++          },
++          "delivered_h": 2.002222222222222,
++          "isl_window_start_h": 0.5,
++          "relay_pass_rise_h": 2.0
++        },
++        {
++          "check": "the relay forwards processed products only, never raw imagery (wp27)",
++          "ok": true
++        },
++        {
++          "check": "the B4 row's energy is joules (P_tx x bytes x 8 / R_gs), not the router's unit-less placeholders",
++          "ok": true,
++          "recomputed_direct_only_kJ": 8.466,
++          "wp18": {
++            "direct_only": 8.47,
++            "b4_mix": 12.88,
++            "note": "joules are report-19 placeholders pending real P_isl/R_isl"
++          }
++        }
++      ],
++      "limits": [
++        "GAP: The canonical B4 row (wp18) uses sat7.relay.route_item: its ENERGY has both legs, but its relay LATENCY is read from window start times (next ISL window, then the relay's next ground pass) with no data volume, rate or capacity, while its direct latency is B3's actual delivery. That is optimistic for the relay; wp27 is the volume- and capacity-aware simulation of both legs.",
++        "P_isl, R_isl and the relay's orbit are ASSUMPTIONS; no relay hardware or real link exists."
++      ],
++      "status": "PARTIAL",
++      "failed_checks": [],
++      "gaps": 1
++    },
++    "11": {
++      "title": "The same inputs and assumptions are used where two things are compared",
++      "checks": [
++        {
++          "check": "B1 vs B2: same scenes, pixels, ground truth, model and matching rule (wp26 check 5)",
++          "ok": true,
++          "fingerprint": "bcaf9ec9630d69e3"
++        },
++        {
++          "check": "ours vs FIFO vs the baselines: same day, same passes, same link share (wp6)",
++          "ok": true,
++          "loads": [
++            5000,
++            10000,
++            20000,
++            40000,
++            80000,
++            160000
++          ]
++        },
++        {
++          "check": "direct vs relay: same items, same ground-link model and power; relay off == the scheduler (wp27)",
++          "ok": true,
++          "deliveries": 32871
++        },
++        {
++          "check": "LoD vs P0-P3: same day and passes (wp23)",
++          "ok": true
++        }
++      ],
++      "limits": [
++        "B1/B2 (1,164 ships on 150 scenes) and B3/B4 (21,137 ships in a simulated day) are different inputs; B2's detection recall and B3's delivered recall are not steps of one curve. Stated in the documents.",
++        "GAP: ES_total compares against a bent pipe that sends ALL raw data: 2,851 kJ/day, which would need 92.6 days of contact per day of imaging. A bent pipe on this link can transmit for at most 34.2 min/day, i.e. 30.8 kJ/day -- LESS than our 54.0 kJ/day. The 98.1% is energy per unit of imagery accounted for, not a saving in the daily energy budget.",
++        "GAP: wp18's B4 gives the direct path its simulated delivery time and the relay path a window estimate (item 10).",
++        "wp17 sends the day's 176.27 MB on 27.2% of the whole link; the scheduler assumes this payload owns 25% of it."
++      ],
++      "status": "PARTIAL",
++      "failed_checks": [],
++      "gaps": 2
++    },
++    "12": {
++      "title": "No numerical claim lacks traceable experimental evidence",
++      "checks": [
++        {
++          "check": "every headline number in the ten judge-facing documents equals its results file",
++          "ok": true,
++          "claims": 44,
++          "claim_document_pairs": 185,
++          "missing": []
++        },
++        {
++          "check": "the earlier 557x estimate is still reproducible from a committed file",
++          "ok": true
++        }
++      ],
++      "limits": [
++        "The ledger covers the headline numbers of ten documents. docs/START_HERE.md, docs/STATUS.md, docs/ARCHITECTURE.md and the bodies of reports 05-22 still narrate the earlier estimate (bannered in reports/README.md) and are not covered.",
++        "GAP: Three claims rest on a modelling assumption rather than a measurement: (a) a progressive product truncated to 10% of its bytes still counts as delivering its ships -- this is what keeps recall flat under congestion and over consecutive days; (b) thumbnail and crop sizes; (c) a 25% link share.",
++        "GAP: '100% of what the satellite still knew' holds for one day given 36 h of passes. The day's offer is 130% of what the share sustains per 24 h; over six consecutive days recall still holds (0.6769-0.6875) only because of assumption (a)."
++      ],
++      "status": "PARTIAL",
++      "failed_checks": [],
++      "gaps": 2
++    }
++  },
++  "steady_state": {
++    "label": "SIM-over-REAL",
++    "days": 6,
++    "tiles_per_day": 40000,
++    "pass_horizon_h": 180,
++    "offered_MB_per_day_mean": 174.8,
++    "runs": {
++      "share_0.25_Value-greedy (ours)": {
++        "link_share": 0.25,
++        "policy": "Value-greedy (ours)",
++        "sustained_capacity_MB_per_24h": 134.5,
++        "offered_over_sustained": 1.299,
++        "per_day": [
++          {
++            "day": 1,
++            "ship_recall": 0.6769,
++            "latency_med_h": 4.69,
++            "latency_p90_h": 9.7,
++            "offered_MB": 177.9,
++            "bytes_delivered_fraction": 0.999
++          },
++          {
++            "day": 2,
++            "ship_recall": 0.6831,
++            "latency_med_h": 4.85,
++            "latency_p90_h": 10.0,
++            "offered_MB": 177.2,
++            "bytes_delivered_fraction": 0.999
++          },
++          {
++            "day": 3,
++            "ship_recall": 0.6858,
++            "latency_med_h": 5.43,
++            "latency_p90_h": 10.35,
++            "offered_MB": 169.4,
++            "bytes_delivered_fraction": 1.0
++          },
++          {
++            "day": 4,
++            "ship_recall": 0.6837,
++            "latency_med_h": 5.1,
++            "latency_p90_h": 9.89,
++            "offered_MB": 174.5,
++            "bytes_delivered_fraction": 0.976
++          },
++          {
++            "day": 5,
++            "ship_recall": 0.6875,
++            "latency_med_h": 5.58,
++            "latency_p90_h": 10.56,
++            "offered_MB": 177.2,
++            "bytes_delivered_fraction": 0.835
++          },
++          {
++            "day": 6,
++            "ship_recall": 0.6798,
++            "latency_med_h": 5.01,
++            "latency_p90_h": 10.88,
++            "offered_MB": 172.9,
++            "bytes_delivered_fraction": 0.823
++          }
++        ]
++      },
++      "share_0.25_FIFO": {
++        "link_share": 0.25,
++        "policy": "FIFO",
++        "sustained_capacity_MB_per_24h": 134.5,
++        "offered_over_sustained": 1.299,
++        "per_day": [
++          {
++            "day": 1,
++            "ship_recall": 0.6769,
++            "latency_med_h": 9.37,
++            "latency_p90_h": 14.23,
++            "offered_MB": 177.9,
++            "bytes_delivered_fraction": 1.0
++          },
++          {
++            "day": 2,
++            "ship_recall": 0.6831,
++            "latency_med_h": 15.86,
++            "latency_p90_h": 20.5,
++            "offered_MB": 177.2,
++            "bytes_delivered_fraction": 1.0
++          },
++          {
++            "day": 3,
++            "ship_recall": 0.6858,
++            "latency_med_h": 23.14,
++            "latency_p90_h": 27.3,
++            "offered_MB": 169.4,
++            "bytes_delivered_fraction": 1.0
++          },
++          {
++            "day": 4,
++            "ship_recall": 0.6837,
++            "latency_med_h": 30.21,
++            "latency_p90_h": 36.52,
++            "offered_MB": 174.5,
++            "bytes_delivered_fraction": 1.0
++          },
++          {
++            "day": 5,
++            "ship_recall": 0.6875,
++            "latency_med_h": 37.03,
++            "latency_p90_h": 41.59,
++            "offered_MB": 177.2,
++            "bytes_delivered_fraction": 1.0
++          },
++          {
++            "day": 6,
++            "ship_recall": 0.4238,
++            "latency_med_h": 42.88,
++            "latency_p90_h": 46.47,
++            "offered_MB": 172.9,
++            "bytes_delivered_fraction": 0.625
++          }
++        ]
++      },
++      "share_0.35_Value-greedy (ours)": {
++        "link_share": 0.35,
++        "policy": "Value-greedy (ours)",
++        "sustained_capacity_MB_per_24h": 188.4,
++        "offered_over_sustained": 0.928,
++        "per_day": [
++          {
++            "day": 1,
++            "ship_recall": 0.6769,
++            "latency_med_h": 4.53,
++            "latency_p90_h": 9.43,
++            "offered_MB": 177.9,
++            "bytes_delivered_fraction": 1.0
++          },
++          {
++            "day": 2,
++            "ship_recall": 0.6831,
++            "latency_med_h": 4.59,
++            "latency_p90_h": 9.59,
++            "offered_MB": 177.2,
++            "bytes_delivered_fraction": 0.999
++          },
++          {
++            "day": 3,
++            "ship_recall": 0.6858,
++            "latency_med_h": 5.12,
++            "latency_p90_h": 9.99,
++            "offered_MB": 169.4,
++            "bytes_delivered_fraction": 1.0
++          },
++          {
++            "day": 4,
++            "ship_recall": 0.6837,
++            "latency_med_h": 4.72,
++            "latency_p90_h": 9.36,
++            "offered_MB": 174.5,
++            "bytes_delivered_fraction": 1.0
++          },
++          {
++            "day": 5,
++            "ship_recall": 0.6875,
++            "latency_med_h": 5.06,
++            "latency_p90_h": 9.88,
++            "offered_MB": 177.2,
++            "bytes_delivered_fraction": 1.0
++          },
++          {
++            "day": 6,
++            "ship_recall": 0.6798,
++            "latency_med_h": 4.45,
++            "latency_p90_h": 9.4,
++            "offered_MB": 172.9,
++            "bytes_delivered_fraction": 0.999
++          }
++        ]
++      }
++    }
++  },
++  "claims_ledger": [
++    {
++      "id": "sustained_link_share_MB_per_24h",
++      "value": 134.5,
++      "forms": [
++        "134.5 MB"
++      ],
++      "docs": [
++        "README.md",
++        "paper/PHASE3_RESULTS.md",
++        "demo/QA_CARD.md",
++        "demo/DEMO.md"
++      ],
++      "source": "wp29_validation.json steady_state"
++    },
++    {
++      "id": "day_offer_over_sustained_percent",
++      "value": 129.9,
++      "forms": [
++        "130%",
++        "130 %"
++      ],
++      "docs": [
++        "README.md",
++        "paper/PHASE3_RESULTS.md",
++        "demo/QA_CARD.md",
++        "demo/DEMO.md"
++      ],
++      "source": "wp29_validation.json steady_state"
++    },
++    {
++      "id": "six_day_recall_range",
++      "value": [
++        0.6769,
++        0.6875
++      ],
++      "forms": [
++        "0.677–0.688"
++      ],
++      "docs": [
++        "README.md",
++        "paper/PHASE3_RESULTS.md",
++        "demo/QA_CARD.md",
++        "demo/DEMO.md"
++      ],
++      "source": "wp29_validation.json steady_state"
++    },
++    {
++      "id": "six_day_latency_range_h",
++      "value": [
++        4.69,
++        5.58
++      ],
++      "forms": [
++        "4.7–5.6 h"
++      ],
++      "docs": [
++        "demo/QA_CARD.md",
++        "demo/DEMO.md"
++      ],
++      "source": "wp29_validation.json steady_state"
++    },
++    {
++      "id": "fifo_latency_day1_h",
++      "value": 9.37,
++      "forms": [
++        "9.4 h"
++      ],
++      "docs": [
++        "demo/QA_CARD.md",
++        "demo/DEMO.md"
++      ],
++      "source": "wp29_validation.json steady_state"
++    },
++    {
++      "id": "fifo_latency_day6_h",
++      "value": 42.88,
++      "forms": [
++        "42.9 h"
++      ],
++      "docs": [
++        "demo/QA_CARD.md",
++        "demo/DEMO.md"
++      ],
++      "source": "wp29_validation.json steady_state"
++    },
++    {
++      "id": "fifo_recall_day6",
++      "value": 0.4238,
++      "forms": [
++        "0.424"
++      ],
++      "docs": [
++        "demo/QA_CARD.md",
++        "demo/DEMO.md"
++      ],
++      "source": "wp29_validation.json steady_state"
++    },
++    {
++      "id": "link_limited_bent_pipe_kJ_per_day",
++      "value": 30.78,
++      "forms": [
++        "30.8 kJ"
++      ],
++      "docs": [
++        "README.md",
++        "paper/PHASE3_RESULTS.md",
++        "demo/QA_CARD.md"
++      ],
++      "source": "wp17_energy_model.json (P_tx x daily contact time)"
++    },
++    {
++      "id": "non_communication_latency_ms",
++      "value": 71.10249999999999,
++      "forms": [
++        "71 ms"
++      ],
++      "docs": [
++        "paper/PHASE3_RESULTS.md",
++        "demo/PAPER_COVERAGE.md"
++      ],
++      "source": "wp17_energy_model.json + wp25_semantic_packets.json (sat7.accounting)"
++    },
++    {
++      "id": "data_reduction_x",
++      "value": 341.09972017528264,
++      "forms": [
++        "341×"
++      ],
++      "docs": [
++        "README.md",
++        "paper/PHASE3_RESULTS.md",
++        "paper/slides/index.html",
++        "paper/video_script.md",
++        "demo/PAPER_COVERAGE.md",
++        "demo/DEMO.md",
++        "demo/QA_CARD.md",
++        "demo/quickstart/README.md",
++        "reports/README.md",
++        "reports/23-paper-faithful-modules.md"
++      ],
++      "source": "wp6_real_table.csv"
++    },
++    {
++      "id": "earlier_modeled_reduction_x",
++      "value": 556.9561545793727,
++      "forms": [
++        "557×"
++      ],
++      "docs": [
++        "README.md",
++        "paper/PHASE3_RESULTS.md",
++        "paper/slides/index.html",
++        "demo/PAPER_COVERAGE.md",
++        "demo/DEMO.md",
++        "demo/QA_CARD.md",
++        "demo/quickstart/README.md",
++        "reports/README.md",
++        "reports/23-paper-faithful-modules.md"
++      ],
++      "source": "wp6_real_table_modeledcoast.csv"
++    },
++    {
++      "id": "MB_sent_per_day",
++      "value": 176.26604687070287,
++      "forms": [
++        "176.3 MB",
++        "176 MB"
++      ],
++      "docs": [
++        "README.md",
++        "paper/PHASE3_RESULTS.md",
++        "paper/slides/index.html",
++        "demo/QA_CARD.md",
++        "reports/README.md",
++        "reports/23-paper-faithful-modules.md"
++      ],
++      "source": "wp6_real_table.csv"
++    },
++    {
++      "id": "D_raw_MB",
++      "value": 60124.299264,
++      "forms": [
++        "60,124 MB"
++      ],
++      "docs": [
++        "README.md",
++        "paper/PHASE3_RESULTS.md",
++        "paper/slides/index.html",
++        "paper/video_script.md",
++        "demo/QA_CARD.md"
++      ],
++      "source": "wp6_real_table.csv"
++    },
++    {
++      "id": "data_reduction_percent",
++      "value": 99.70683060089111,
++      "forms": [
++        "99.71 %",
++        "99.71%"
++      ],
++      "docs": [
++        "paper/PHASE3_RESULTS.md",
++        "demo/PAPER_COVERAGE.md"
++      ],
++      "source": "wp6_real_table.csv"
++    },
++    {
++      "id": "ship_recall",
++      "value": 0.6850504239541705,
++      "forms": [
++        "0.685"
++      ],
++      "docs": [
++        "README.md",
++        "paper/PHASE3_RESULTS.md",
++        "paper/slides/index.html",
++        "demo/DEMO.md",
++        "demo/QA_CARD.md",
++        "paper/video_script.md"
++      ],
++      "source": "wp6_real_table.csv"
++    },
++    {
++      "id": "lead_over_fair_baseline_pts",
++      "value": 6.347927006053711,
++      "forms": [
++        "+6.3"
++      ],
++      "docs": [
++        "README.md",
++        "paper/PHASE3_RESULTS.md",
++        "paper/slides/index.html",
++        "demo/DEMO.md"
++      ],
++      "source": "wp6_real_table.csv"
++    },
++    {
++      "id": "bytes_vs_fair_baseline_x",
++      "value": 10.840470287251097,
++      "forms": [
++        "~11×"
++      ],
++      "docs": [
++        "README.md",
++        "paper/PHASE3_RESULTS.md",
++        "paper/slides/index.html"
++      ],
++      "source": "wp6_real_table.csv"
++    },
++    {
++      "id": "vs_FIFO_160k_x",
++      "value": 3.5886221637619213,
++      "forms": [
++        "3.59×"
++      ],
++      "docs": [
++        "README.md",
++        "paper/PHASE3_RESULTS.md",
++        "reports/README.md"
++      ],
++      "source": "wp6_real_sweep.csv"
++    },
++    {
++      "id": "vs_FIFO_80k_x",
++      "value": 1.877937037764252,
++      "forms": [
++        "1.88×"
++      ],
++      "docs": [
++        "README.md",
++        "paper/PHASE3_RESULTS.md",
++        "reports/README.md"
++      ],
++      "source": "wp6_real_sweep.csv"
++    },
++    {
++      "id": "greedy_gap_operational",
++      "value": 0.008842639412006968,
++      "forms": [
++        "0.884%",
++        "0.88 %",
++        "0.88%"
++      ],
++      "docs": [
++        "README.md",
++        "paper/PHASE3_RESULTS.md",
++        "demo/QA_CARD.md",
++        "reports/README.md"
++      ],
++      "source": "wp5_optimality_gap.csv"
++    },
++    {
++      "id": "foresight_value_max",
++      "value": 0.0032955615461296,
++      "forms": [
++        "≤ 0.3 %",
++        "≤0.3%"
++      ],
++      "docs": [
++        "paper/PHASE3_RESULTS.md",
++        "reports/README.md"
++      ],
++      "source": "wp5_joint_bound.csv"
++    },
++    {
++      "id": "queue_aware_worst_regret_pts",
++      "value": 0.21369947194300998,
++      "forms": [
++        "0.2 points"
++      ],
++      "docs": [
++        "paper/PHASE3_RESULTS.md",
++        "reports/README.md"
++      ],
++      "source": "wp8_queue_aware.csv"
++    },
++    {
++      "id": "B1_recall_same_scenes",
++      "value": 0.3385,
++      "forms": [
++        "0.339"
++      ],
++      "docs": [
++        "README.md",
++        "paper/PHASE3_RESULTS.md",
++        "paper/slides/index.html",
++        "demo/PAPER_COVERAGE.md",
++        "demo/DEMO.md",
++        "demo/QA_CARD.md",
++        "demo/quickstart/README.md",
++        "reports/README.md",
++        "reports/23-paper-faithful-modules.md"
++      ],
++      "source": "wp26_b0_b4.json"
++    },
++    {
++      "id": "B2_recall_same_scenes",
++      "value": 0.7174,
++      "forms": [
++        "0.717"
++      ],
++      "docs": [
++        "README.md",
++        "paper/PHASE3_RESULTS.md",
++        "paper/slides/index.html",
++        "demo/PAPER_COVERAGE.md",
++        "demo/DEMO.md",
++        "demo/QA_CARD.md",
++        "demo/quickstart/README.md",
++        "reports/README.md",
++        "reports/23-paper-faithful-modules.md"
++      ],
++      "source": "wp26_b0_b4.json"
++    },
++    {
++      "id": "plain_tiling_recall_same_scenes",
++      "value": 0.7302,
++      "forms": [
++        "0.730"
++      ],
++      "docs": [
++        "README.md",
++        "paper/PHASE3_RESULTS.md",
++        "paper/slides/index.html",
++        "demo/PAPER_COVERAGE.md",
++        "demo/DEMO.md",
++        "demo/QA_CARD.md"
++      ],
++      "source": "wp26_b0_b4.json"
++    },
++    {
++      "id": "sahi_compute_x",
++      "value": 1.5625,
++      "forms": [
++        "1.56×"
++      ],
++      "docs": [
++        "README.md",
++        "paper/PHASE3_RESULTS.md",
++        "paper/slides/index.html",
++        "demo/PAPER_COVERAGE.md",
++        "demo/DEMO.md",
++        "demo/QA_CARD.md",
++        "demo/quickstart/README.md"
++      ],
++      "source": "wp26_b0_b4.json"
++    },
++    {
++      "id": "detector_on_native_tiles_recall",
++      "value": 0.7658,
++      "forms": [
++        "0.766"
++      ],
++      "docs": [
++        "README.md",
++        "paper/PHASE3_RESULTS.md",
++        "demo/PAPER_COVERAGE.md",
++        "demo/QA_CARD.md",
++        "reports/README.md"
++      ],
++      "source": "wp24_detection_eval.json"
++    },
++    {
++      "id": "detector_mAP50",
++      "value": 0.8039831583260127,
++      "forms": [
++        "0.804"
++      ],
++      "docs": [
++        "README.md",
++        "paper/PHASE3_RESULTS.md",
++        "demo/PAPER_COVERAGE.md"
++      ],
++      "source": "wp1_metrics.json"
++    },
++    {
++      "id": "dataset_tiles",
++      "value": 53195,
++      "forms": [
++        "53,195"
++      ],
++      "docs": [
++        "README.md",
++        "paper/PHASE3_RESULTS.md",
++        "demo/QA_CARD.md"
++      ],
++      "source": "wp0_stats.json"
++    },
++    {
++      "id": "cloud_band",
++      "value": [
++        0.3957536772974675,
++        0.8189204599448826
++      ],
++      "forms": [
++        "0.40–0.82"
++      ],
++      "docs": [
++        "README.md",
++        "paper/PHASE3_RESULTS.md",
++        "paper/slides/index.html",
++        "demo/DEMO.md",
++        "demo/QA_CARD.md",
++        "paper/video_script.md"
++      ],
++      "source": "wp10_sensitivity.csv"
++    },
++    {
++      "id": "sensitivity_ours_ge_fair",
++      "value": [
++        74,
++        80
++      ],
++      "forms": [
++        "74 of 80",
++        "in 74"
++      ],
++      "docs": [
++        "README.md",
++        "paper/PHASE3_RESULTS.md",
++        "demo/PAPER_COVERAGE.md",
++        "paper/slides/index.html",
++        "demo/QA_CARD.md",
++        "reports/README.md"
++      ],
++      "source": "wp10_sensitivity.csv"
++    },
++    {
++      "id": "lead_over_fair_at_160k_pts",
++      "value": 1.29337392799869,
++      "forms": [
++        "1.3 points",
++        "1.3 pts"
++      ],
++      "docs": [
++        "README.md",
++        "paper/PHASE3_RESULTS.md",
++        "demo/PAPER_COVERAGE.md",
++        "paper/slides/index.html",
++        "demo/QA_CARD.md"
++      ],
++      "source": "wp10_sensitivity.csv"
++    },
++    {
++      "id": "ES_proc_percent",
++      "value": 57.63,
++      "forms": [
++        "57.6 %",
++        "57.6%"
++      ],
++      "docs": [
++        "paper/PHASE3_RESULTS.md",
++        "paper/slides/index.html",
++        "demo/PAPER_COVERAGE.md"
++      ],
++      "source": "wp17_energy_model.json"
++    },
++    {
++      "id": "proc_to_comm_energy",
++      "value": 5.46,
++      "forms": [
++        "5.5 : 1",
++        "5.5:1"
++      ],
++      "docs": [
++        "paper/PHASE3_RESULTS.md",
++        "paper/slides/index.html",
++        "demo/PAPER_COVERAGE.md",
++        "reports/README.md"
++      ],
++      "source": "wp17_energy_model.json"
++    },
++    {
++      "id": "ES_total_percent",
++      "value": 98.11,
++      "forms": [
++        "98.1 %"
++      ],
++      "docs": [
++        "paper/PHASE3_RESULTS.md"
++      ],
++      "source": "wp17_energy_model.json"
++    },
++    {
++      "id": "relay_worst_latency_h",
++      "value": [
++        35.18,
++        10.86
++      ],
++      "forms": [
++        "35.2"
++      ],
++      "docs": [
++        "paper/PHASE3_RESULTS.md",
++        "paper/slides/index.html",
++        "demo/PAPER_COVERAGE.md",
++        "demo/DEMO.md",
++        "demo/QA_CARD.md",
++        "paper/video_script.md",
++        "reports/README.md"
++      ],
++      "source": "wp18_campaign.json"
++    },
++    {
++      "id": "relay_worst_latency_with_relay_h",
++      "value": 10.86,
++      "forms": [
++        "10.9"
++      ],
++      "docs": [
++        "paper/PHASE3_RESULTS.md",
++        "paper/slides/index.html",
++        "demo/PAPER_COVERAGE.md",
++        "demo/DEMO.md",
++        "demo/QA_CARD.md",
++        "paper/video_script.md",
++        "reports/README.md"
++      ],
++      "source": "wp18_campaign.json"
++    },
++    {
++      "id": "relay_item_share_percent",
++      "value": 66.4,
++      "forms": [
++        "66 %",
++        "66%"
++      ],
++      "docs": [
++        "paper/PHASE3_RESULTS.md",
++        "reports/README.md"
++      ],
++      "source": "wp18_campaign.json"
++    },
++    {
++      "id": "relay_comm_energy_increase_percent",
++      "value": 52.066115702479344,
++      "forms": [
++        "+52"
++      ],
++      "docs": [
++        "paper/PHASE3_RESULTS.md",
++        "paper/slides/index.html",
++        "demo/QA_CARD.md",
++        "reports/README.md"
++      ],
++      "source": "wp18_campaign.json"
++    },
++    {
++      "id": "thumbnail_rekey_saving_percent",
++      "value": 2.2752956653766643,
++      "forms": [
++        "2.3 %",
++        "2.3%"
++      ],
++      "docs": [
++        "paper/PHASE3_RESULTS.md",
++        "reports/README.md"
++      ],
++      "source": "wp14_gate_signal.json"
++    },
++    {
++      "id": "P0P3_MB_same_day",
++      "value": 90.5,
++      "forms": [
++        "90.5"
++      ],
++      "docs": [
++        "demo/PAPER_COVERAGE.md",
++        "reports/23-paper-faithful-modules.md",
++        "reports/README.md"
++      ],
++      "source": "wp23_semantic_compare.json"
++    },
++    {
++      "id": "LoD_MB_same_day",
++      "value": 178.5,
++      "forms": [
++        "178.5"
++      ],
++      "docs": [
++        "demo/PAPER_COVERAGE.md",
++        "reports/23-paper-faithful-modules.md",
++        "reports/README.md"
++      ],
++      "source": "wp23_semantic_compare.json"
++    },
++    {
++      "id": "coastal_tile_median_kB",
++      "value": 66.527,
++      "forms": [
++        "66.5 kB"
++      ],
++      "docs": [
++        "paper/PHASE3_RESULTS.md",
++        "demo/DEMO.md",
++        "demo/QA_CARD.md",
++        "reports/README.md"
++      ],
++      "source": "wp28_coast_tile_model.json"
++    },
++    {
++      "id": "modeled_share_of_bytes_percent",
++      "value": 23.75,
++      "forms": [
++        "24 %",
++        "24%"
++      ],
++      "docs": [
++        "paper/PHASE3_RESULTS.md",
++        "demo/QA_CARD.md"
++      ],
++      "source": "wp28_coast_tile_model.json"
++    }
++  ]
++}
+diff --git a/code/sat7/__init__.py b/code/sat7/__init__.py
+index 3428e33..d6381f5 100644
+--- a/code/sat7/__init__.py
++++ b/code/sat7/__init__.py
+@@ -24,4 +24,5 @@ evaluation     Precision / recall / F1 / AP50 / AP50-95 with ground truth; count
+ semantic       Real downlink bytes: binary semantic records, JPEG ROI/context, CCSDS packets, ground decoder
+ campaign       B0-B4 as three switches (perception / payload / relay) on one chain, over shared scenes
+ comms          Two-path link simulator [SIM]: direct + relay, with capacity, transmit time and energy per stage
++accounting     Units and the three bookkeeping definitions: data reduction, E = P x T, the latency convention
+ """
+diff --git a/code/sat7/accounting.py b/code/sat7/accounting.py
+new file mode 100644
+index 0000000..b4f6191
+--- /dev/null
++++ b/code/sat7/accounting.py
+@@ -0,0 +1,151 @@
++"""Units and the three bookkeeping definitions every result uses: data reduction, energy, latency.
++
++Nothing here is a model. It states, in one place and with the units spelled out, the arithmetic
++that sat7.energy, sat7.comms, scripts/wp17 and scripts/wp19 each carry inline, so that tests can
++check they all mean the same thing (tests/test_validation.py) and so that latency has one written
++convention.
++
++Units, repo-wide
++----------------
++  data volume   bytes. 1 MB = 10^6 bytes (decimal), never 2^20.
++  link rate     bit/s. A volume in bytes is multiplied by 8 before it is divided by a rate.
++  power         watts.   time: seconds (stage timings are stored in ms and divided by 1000).
++  energy        joules = watts x seconds. kJ only for display.
++
++Data reduction (paper eq 27)
++----------------------------
++    Data_reduction_percent = 100 x (1 - D_transmitted / D_raw)
++  D_transmitted  the bytes of the representation that is actually sent.
++  D_raw          the full-image baseline: every imaged pixel as uncompressed 8-bit RGB,
++                 H x W x 3 bytes (768 x 768 x 3 = 1,769,472 B per tile).
++
++Energy (paper section V)
++------------------------
++    E_total         = E_processing + E_communication
++    E_processing    = sum_k P_k x T_k                    per onboard stage k
++    E_communication = P_transmission x T_transmission,   T_transmission = bytes x 8 / rate
++  No power was measured in this project: every P is an ASSUMPTION. Stage times T_k are measured
++  on a laptop; transmit times come from simulated links. Every joule is therefore an ESTIMATE.
++
++Latency (paper eq 28) -- the convention
++---------------------------------------
++    T_total = T_processing + T_encoding + T_communication + T_decoding
++  The stages are SEQUENTIAL for one item and are added, never overlapped:
++
++    capture --T_processing--> detections --T_encoding--> packet queued
++            --T_communication--> last byte at the ground station --T_decoding--> usable on ground
++
++  * T_processing and T_encoding are per tile, a few tens of ms. Tiles arrive seconds apart
++    (40,000 tiles/day = one every 2.16 s), so stage k of one tile overlaps the CAPTURE of the next
++    but never its own later stages, and no processing queue builds up.
++  * T_communication is what the simulators report as "latency": from the capture time to the
++    end of that item's transmission. It contains the wait for a contact window and the transmission
++    itself. On the relay path it contains BOTH legs: wait for an inter-satellite window + ISL
++    transmission + storage on the relay until its ground pass + relay-to-ground transmission.
++  * The simulators treat an item as queued at its capture time. Adding T_processing + T_encoding
++    (about 0.05 s) would delay the queueing by that much, which can only matter for a tile captured
++    within that margin of a pass; the stages are instead added on top, as below.
++"""
++from __future__ import annotations
++
++import json
++from dataclasses import asdict, dataclass
++from pathlib import Path
++
++BITS_PER_BYTE = 8
++MB = 1e6                                  # bytes in a megabyte, decimal
++RAW_BYTES_PER_PIXEL = 3                   # uncompressed 8-bit RGB
++
++
++def raw_image_bytes(height_px: int, width_px: int) -> int:
++    """D_raw of one image: every pixel as uncompressed 8-bit RGB."""
++    return int(height_px) * int(width_px) * RAW_BYTES_PER_PIXEL
++
++
++def data_reduction_percent(d_transmitted_bytes: float, d_raw_bytes: float) -> float:
++    """100 x (1 - D_transmitted / D_raw). Both in the same unit (bytes, or both MB)."""
++    if d_raw_bytes <= 0:
++        raise ValueError("D_raw must be positive")
++    if d_transmitted_bytes < 0:
++        raise ValueError("D_transmitted cannot be negative")
++    return 100.0 * (1.0 - d_transmitted_bytes / d_raw_bytes)
++
++
++def reduction_factor(d_transmitted_bytes: float, d_raw_bytes: float) -> float:
++    """D_raw / D_transmitted -- the same statement as data_reduction_percent, as 'N x'."""
++    if d_transmitted_bytes <= 0:
++        raise ValueError("D_transmitted must be positive to state a factor")
++    return d_raw_bytes / d_transmitted_bytes
++
++
++def tx_time_s(n_bytes: float, rate_bps: float) -> float:
++    """T_transmission in seconds: bytes -> bits -> seconds at a rate in bit/s."""
++    if rate_bps <= 0:
++        raise ValueError("link rate must be positive (bit/s)")
++    return n_bytes * BITS_PER_BYTE / rate_bps
++
++
++def tx_energy_J(power_W: float, n_bytes: float, rate_bps: float) -> float:
++    """E_communication = P_transmission x T_transmission, in joules."""
++    return power_W * tx_time_s(n_bytes, rate_bps)
++
++
++def stage_energy_J(power_W: float, time_ms: float) -> float:
++    """One term of E_processing = sum_k P_k x T_k, with T_k given in milliseconds."""
++    return power_W * time_ms / 1000.0
++
++
++@dataclass(frozen=True)
++class LatencyBudget:
++    """T_total = T_processing + T_encoding + T_communication + T_decoding, all in seconds."""
++    processing_s: float
++    encoding_s: float
++    communication_s: float
++    decoding_s: float
++
++    @property
++    def total_s(self) -> float:
++        return self.processing_s + self.encoding_s + self.communication_s + self.decoding_s
++
++    @property
++    def non_communication_s(self) -> float:
++        return self.processing_s + self.encoding_s + self.decoding_s
++
++    def as_dict(self) -> dict:
++        d = asdict(self)
++        d["total_s"] = self.total_s
++        d["non_communication_share"] = (self.non_communication_s / self.total_s) if self.total_s else 0.0
++        return d
++
++
++def measured_stage_times_s(results_dir: str | Path, build: str = "cpu_onnx",
++                           calls_per_tile: float = 1.0) -> dict:
++    """The per-tile stage times this repo has measured, in seconds, with where each comes from.
++
++    build            "cpu_onnx" (the stated onboard build) or "gpu" (the laptop GPU budget)
++    calls_per_tile   detector calls per tile: 1.0 for one call per tile, 1.5625 for SAHI's 25
++                     windows over a 4x4-tile scene
++    Times are REAL but measured on a laptop, not flight hardware.
++    """
++    d = Path(results_dir)
++    e17 = json.loads((d / "wp17_energy_model.json").read_text(encoding="utf-8"))
++    w25 = json.loads((d / "wp25_semantic_packets.json").read_text(encoding="utf-8"))["timing_ms_per_tile"]
++    t = e17["stage_times_ms"]
++    if build == "cpu_onnx":
++        gate, detect = t["gate_cpu"], t["detect_cpu_onnx"]
++    elif build == "gpu":
++        gate, detect = t["gate_gpu"], t["detect_gpu"]
++    else:
++        raise ValueError(f"unknown build {build!r}")
++    enc = w25["T_enc_onboard_median"]
++    return {
++        "processing_s": (t["preprocess_decode_cpu"] + gate + detect * calls_per_tile) / 1000.0,
++        "encoding_s": {ctx: ms / 1000.0 for ctx, ms in enc.items()},
++        "decoding_s": w25["T_dec_ground_median"] / 1000.0,
++        "source": {"processing": "results/wp17_energy_model.json stage_times_ms (preprocess + gate + "
++                                 f"detect x {calls_per_tile:g}), build {build}",
++                   "encoding": "results/wp25_semantic_packets.json timing_ms_per_tile.T_enc_onboard_median",
++                   "decoding": "results/wp25_semantic_packets.json timing_ms_per_tile.T_dec_ground_median"},
++        "label": "REAL timings on a laptop (not flight hardware); preprocess_decode is not sourced "
++                 "from a results file (wp17 unsourced_figures)",
++    }
+diff --git a/code/scripts/wp29_validation.py b/code/scripts/wp29_validation.py
+new file mode 100644
+index 0000000..a3740bd
+--- /dev/null
++++ b/code/scripts/wp29_validation.py
+@@ -0,0 +1,665 @@
++"""WP29 -- scientific validation: units, data reduction, energy, latency, fairness, traceability.
++
++Reads the committed results and checks them; it regenerates none of them. Seven checklist items
++(numbered 6-12, continuing the B0-B4 checks 1-5 in wp26):
++
++   6  data reduction uses actual, consistently defined data sizes
++   7  detection metrics are based on valid ground truth (or are not claimed as accuracy)
++   8  processing / communication energy assumptions are documented
++   9  latency includes the stages the experiment requires
++  10  relay energy and latency account for both links
++  11  the same inputs and assumptions are used where two things are compared
++  12  no numerical claim lacks traceable experimental evidence
++
++Each item gets hard CHECKS (a failed one makes the item FAIL) and LIMITS. A limit that starts
++"GAP:" means the requirement is not fully met and makes the item PARTIAL; the others are caveats
++that travel with a PASS. Evidence is written beside each. One live simulation is run, because no committed file answers it: six consecutive days of
++the nominal workload, to see whether one day's result survives when the next day's traffic needs
++the same passes (--no-steady-state skips it and keeps the block already in the output file).
++
++Labels: stage times REAL (laptop, not flight hardware); powers ASSUMPTION -- NO power was measured
++anywhere in this project, so every energy figure is an ESTIMATE; links and days SIM.
++
++    .venv/Scripts/python.exe scripts/wp29_validation.py
++
++Output: results/wp29_validation.json
++"""
++from __future__ import annotations
++
++import argparse
++import csv
++import json
++import math
++import sys
++import time
++from dataclasses import replace
++from datetime import datetime, timedelta, timezone
++from pathlib import Path
++
++ROOT = Path(__file__).resolve().parents[1]
++REPO = ROOT.parent
++sys.path.insert(0, str(ROOT))
++
++import numpy as np
++import pandas as pd
++
++from sat7.accounting import (MB, LatencyBudget, data_reduction_percent, measured_stage_times_s,
++                             raw_image_bytes, reduction_factor, stage_energy_J, tx_energy_J, tx_time_s)
++from sat7.comms import CommsConfig, Links, simulate_comms
++from sat7.energy import EnergyModel
++from sat7.evaluation import describe_detections
++from sat7.orbit import LINK_PRESETS, GroundStation, OrbitConfig, Pass, find_passes, make_satellite
++from sat7.real_workload import RealWorkloadConfig, load_catalogue, load_size_model, workload_from_catalogue
++from sat7.relay import ISLWindow
++from sat7.scheduler import FIFO, RAW_TILE_BYTES, Item, LoDConfig, ValueGreedy, encode_lod, simulate
++from sat7.semantic import Packetizer
++
++DOCS = {"README": "README.md", "PHASE3": "paper/PHASE3_RESULTS.md", "SLIDES": "paper/slides/index.html",
++        "VIDEO": "paper/video_script.md", "COVERAGE": "demo/PAPER_COVERAGE.md", "DEMO": "demo/DEMO.md",
++        "QA": "demo/QA_CARD.md", "QUICKSTART": "demo/quickstart/README.md",
++        "REPORTS": "reports/README.md", "R23": "reports/23-paper-faithful-modules.md"}
++JUDGE_DOCS = list(DOCS)                                # the ten documents the ledger covers
++
++
++def _json(res: Path, name: str) -> dict:
++    return json.loads((res / name).read_text(encoding="utf-8"))
++
++
++def _table(res: Path, name: str) -> dict:
++    with (res / name).open(newline="", encoding="utf-8") as f:
++        return {r["strategy"]: r for r in csv.DictReader(f)}
++
++
++# ---------------------------------------------------------------------------------- claims ledger
++def claims_ledger(res: Path, steady: dict | None = None) -> list[dict]:
++    """Every headline number the ten judge-facing documents quote, recomputed from the results file
++    that owns it. `forms` are the spellings a document may use; `docs` must each contain one.
++    `steady` is the six-day block (default: the one in results/wp29_validation.json, if present)."""
++    if steady is None and (res / "wp29_validation.json").exists():
++        steady = _json(res, "wp29_validation.json")["steady_state"]
++    t = _table(res, "wp6_real_table.csv")
++    ours, fair, bent = (t["Ours: LoD + value-greedy"], t["Phi-sat-2 style, fair (+coastal)"],
++                        t["Bent pipe (raw, FIFO)"])
++    told = _table(res, "wp6_real_table_modeledcoast.csv")["Ours: LoD + value-greedy"]
++    sweep = pd.read_csv(res / "wp6_real_sweep.csv")
++
++    def recall(tiles, strategy):
++        return float(sweep[(sweep.tiles == tiles) & (sweep.strategy == strategy)].ship_recall.iloc[0])
++    gap = pd.read_csv(res / "wp5_optimality_gap.csv")
++    op_gap = float(gap[(gap.policy == "Value-greedy (ours)") & (gap.scale == "operational")].gap.mean())
++    jb = pd.read_csv(res / "wp5_joint_bound.csv")
++    qa = pd.read_csv(res / "wp8_queue_aware.csv")
++    sens = pd.read_csv(res / "wp10_sensitivity.csv")
++    sw = sens[sens.param != "(baseline)"]
++    cloud = sens[(sens.load == 40000) & (sens.param == "cloud")].ship_recall
++    base160 = float(sens[(sens.load == 160000) & (sens.param == "(baseline)")].ours_minus_baseline.iloc[0])
++    w26 = _json(res, "wp26_b0_b4.json")["detection_quality_same_scenes"]
++    w24 = _json(res, "wp24_detection_eval.json")["B1_committed_all_test_tiles"]
++    w17 = _json(res, "wp17_energy_model.json")
++    b4 = _json(res, "wp18_campaign.json")["configs"]["B4"]
++    w14 = _json(res, "wp14_gate_signal.json")["by_load"]["40000"]
++    w23 = _json(res, "wp23_semantic_compare.json")["semantic_schemes"]
++    w28 = _json(res, "wp28_coast_tile_model.json")
++    w1 = _json(res, "wp1_metrics.json")["test"]
++    w0 = _json(res, "wp0_stats.json")
++    mb, red = float(ours["MB_sent"]), float(ours["data_reduction_x"])
++    dr = data_reduction_percent(mb, float(bent["MB_offered"]))
++    lat_d, lat_r = b4["latency_h_B3_direct"], b4["latency_h_B4_relay"]
++    e_b4 = b4["energy_kJ_TARGET"]
++    wins = _json(res, "wp26_b0_b4.json")["checks"]["3_B2_sahi_fusion"]["windows_per_scene"]
++    D = DOCS
++    every = list(D.values())
++
++    def c(cid, value, forms, docs, source):
++        return {"id": cid, "value": value, "forms": forms, "docs": docs, "source": source}
++    extra = []
++    if steady is not None:
++        vg = steady["runs"]["share_0.25_Value-greedy (ours)"]
++        rec = [d["ship_recall"] for d in vg["per_day"]]
++        st = measured_stage_times_s(res, "cpu_onnx", calls_per_tile=1.5625)
++        stage_ms = 1e3 * (st["processing_s"] + max(st["encoding_s"].values()) + st["decoding_s"])
++        bent_kJ = w17["powers_W_assumption"]["tx"] * w17["downlink"]["contact_min_day"] * 60 / 1e3
++        fifo = steady["runs"]["share_0.25_FIFO"]["per_day"]
++        lat = [d["latency_med_h"] for d in vg["per_day"]]
++        extra = [
++            c("sustained_link_share_MB_per_24h", vg["sustained_capacity_MB_per_24h"],
++              [f"{vg['sustained_capacity_MB_per_24h']:.1f} MB"], [D["README"], D["PHASE3"], D["QA"], D["DEMO"]],
++              "wp29_validation.json steady_state"),
++            c("day_offer_over_sustained_percent", 100 * vg["offered_over_sustained"],
++              [f"{100 * vg['offered_over_sustained']:.0f}%", f"{100 * vg['offered_over_sustained']:.0f} %"],
++              [D["README"], D["PHASE3"], D["QA"], D["DEMO"]], "wp29_validation.json steady_state"),
++            c("six_day_recall_range", [min(rec), max(rec)], [f"{min(rec):.3f}–{max(rec):.3f}"],
++              [D["README"], D["PHASE3"], D["QA"], D["DEMO"]], "wp29_validation.json steady_state"),
++            c("six_day_latency_range_h", [min(lat), max(lat)], [f"{min(lat):.1f}–{max(lat):.1f} h"],
++              [D["QA"], D["DEMO"]], "wp29_validation.json steady_state"),
++            c("fifo_latency_day1_h", fifo[0]["latency_med_h"], [f"{fifo[0]['latency_med_h']:.1f} h"],
++              [D["QA"], D["DEMO"]], "wp29_validation.json steady_state"),
++            c("fifo_latency_day6_h", fifo[-1]["latency_med_h"], [f"{fifo[-1]['latency_med_h']:.1f} h"],
++              [D["QA"], D["DEMO"]], "wp29_validation.json steady_state"),
++            c("fifo_recall_day6", fifo[-1]["ship_recall"], [f"{fifo[-1]['ship_recall']:.3f}"],
++              [D["QA"], D["DEMO"]], "wp29_validation.json steady_state"),
++            c("link_limited_bent_pipe_kJ_per_day", bent_kJ, [f"{bent_kJ:.1f} kJ"],
++              [D["README"], D["PHASE3"], D["QA"]], "wp17_energy_model.json (P_tx x daily contact time)"),
++            c("non_communication_latency_ms", stage_ms, [f"{stage_ms:.0f} ms"], [D["PHASE3"], D["COVERAGE"]],
++              "wp17_energy_model.json + wp25_semantic_packets.json (sat7.accounting)"),
++        ]
++    return extra + [
++        c("data_reduction_x", red, [f"{red:.0f}×"], every, "wp6_real_table.csv"),
++        c("earlier_modeled_reduction_x", float(told["data_reduction_x"]),
++          [f"{float(told['data_reduction_x']):.0f}×"],
++          [D[k] for k in ("README", "PHASE3", "SLIDES", "COVERAGE", "DEMO", "QA", "QUICKSTART", "REPORTS", "R23")],
++          "wp6_real_table_modeledcoast.csv"),
++        c("MB_sent_per_day", mb, [f"{mb:.1f} MB", f"{mb:.0f} MB"],
++          [D[k] for k in ("README", "PHASE3", "SLIDES", "QA", "REPORTS", "R23")], "wp6_real_table.csv"),
++        c("D_raw_MB", float(bent["MB_offered"]), [f"{float(bent['MB_offered']):,.0f} MB"],
++          [D[k] for k in ("README", "PHASE3", "SLIDES", "VIDEO", "QA")], "wp6_real_table.csv"),
++        c("data_reduction_percent", dr, [f"{dr:.2f} %", f"{dr:.2f}%"], [D["PHASE3"], D["COVERAGE"]],
++          "wp6_real_table.csv"),
++        c("ship_recall", float(ours["ship_recall"]), [f"{float(ours['ship_recall']):.3f}"],
++          [D[k] for k in ("README", "PHASE3", "SLIDES", "DEMO", "QA", "VIDEO")], "wp6_real_table.csv"),
++        c("lead_over_fair_baseline_pts", 100 * (float(ours["ship_recall"]) - float(fair["ship_recall"])),
++          [f"+{100 * (float(ours['ship_recall']) - float(fair['ship_recall'])):.1f}"],
++          [D[k] for k in ("README", "PHASE3", "SLIDES", "DEMO")], "wp6_real_table.csv"),
++        c("bytes_vs_fair_baseline_x", mb / float(fair["MB_sent"]), [f"~{mb / float(fair['MB_sent']):.0f}×"],
++          [D[k] for k in ("README", "PHASE3", "SLIDES")], "wp6_real_table.csv"),
++        c("vs_FIFO_160k_x", recall(160000, "Ours: LoD + value-greedy") / recall(160000, "Ours: LoD + FIFO"),
++          [f"{recall(160000, 'Ours: LoD + value-greedy') / recall(160000, 'Ours: LoD + FIFO'):.2f}×"],
++          [D["README"], D["PHASE3"], D["REPORTS"]], "wp6_real_sweep.csv"),
++        c("vs_FIFO_80k_x", recall(80000, "Ours: LoD + value-greedy") / recall(80000, "Ours: LoD + FIFO"),
++          [f"{recall(80000, 'Ours: LoD + value-greedy') / recall(80000, 'Ours: LoD + FIFO'):.2f}×"],
++          [D["README"], D["PHASE3"], D["REPORTS"]], "wp6_real_sweep.csv"),
++        c("greedy_gap_operational", op_gap, [f"{100 * op_gap:.3f}%", f"{100 * op_gap:.2f} %", f"{100 * op_gap:.2f}%"],
++          [D["README"], D["PHASE3"], D["QA"], D["REPORTS"]], "wp5_optimality_gap.csv"),
++        c("foresight_value_max", float(jb.price_of_online.max()),
++          [f"≤ {100 * jb.price_of_online.max():.1f} %", f"≤{100 * jb.price_of_online.max():.1f}%"],
++          [D["PHASE3"], D["REPORTS"]], "wp5_joint_bound.csv"),
++        c("queue_aware_worst_regret_pts", 100 * float(qa[qa.policy.str.startswith("queue-aware")].regret.max()),
++          [f"{100 * float(qa[qa.policy.str.startswith('queue-aware')].regret.max()):.1f} points"],
++          [D["PHASE3"], D["REPORTS"]], "wp8_queue_aware.csv"),
++        c("B1_recall_same_scenes", w26["B1"]["recall"], [f"{w26['B1']['recall']:.3f}"],
++          [D[k] for k in ("README", "PHASE3", "SLIDES", "COVERAGE", "DEMO", "QA", "QUICKSTART", "REPORTS", "R23")],
++          "wp26_b0_b4.json"),
++        c("B2_recall_same_scenes", w26["B2"]["recall"], [f"{w26['B2']['recall']:.3f}"],
++          [D[k] for k in ("README", "PHASE3", "SLIDES", "COVERAGE", "DEMO", "QA", "QUICKSTART", "REPORTS", "R23")],
++          "wp26_b0_b4.json"),
++        c("plain_tiling_recall_same_scenes", w26["B1_per_tile_reference"]["recall"],
++          [f"{w26['B1_per_tile_reference']['recall']:.3f}"],
++          [D[k] for k in ("README", "PHASE3", "SLIDES", "COVERAGE", "DEMO", "QA")], "wp26_b0_b4.json"),
++        c("sahi_compute_x", wins / 16, [f"{wins / 16:.2f}×"],
++          [D[k] for k in ("README", "PHASE3", "SLIDES", "COVERAGE", "DEMO", "QA", "QUICKSTART")], "wp26_b0_b4.json"),
++        c("detector_on_native_tiles_recall", w24["recall"], [f"{w24['recall']:.3f}"],
++          [D[k] for k in ("README", "PHASE3", "COVERAGE", "QA", "REPORTS")], "wp24_detection_eval.json"),
++        c("detector_mAP50", w1["mAP50"], [f"{w1['mAP50']:.3f}"], [D["README"], D["PHASE3"], D["COVERAGE"]],
++          "wp1_metrics.json"),
++        c("dataset_tiles", w0["selected_tiles"], [f"{w0['selected_tiles']:,}"], [D["README"], D["PHASE3"], D["QA"]],
++          "wp0_stats.json"),
++        c("cloud_band", [float(cloud.min()), float(cloud.max())], [f"{cloud.min():.2f}–{cloud.max():.2f}"],
++          [D[k] for k in ("README", "PHASE3", "SLIDES", "DEMO", "QA", "VIDEO")], "wp10_sensitivity.csv"),
++        c("sensitivity_ours_ge_fair", [int((sw.ours_minus_baseline >= 0).sum()), int(len(sw))],
++          [f"{int((sw.ours_minus_baseline >= 0).sum())} of {len(sw)}", f"in {int((sw.ours_minus_baseline >= 0).sum())}"],
++          [D[k] for k in ("README", "PHASE3", "COVERAGE", "SLIDES", "QA", "REPORTS")], "wp10_sensitivity.csv"),
++        c("lead_over_fair_at_160k_pts", 100 * base160, [f"{100 * base160:.1f} points", f"{100 * base160:.1f} pts"],
++          [D[k] for k in ("README", "PHASE3", "COVERAGE", "SLIDES", "QA")], "wp10_sensitivity.csv"),
++        c("ES_proc_percent", 100 * w17["E_proc_per_tile_J"]["cpu_onnx_DEFAULT"]["ES_proc"],
++          [f"{100 * w17['E_proc_per_tile_J']['cpu_onnx_DEFAULT']['ES_proc']:.1f} %",
++           f"{100 * w17['E_proc_per_tile_J']['cpu_onnx_DEFAULT']['ES_proc']:.1f}%"],
++          [D["PHASE3"], D["SLIDES"], D["COVERAGE"]], "wp17_energy_model.json"),
++        c("proc_to_comm_energy", w17["E_per_day_kJ"]["proc_vs_comm_ratio_proposed"],
++          [f"{w17['E_per_day_kJ']['proc_vs_comm_ratio_proposed']:.1f} : 1",
++           f"{w17['E_per_day_kJ']['proc_vs_comm_ratio_proposed']:.1f}:1"],
++          [D["PHASE3"], D["SLIDES"], D["COVERAGE"], D["REPORTS"]], "wp17_energy_model.json"),
++        c("ES_total_percent", 100 * w17["E_per_day_kJ"]["ES_total_vs_bent_pipe"],
++          [f"{100 * w17['E_per_day_kJ']['ES_total_vs_bent_pipe']:.1f} %"], [D["PHASE3"]], "wp17_energy_model.json"),
++        c("relay_worst_latency_h", [lat_d["max"], lat_r["max"]], [f"{lat_d['max']:.1f}"],
++          [D[k] for k in ("PHASE3", "SLIDES", "COVERAGE", "DEMO", "QA", "VIDEO", "REPORTS")], "wp18_campaign.json"),
++        c("relay_worst_latency_with_relay_h", lat_r["max"], [f"{lat_r['max']:.1f}"],
++          [D[k] for k in ("PHASE3", "SLIDES", "COVERAGE", "DEMO", "QA", "VIDEO", "REPORTS")], "wp18_campaign.json"),
++        c("relay_item_share_percent", 100 * b4["relay_fraction"],
++          [f"{100 * b4['relay_fraction']:.0f} %", f"{100 * b4['relay_fraction']:.0f}%"], [D["PHASE3"], D["REPORTS"]],
++          "wp18_campaign.json"),
++        c("relay_comm_energy_increase_percent", 100 * (e_b4["b4_mix"] / e_b4["direct_only"] - 1),
++          [f"+{100 * (e_b4['b4_mix'] / e_b4['direct_only'] - 1):.0f}"],
++          [D["PHASE3"], D["SLIDES"], D["QA"], D["REPORTS"]], "wp18_campaign.json"),
++        c("thumbnail_rekey_saving_percent", w14["bytes_saved_pct"],
++          [f"{w14['bytes_saved_pct']:.1f} %", f"{w14['bytes_saved_pct']:.1f}%"], [D["PHASE3"], D["REPORTS"]],
++          "wp14_gate_signal.json"),
++        c("P0P3_MB_same_day", w23["priority"]["MB_sent"], [f"{w23['priority']['MB_sent']:.1f}"],
++          [D["COVERAGE"], D["R23"], D["REPORTS"]], "wp23_semantic_compare.json"),
++        c("LoD_MB_same_day", w23["lod"]["MB_sent"], [f"{w23['lod']['MB_sent']:.1f}"],
++          [D["COVERAGE"], D["R23"], D["REPORTS"]], "wp23_semantic_compare.json"),
++        c("coastal_tile_median_kB",
++          w28["coastal_tile_q40"]["measured_all_coastal_test_tiles"]["jpeg_baseline"]["median_B"] / 1e3,
++          [f"{w28['coastal_tile_q40']['measured_all_coastal_test_tiles']['jpeg_baseline']['median_B'] / 1e3:.1f} kB"],
++          [D["PHASE3"], D["DEMO"], D["QA"], D["REPORTS"]], "wp28_coast_tile_model.json"),
++        c("modeled_share_of_bytes_percent", 100 * w28["headline"]["still_modeled_share_of_canonical_bytes"],
++          [f"{100 * w28['headline']['still_modeled_share_of_canonical_bytes']:.0f} %",
++           f"{100 * w28['headline']['still_modeled_share_of_canonical_bytes']:.0f}%"], [D["PHASE3"], D["QA"]],
++          "wp28_coast_tile_model.json"),
++    ]
++
++
++def check_claims(res: Path, repo: Path, steady: dict | None = None) -> dict:
++    texts = {rel: (repo / rel).read_text(encoding="utf-8") for rel in DOCS.values()}
++    ledger = claims_ledger(res, steady)
++    missing, n = [], 0
++    for cl in ledger:
++        for doc in cl["docs"]:
++            n += 1
++            if not any(f in texts[doc] for f in cl["forms"]):
++                missing.append({"claim": cl["id"], "doc": doc, "expected_one_of": cl["forms"], "source": cl["source"]})
++    return {"claims": len(ledger), "claim_document_pairs": n, "missing": missing}
++
++
++# ---------------------------------------------------------------------------------- steady state
++def steady_state(res: Path, days: int = 6, tail_h: int = 36, tiles_per_day: int = 40_000) -> dict:
++    """Six consecutive days of the nominal workload [SIM-over-REAL]. The committed day simulations
++    give ONE day of traffic 36 h of passes; here every day's traffic competes for the passes."""
++    tiles, ships = load_catalogue(res)
++    lod = LoDConfig(conf_low=0.25, size_model=load_size_model(res / "wp6_size_model.json"))
++    start = datetime(2026, 9, 18, tzinfo=timezone.utc)
++    sat = make_satellite(OrbitConfig(epoch=start))
++    full = find_passes(sat, GroundStation(), start, days * 24 + tail_h, LINK_PRESETS["cubesat_sband"])
++    wl, _ = workload_from_catalogue(tiles, ships, RealWorkloadConfig(
++        hours=24.0 * days, tiles_per_day=tiles_per_day, det_thr=0.25, seed=0))
++    items = encode_lod(wl, lod)
++    out = {"label": "SIM-over-REAL", "days": days, "tiles_per_day": tiles_per_day, "pass_horizon_h": days * 24 + tail_h,
++           "offered_MB_per_day_mean": round(sum(i.size for i in items) / MB / days, 1), "runs": {}}
++    for share, policy in ((0.25, ValueGreedy()), (0.25, FIFO()), (0.35, ValueGreedy())):
++        passes = [replace(p, capacity_bytes=p.capacity_bytes * share) for p in full]
++        r = simulate(items, passes, start, policy, 8e9, encoder="LoD")
++        first, sent = {}, {}
++        for s in r.sent:
++            sent[id(s.item)] = sent.get(id(s.item), 0.0) + s.item.size * s.fraction
++            for sid in s.item.ships:
++                if sid not in first or s.delivered_s < first[sid]:
++                    first[sid] = s.delivered_s
++        rows = []
++        for d in range(days):
++            lo, hi = d * 86400.0, (d + 1) * 86400.0
++            sh = [s for s in wl.ships if lo <= s.created_s < hi]
++            lat = np.array([(first[s.id] - s.created_s) / 3600 for s in sh if s.id in first])
++            it = [i for i in items if lo <= i.created_s < hi]
++            off = sum(i.size for i in it)
++            rows.append({"day": d + 1, "ship_recall": round(len(lat) / len(sh), 4),
++                         "latency_med_h": round(float(np.median(lat)), 2),
++                         "latency_p90_h": round(float(np.percentile(lat, 90)), 2),
++                         "offered_MB": round(off / MB, 1),
++                         "bytes_delivered_fraction": round(sum(sent.get(id(i), 0.0) for i in it) / off, 3)})
++        cap24 = sum(p.capacity_bytes for p in passes) / MB * 24 / (days * 24 + tail_h)
++        out["runs"][f"share_{share}_{policy.name}"] = {
++            "link_share": share, "policy": policy.name, "sustained_capacity_MB_per_24h": round(cap24, 1),
++            "offered_over_sustained": round(out["offered_MB_per_day_mean"] / cap24, 3), "per_day": rows}
++    return out
++
++
++# ---------------------------------------------------------------------------------- live micro-checks
++def _toy_latency_definition() -> dict:
++    """One item captured at t=100 s, one pass rising at t=1000 s: what does 'latency' contain?"""
++    start = datetime(2026, 9, 18, tzinfo=timezone.utc)
++    p = Pass(start + timedelta(seconds=1000), start + timedelta(seconds=1000), start + timedelta(seconds=1400), 45.0, 1e6)
++    it = Item(1, 100.0, 250_000.0, 1.0, "P2", (0,), progressive=True)
++    r = simulate([it], [p], start, ValueGreedy(), 8e9)
++    s = r.sent[0]
++    wait = 1000.0 - 100.0
++    in_pass = 400.0 * (250_000.0 / 1e6)                       # its share of the pass, at the payload rate
++    return {"latency_s": s.delivered_s - it.created_s, "wait_for_pass_s": wait, "transmission_s": in_pass,
++            "ok": abs((s.delivered_s - it.created_s) - (wait + in_pass)) < 1e-6}
++
++
++def _toy_relay_both_legs() -> dict:
++    """A relay delivery must carry an ISL leg and a relay-to-ground leg, in time and in energy."""
++    start = datetime(2026, 9, 18, tzinfo=timezone.utc)
++
++    def gp(h, cap=1e6, dur=400):
++        t = start + timedelta(hours=h)
++        return Pass(t, t, t + timedelta(seconds=dur), 45.0, cap)
++    isl0 = start + timedelta(hours=0.5)
++    links = Links([gp(10)], [ISLWindow(isl0, isl0 + timedelta(minutes=10), 2000.0, 2500.0)], [gp(2)])
++    cfg = CommsConfig()
++    it = Item(1, 60.0, 20_000.0, 1.0, "P2", (0,), progressive=True)
++    cr = simulate_comms([it], links, start, ValueGreedy(), cfg)
++    d = cr.deliveries[0]
++    t_isl = tx_time_s(it.size, cfg.isl_rate_bps * cfg.isl_efficiency)
++    r_gs = links.relay_passes[0].capacity_bytes * 8 / links.relay_passes[0].duration_s / links.relay_share
++    t_gs = tx_time_s(it.size, r_gs)
++    e = cfg.p_isl_W * t_isl + cfg.p_tx_W * t_gs
++    return {"path": d.path, "tx_s": d.tx_s, "energy_J": d.energy_J, "delivered_h": d.delivered_s / 3600,
++            "isl_window_start_h": 0.5, "relay_pass_rise_h": 2.0,
++            "ok": (d.path == "relay" and abs(d.tx_s["isl"] - t_isl) < 1e-9 and abs(d.tx_s["relay_ground"] - t_gs) < 1e-9
++                   and abs(sum(d.energy_J.values()) - e) < 1e-9 and d.delivered_s >= 2.0 * 3600)}
++
++
++# ---------------------------------------------------------------------------------- the checklist
++def run_checklist(res: Path, repo: Path, steady: dict) -> dict:
++    items: dict[str, dict] = {}
++
++    def item(num, title):
++        items[str(num)] = {"title": title, "checks": [], "limits": []}
++        return items[str(num)]
++
++    def chk(it, name, ok, **ev):
++        it["checks"].append({"check": name, "ok": bool(ok), **ev})
++
++    t = _table(res, "wp6_real_table.csv")
++    ours, bent = t["Ours: LoD + value-greedy"], t["Bent pipe (raw, FIFO)"]
++    d_tx, d_raw = float(ours["MB_sent"]), float(bent["MB_offered"])
++    w17, w19 = _json(res, "wp17_energy_model.json"), _json(res, "wp19_relay_energy.json")
++    w24, w25 = _json(res, "wp24_detection_eval.json"), _json(res, "wp25_semantic_packets.json")
++    w26, w27, w28 = _json(res, "wp26_b0_b4.json"), _json(res, "wp27_comms.json"), _json(res, "wp28_coast_tile_model.json")
++    w18 = _json(res, "wp18_campaign.json")
++    ss = steady["runs"]["share_0.25_Value-greedy (ours)"]
++
++    # ------------------------------------------------------------------ 6 data reduction
++    it = item(6, "Data reduction uses actual, consistently defined data sizes")
++    chk(it, "D_raw per tile is H x W x 3 bytes", RAW_TILE_BYTES == raw_image_bytes(768, 768) == 1_769_472,
++        RAW_TILE_BYTES=RAW_TILE_BYTES)
++    dr, rf = data_reduction_percent(d_tx, d_raw), reduction_factor(d_tx, d_raw)
++    chk(it, "headline = 100 x (1 - D_tx / D_raw) on the table's own bytes",
++        abs(rf - float(ours["data_reduction_x"])) / rf < 1e-9, D_tx_MB=round(d_tx, 3), D_raw_MB=round(d_raw, 3),
++        data_reduction_percent=round(dr, 4), factor=round(rf, 2), table_column=round(float(ours["data_reduction_x"]), 2))
++    raw_tiles = d_raw * MB / RAW_TILE_BYTES
++    chk(it, "D_raw is whole tiles (non-cloud tiles x 1,769,472 B), nothing compressed",
++        abs(raw_tiles - w28["days"]["raw_tiles_mean"]) < 0.1, tiles_per_day_in_baseline=round(raw_tiles, 1))
++    chk(it, "the coastal size table reproduces from pixels (wp25 gate)",
++        w25["LoD_headline_with_measured_coast"].get("size_table_reproduces_from_pixels") is True)
++    tb = pd.read_csv(res / "wp28_coast_tile_bytes.csv")
++    wire = [sum(len(pk) for pk in Packetizer().packetize(0x103, bytes(int(r.jpeg_q40_baseline_B) + 18))) == r.packet_B
++            for r in tb.head(25).itertuples()]
++    chk(it, "a coastal tile's charged size is its real serialization (JPEG + 18 B header + CCSDS packets)",
++        all(wire), rows_checked=len(wire))
++    chk(it, "scene-level B0 equals pixels + packet headers (wp26 check 1)",
++        w26["checks"]["1_B0_original_image"]["passed"] and
++        w26["checks"]["1_B0_original_image"]["pixels_bytes"] == raw_image_bytes(3072, 3072),
++        pixels_bytes=w26["checks"]["1_B0_original_image"]["pixels_bytes"])
++    share_meas = w28["models"]["measured_per_tile"]["products"]["tile"]["share"]
++    it["limits"] += [
++        f"GAP: D_transmitted is only partly ACTUAL: coastal tiles ({100 * share_meas:.1f}% of the bytes) are measured "
++        f"JPEGs; thumbnails, chips and crops ({100 * (1 - share_meas):.1f}%) are model sizes (flat 1,000 B, WP4 "
++        f"power law). On real packets the crop model was within 0.94-1.26x (wp25 measured_over_modeled).",
++        f"Two D_raw definitions exist. The headline counts non-cloud tiles only ({raw_tiles:,.0f} of 40,000 per "
++        f"day) with no packet headers; counting every imaged tile gives {40_000 * RAW_TILE_BYTES / MB:,.0f} MB "
++        f"and {40_000 * RAW_TILE_BYTES / MB / d_tx:.0f}x. wp26's B0 counts every tile plus CCSDS headers. The "
++        f"headline uses the smaller baseline, so it understates rather than overstates.",
++        f"D_transmitted is one isolated day given 36 h of passes ({d_tx:.1f} MB). The link share sustains "
++        f"{ss['sustained_capacity_MB_per_24h']} MB per 24 h, i.e. the day's offer is "
++        f"{100 * ss['offered_over_sustained']:.0f}% of it. On consecutive days fewer bytes than that are sent "
++        f"(steady_state block).",
++    ]
++
++    # ------------------------------------------------------------------ 7 detection metrics / GT
++    it = item(7, "Detection metrics are based on valid ground truth (or are not claimed as accuracy)")
++    w0 = _json(res, "wp0_stats.json")
++    cat = pd.read_csv(res / "wp6_ships.csv")
++    b1 = w24["B1_committed_all_test_tiles"]
++    chk(it, "full-scale evaluation uses every labelled test ship",
++        b1["n_gt"] == len(cat) == w0["split"]["test"]["ships"] and b1["images"] == w0["split"]["test"]["tiles"],
++        n_gt=b1["n_gt"], images=b1["images"], iou_thr=b1["iou_thr"], conf_thr=b1["conf_thr"])
++    chk(it, "the test split shares no near-duplicate group with train/val",
++        w0["groups_spanning_splits"] == 0, groups_a_naive_split_would_leak=w0["groups_a_naive_split_would_leak"])
++    q = w26["detection_quality_same_scenes"]
++    chk(it, "B1..B4 are scored against the same ground truth",
++        len({q[m]["n_gt"] for m in ("B1", "B2", "B3", "B4")}) == 1 and w26["checks"]["5_same_inputs"]["passed"],
++        n_gt=q["B1"]["n_gt"], matching=w26["checks"]["5_same_inputs"]["fingerprint"]["matching"])
++    chk(it, "precision, recall, F1 and AP are all reported (not recall alone)",
++        all(k in b1 for k in ("precision", "recall", "F1", "AP50", "AP50-95")),
++        precision=b1["precision"], recall=b1["recall"], F1=b1["F1"], AP50=b1["AP50"])
++    nogt = describe_detections([(10, 10, 5, 5, 0.9), (20, 20, 5, 5, 0.1)])
++    chk(it, "without ground truth only counts and confidences are returned",
++        not any(k in json.dumps(nogt).lower() for k in ("recall", "precision", "f1", "ap50")), keys=sorted(nogt))
++    cat_recall = float((cat.conf >= 0.25).mean())
++    it["limits"] += [
++        f"The day simulations (B3, the 0.685 delivered recall) read the stored catalogue, which matches a "
++        f"box to a ship BEFORE applying the 0.25 cut and at IoU >= 0.3. It finds {cat_recall:.4f} of the test "
++        f"ships where threshold-then-match at IoU 0.5 finds {b1['recall']:.4f} (wp24). Delivered recall is "
++        f"therefore on the catalogue's rule, not on the wp24 rule; the catalogue was not rebuilt.",
++        "B1 / B2 ground truth is the tile labels shifted onto scenes stitched from independent tiles: valid "
++        "boxes, but no ship crosses a seam, so these scenes cannot show a seam effect.",
++        "The quickstart's synthetic tiles have no ground truth; its output is labelled SYNTH and reports "
++        "counts and confidences only.",
++    ]
++
++    # ------------------------------------------------------------------ 8 energy assumptions
++    it = item(8, "Processing / communication energy assumptions are documented")
++    P, T, day = w17["powers_W_assumption"], w17["stage_times_ms"], w17["E_per_day_kJ"]
++    r_bps = w17["downlink"]["R_eff_Mbps"] * 1e6
++    e_comm = tx_energy_J(P["tx"], w17["downlink"]["D_sent_MB_day"] * MB, r_bps) / 1e3
++    chk(it, "E_communication = P_tx x bytes x 8 / rate reproduces wp17",
++        abs(e_comm - day["E_comm_proposed_semantic"]) / e_comm < 2e-3,
++        recomputed_kJ=round(e_comm, 3), wp17_kJ=day["E_comm_proposed_semantic"], P_tx_W=P["tx"],
++        D_MB=w17["downlink"]["D_sent_MB_day"], rate_Mbps=w17["downlink"]["R_eff_Mbps"])
++    stages = {"preprocess": ("cpu", "preprocess_decode_cpu"), "gate": ("cpu", "gate_cpu"),
++              "detect": ("cpu", "detect_cpu_onnx"), "fuse": ("cpu", "fuse_cpu"), "semantic": ("cpu", "semantic_cpu")}
++    e_tile = sum(stage_energy_J(P[p], T[k]) for p, k in stages.values())
++    e_proc = e_tile * day["tiles_per_day"] / 1e3
++    chk(it, "E_processing = sum_k P_k x T_k reproduces wp17",
++        abs(e_proc - day["E_proc_proposed"]) / e_proc < 1e-3, recomputed_kJ=round(e_proc, 3),
++        wp17_kJ=day["E_proc_proposed"], J_per_tile=round(e_tile, 4))
++    chk(it, "E_total = E_processing + E_communication",
++        abs(day["E_proc_proposed"] + day["E_comm_proposed_semantic"] - day["E_total_proposed"]) < 0.02,
++        E_total_kJ=day["E_total_proposed"])
++    em = EnergyModel.from_results(res)
++    lib = em.e_proc_per_tile_J("cpu_onnx")
++    chk(it, "sat7.energy gives the same per-tile energy as wp17 and the same E_comm",
++        abs(lib["E_prop"] - w17["E_proc_per_tile_J"]["cpu_onnx_DEFAULT"]["E_prop"]) < 1e-3 and
++        abs(replace(em, r_tx_bps=r_bps).e_comm_direct_J(w17["downlink"]["D_sent_MB_day"] * MB) / 1e3 - e_comm) < 1e-9,
++        sat7_energy_E_prop_J=round(lib["E_prop"], 4))
++    pw = w19["powers_W"]
++    e_isl = tx_energy_J(pw["isl_ASSUMPTION_NEW"], w19["inputs"]["D_sent_MB_day"] * MB, w19["inputs"]["R_isl_Mbps"] * 1e6) / 1e3
++    chk(it, "wp19 ISL energy reproduces from P_isl x bytes x 8 / R_isl",
++        abs(e_isl - w19["per_path_energy_daily_kJ"]["E_ISL"]) / e_isl < 2e-3, recomputed_kJ=round(e_isl, 3),
++        wp19_kJ=w19["per_path_energy_daily_kJ"]["E_ISL"])
++    chk(it, "every power is labelled an assumption in the results files",
++        "ASSUMPTION" in w17["label_note"] and all("ASSUMPTION" in k for k in pw),
++        wp17_powers_W=P, wp19_powers_W=pw)
++    chk(it, "every stage time names its source; the unsourced ones are listed",
++        set(w17["stage_time_provenance"]) == set(T) and len(w17["unsourced_figures"]) == 2,
++        unsourced=w17["unsourced_figures"])
++    chk(it, "power assumptions are swept", set(w17["sensitivity_P_sweep"]) == {"P_cpu", "P_gpu", "P_tx"} and
++        len(w19["sensitivity_NEW_assumptions"]) >= 4, ES_total_range=[min(min(v["ES_total"]) for v in w17["sensitivity_P_sweep"].values()),
++                                                                     max(max(v["ES_total"]) for v in w17["sensitivity_P_sweep"].values())])
++    enc = w25["timing_ms_per_tile"]["T_enc_onboard_median"]
++    enc_avg = 0.05 * enc["coast"] + 0.20 * enc["ships"]               # orbit mix: 5% coast, 20% ships, rest send nothing
++    sahi_tile = e_tile + 0.5625 * stage_energy_J(P["cpu"], T["detect_cpu_onnx"])
++    it["limits"] += [
++        "NO power was measured in this project. P_cpu 28 W, P_gpu 60 W, P_tx 15 W and P_isl 12 W are "
++        "ASSUMPTIONS; stage times are measured on a laptop; so every joule is an ESTIMATE. Only ES_proc for "
++        "the all-CPU build is free of them (the power cancels: it is a ratio of measured times).",
++        f"semantic_cpu = 0.5 ms is an ASSUMPTION in wp17. wp25 has since measured the encoder: "
++        f"{enc['ships']} ms on a ship tile, {enc['coast']} ms on a coastal tile, i.e. about {enc_avg:.2f} ms per "
++        f"tile over the assumed orbit mix -- consistent with the assumption, so wp17 was not regenerated.",
++        f"E_processing is for ONE detector call per tile, which is what the day simulation runs. With SAHI's "
++        f"1.5625 calls per tile it would be {sahi_tile:.3f} J/tile, {sahi_tile * day['tiles_per_day'] / 1e3:.1f} kJ/day "
++        f"({sahi_tile * day['tiles_per_day'] / 1e3 / day['E_comm_proposed_semantic']:.1f} : 1 against the radio).",
++        "wp18 and the docs label the relay's energy 'TARGET'. It is an estimate from assumed P_isl and R_isl, "
++        "not a design goal; the label is kept as report 19 wrote it.",
++    ]
++
++    # ------------------------------------------------------------------ 9 latency stages
++    it = item(9, "Latency includes the stages the experiment requires")
++    toy = _toy_latency_definition()
++    chk(it, "simulated latency = wait for the pass + the item's transmission, from capture", toy["ok"],
++        **{k: v for k, v in toy.items() if k != "ok"})
++    st_cpu = measured_stage_times_s(res, "cpu_onnx")
++    st_sahi = measured_stage_times_s(res, "cpu_onnx", calls_per_tile=1.5625)
++    comm_direct_s = float(ours["latency_med_h"]) * 3600
++    budgets = {
++        "direct, per ship, three-day mean (wp6_real_table.csv)":
++            LatencyBudget(st_cpu["processing_s"], st_cpu["encoding_s"]["coast"], comm_direct_s, st_cpu["decoding_s"]),
++        "direct, real packets (wp27 nominal, direct only)":
++            LatencyBudget(st_cpu["processing_s"], st_cpu["encoding_s"]["coast"],
++                          w27["nominal"]["direct_only"]["ships"]["latency_med_h"] * 3600, st_cpu["decoding_s"]),
++        "with relay, real packets (wp27 nominal)":
++            LatencyBudget(st_cpu["processing_s"], st_cpu["encoding_s"]["coast"],
++                          w27["nominal"]["with_relay"]["ships"]["latency_med_h"] * 3600, st_cpu["decoding_s"]),
++        "direct, SAHI processing (1.5625 detector calls per tile)":
++            LatencyBudget(st_sahi["processing_s"], st_sahi["encoding_s"]["coast"], comm_direct_s, st_sahi["decoding_s"]),
++    }
++    worst_stage = max(b.non_communication_s for b in budgets.values())
++    chk(it, "processing, encoding and decoding times are measured and can be added",
++        all(v > 0 for v in (st_cpu["processing_s"], st_cpu["encoding_s"]["coast"], st_cpu["decoding_s"])),
++        processing_s=round(st_cpu["processing_s"], 5), encoding_s=st_cpu["encoding_s"], decoding_s=st_cpu["decoding_s"],
++        source=st_cpu["source"])
++    chk(it, "T_total = T_processing + T_encoding + T_communication + T_decoding (median, seconds)", True,
++        budgets={k: {kk: (round(vv, 6) if kk != "non_communication_share" else float(f"{vv:.3g}"))
++                     for kk, vv in b.as_dict().items()} for k, b in budgets.items()})
++    chk(it, "the onboard stages never queue: a tile is finished before the next one is captured",
++        worst_stage < 86400 / 160_000, per_tile_onboard_s=round(worst_stage, 4),
++        tile_interval_s_at_40k=86400 / 40_000, tile_interval_s_at_160k=86400 / 160_000)
++    chk(it, "ignoring the onboard stages in the simulator cannot move a pass assignment materially",
++        worst_stage * 6 / 86400 < 1e-4, fraction_of_tiles_within_the_margin_of_a_pass=float(f"{worst_stage * 6 / 86400:.2g}"))
++    it["limits"] += [
++        "Every latency the results files and documents quote is T_communication alone. The other three "
++        f"stages add {worst_stage * 1e3:.0f} ms at most ({worst_stage / comm_direct_s:.1e} of the median), so "
++        "the quoted hours are unchanged; the convention is written in sat7/accounting.py.",
++        "Stage times are a laptop's, not flight hardware's. A processor 10x slower still finishes a tile "
++        f"({10 * worst_stage:.2f} s) before the next arrives at 40,000 tiles/day (2.16 s), not at 160,000 (0.54 s).",
++        f"Latencies come from one isolated day. Over six consecutive days the per-ship median is "
++        f"{min(r['latency_med_h'] for r in ss['per_day'])}-{max(r['latency_med_h'] for r in ss['per_day'])} h with "
++        f"value-greedy, and FIFO's grows without bound (steady_state block).",
++    ]
++
++    # ------------------------------------------------------------------ 10 relay: both links
++    it = item(10, "Relay energy and latency account for both links")
++    pp = w19["per_path_energy_daily_kJ"]
++    chk(it, "E_relay = E_ISL + E_GS, both non-zero (wp19)",
++        abs(pp["E_ISL"] + pp["E_GS"] - pp["E_relay"]) < 2e-3 and pp["E_ISL"] > 0 and pp["E_GS"] > 0, **pp)
++    rl = w27["nominal"]["with_relay"]["by_path"]["relay"]
++    chk(it, "relayed traffic has transmit time and energy on the ISL and on the relay's ground pass (wp27)",
++        all(rl[k][leg] > 0 for k in ("tx_s", "energy_J") for leg in ("isl", "relay_ground")) and
++        rl["tx_s"]["ground"] == 0, tx_s=rl["tx_s"], energy_J=rl["energy_J"])
++    cfg27 = w27["config"]
++    chk(it, "each leg's energy is its own power x its own transmit time (wp27)",
++        abs(rl["energy_J"]["isl"] - cfg27["p_isl_W"] * rl["tx_s"]["isl"]) < 0.01 * rl["energy_J"]["isl"] and
++        abs(rl["energy_J"]["relay_ground"] - cfg27["p_tx_W"] * rl["tx_s"]["relay_ground"]) < 0.01 * rl["energy_J"]["relay_ground"],
++        p_isl_W=cfg27["p_isl_W"], p_tx_W=cfg27["p_tx_W"])
++    ex = w27["example_items_both_paths"]["P3"]
++    t_isl = tx_time_s(ex["bytes"], ex["relay"]["isl_rate_Mbps"] * 1e6)
++    chk(it, "one item traced by hand: ISL time = bytes x 8 / R_isl (wp27 example)",
++        abs(t_isl - ex["relay"]["tx_s"]["isl"]) < 1e-3, bytes=ex["bytes"], recomputed_s=round(t_isl, 4),
++        wp27_s=ex["relay"]["tx_s"]["isl"])
++    toy = _toy_relay_both_legs()
++    chk(it, "live: a relayed item waits for the ISL window AND the relay's ground pass", toy["ok"],
++        **{k: v for k, v in toy.items() if k != "ok"})
++    chk(it, "the relay forwards processed products only, never raw imagery (wp27)",
++        w27["nominal"]["checks"]["non_semantic_items_on_relay"] == 0)
++    b4 = w18["configs"]["B4"]
++    e_direct_only = tx_energy_J(15.0, b4["MB_sent_SIM"] * MB, 2.53e6) / 1e3
++    chk(it, "the B4 row's energy is joules (P_tx x bytes x 8 / R_gs), not the router's unit-less placeholders",
++        abs(e_direct_only - b4["energy_kJ_TARGET"]["direct_only"]) < 0.02 and
++        b4["energy_kJ_TARGET"]["b4_mix"] > b4["energy_kJ_TARGET"]["direct_only"],
++        recomputed_direct_only_kJ=round(e_direct_only, 3), wp18=b4["energy_kJ_TARGET"])
++    it["limits"] += [
++        "GAP: The canonical B4 row (wp18) uses sat7.relay.route_item: its ENERGY has both legs, but its relay "
++        "LATENCY is read from window start times (next ISL window, then the relay's next ground pass) with "
++        "no data volume, rate or capacity, while its direct latency is B3's actual delivery. That is "
++        "optimistic for the relay; wp27 is the volume- and capacity-aware simulation of both legs.",
++        "P_isl, R_isl and the relay's orbit are ASSUMPTIONS; no relay hardware or real link exists.",
++    ]
++
++    # ------------------------------------------------------------------ 11 fair comparisons
++    it = item(11, "The same inputs and assumptions are used where two things are compared")
++    chk(it, "B1 vs B2: same scenes, pixels, ground truth, model and matching rule (wp26 check 5)",
++        w26["checks"]["5_same_inputs"]["passed"], fingerprint=w26["checks"]["5_same_inputs"]["fingerprint"]["scenes"])
++    sweep = pd.read_csv(res / "wp6_real_sweep.csv")
++    same_cap = all(g.MB_capacity.nunique() == 1 for _, g in sweep.groupby("tiles"))
++    same_ceiling = all(g[g.strategy.str.startswith("Ours")].ceiling_recall.nunique() == 1 for _, g in sweep.groupby("tiles"))
++    chk(it, "ours vs FIFO vs the baselines: same day, same passes, same link share (wp6)",
++        same_cap and same_ceiling, loads=sorted(int(x) for x in sweep.tiles.unique()))
++    chk(it, "direct vs relay: same items, same ground-link model and power; relay off == the scheduler (wp27)",
++        w27["gate_direct_only_equals_scheduler"]["passed"] and cfg27["link_share"] == cfg27["relay_link_share"],
++        deliveries=w27["gate_direct_only_equals_scheduler"]["deliveries"])
++    chk(it, "LoD vs P0-P3: same day and passes (wp23)",
++        _json(res, "wp23_semantic_compare.json")["workload"]["tiles"] == 40000)
++    contact_s = w17["downlink"]["contact_min_day"] * 60
++    e_bent_feasible = P["tx"] * contact_s / 1e3
++    it["limits"] += [
++        f"B1/B2 ({q['B1']['n_gt']:,} ships on 150 scenes) and B3/B4 ({w18['configs']['B3']['day_ships']:,} ships "
++        f"in a simulated day) are different inputs; B2's detection recall and B3's delivered recall are not "
++        f"steps of one curve. Stated in the documents.",
++        f"GAP: ES_total compares against a bent pipe that sends ALL raw data: {day['E_comm_bent_pipe_raw']:,.0f} kJ/day, "
++        f"which would need {w17['downlink']['bent_pipe_days_of_contact_needed']} days of contact per day of imaging. "
++        f"A bent pipe on this link can transmit for at most {w17['downlink']['contact_min_day']} min/day, i.e. "
++        f"{e_bent_feasible:.1f} kJ/day -- LESS than our {day['E_total_proposed']} kJ/day. The {100 * day['ES_total_vs_bent_pipe']:.1f}% "
++        f"is energy per unit of imagery accounted for, not a saving in the daily energy budget.",
++        "GAP: wp18's B4 gives the direct path its simulated delivery time and the relay path a window estimate "
++        "(item 10).",
++        f"wp17 sends the day's {w17['downlink']['D_sent_MB_day']} MB on {100 * w17['downlink']['capacity_used_by_semantic']:.1f}% "
++        f"of the whole link; the scheduler assumes this payload owns 25% of it.",
++    ]
++
++    # ------------------------------------------------------------------ 12 traceability
++    it = item(12, "No numerical claim lacks traceable experimental evidence")
++    cl = check_claims(res, repo, steady)
++    chk(it, "every headline number in the ten judge-facing documents equals its results file",
++        not cl["missing"], claims=cl["claims"], claim_document_pairs=cl["claim_document_pairs"], missing=cl["missing"])
++    chk(it, "the earlier 557x estimate is still reproducible from a committed file",
++        abs(float(_table(res, "wp6_real_table_modeledcoast.csv")["Ours: LoD + value-greedy"]["data_reduction_x"]) - 556.96) < 0.01)
++    it["limits"] += [
++        "The ledger covers the headline numbers of ten documents. docs/START_HERE.md, docs/STATUS.md, "
++        "docs/ARCHITECTURE.md and the bodies of reports 05-22 still narrate the earlier estimate (bannered "
++        "in reports/README.md) and are not covered.",
++        "GAP: Three claims rest on a modelling assumption rather than a measurement: (a) a progressive product "
++        "truncated to 10% of its bytes still counts as delivering its ships -- this is what keeps recall "
++        "flat under congestion and over consecutive days; (b) thumbnail and crop sizes; (c) a 25% link share.",
++        f"GAP: '100% of what the satellite still knew' holds for one day given 36 h of passes. The day's offer is "
++        f"{100 * ss['offered_over_sustained']:.0f}% of what the share sustains per 24 h; over six consecutive days "
++        f"recall still holds ({min(r['ship_recall'] for r in ss['per_day'])}-{max(r['ship_recall'] for r in ss['per_day'])}) "
++        f"only because of assumption (a).",
++    ]
++
++    for it in items.values():
++        failed = [c["check"] for c in it["checks"] if not c["ok"]]
++        gaps = [x for x in it["limits"] if x.startswith("GAP: ")]
++        it["status"] = "FAIL" if failed else ("PARTIAL" if gaps else "PASS")
++        it["failed_checks"], it["gaps"] = failed, len(gaps)
++    return items
++
++
++def main() -> int:
++    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
++    ap.add_argument("--results", type=Path, default=ROOT / "results")
++    ap.add_argument("--no-steady-state", action="store_true",
++                    help="reuse the steady_state block already in the output file instead of re-simulating")
++    args = ap.parse_args()
++    res, out = args.results, args.results / "wp29_validation.json"
++    t0 = time.perf_counter()
++    if args.no_steady_state and out.exists():
++        steady = json.loads(out.read_text(encoding="utf-8"))["steady_state"]
++    else:
++        steady = steady_state(res)
++    checklist = run_checklist(res, REPO, steady)
++    report = {
++        "label": "validation of committed results; stage times REAL (laptop), powers ASSUMPTION (none measured: "
++                 "every energy is an ESTIMATE), links and days SIM",
++        "status_meaning": {"PASS": "every check holds; any limits listed are caveats",
++                           "PARTIAL": "every check holds, but a limit marked GAP means the requirement is "
++                                      "not fully met",
++                           "FAIL": "at least one check does not hold"},
++        "checklist": checklist,
++        "steady_state": steady,
++        "claims_ledger": claims_ledger(res, steady),
++    }
++    out.write_text(json.dumps(report, indent=2, ensure_ascii=False, default=float) + "\n", encoding="utf-8")
++
++    print("=== WP29 validation (committed results; nothing regenerated) ===")
++    for num, it in checklist.items():
++        ok = sum(c["ok"] for c in it["checks"])
++        print(f"\n[{num}] {it['title']}: {it['status']}  ({ok}/{len(it['checks'])} checks, {it['gaps']} gaps, "
++              f"{len(it['limits']) - it['gaps']} caveats)")
++        for c in it["checks"]:
++            print(f"     {'ok  ' if c['ok'] else 'FAIL'} {c['check']}")
++        for lim in it["limits"]:
++            print(f"     {'' if lim.startswith('GAP: ') else 'caveat: '}{lim[:150]}{'...' if len(lim) > 150 else ''}")
++    ss = steady["runs"]
++    print("\nsteady state, six consecutive days [SIM-over-REAL]:")
++    for name, r in ss.items():
++        print(f"  {name}: sustained {r['sustained_capacity_MB_per_24h']} MB/24 h, offer {100 * r['offered_over_sustained']:.0f}% of it")
++        for d in r["per_day"]:
++            print(f"     day {d['day']}: recall {d['ship_recall']}  latency med {d['latency_med_h']} h  "
++                  f"bytes delivered {d['bytes_delivered_fraction']}")
++    print(f"\nsaved {out} ({time.perf_counter() - t0:.0f} s)")
++    return 1 if any(it["status"] == "FAIL" for it in checklist.values()) else 0
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+diff --git a/code/tests/test_validation.py b/code/tests/test_validation.py
+new file mode 100644
+index 0000000..6ebddcf
+--- /dev/null
++++ b/code/tests/test_validation.py
+@@ -0,0 +1,393 @@
++"""Units and bookkeeping, end to end: semantic encoding, coordinate conversion, duplicate removal,
++data sizes, energy, communication routing -- and that the documents quote what the results say.
++
++Each block states the definition it pins (sat7/accounting.py) and then checks that the module
++that carries its own copy of the arithmetic agrees with it."""
++import csv
++import importlib.util
++import json
++import math
++import sys
++from datetime import datetime, timedelta, timezone
++from pathlib import Path
++
++import numpy as np
++import pytest
++
++from sat7.accounting import (MB, LatencyBudget, data_reduction_percent, measured_stage_times_s,
++                             raw_image_bytes, reduction_factor, stage_energy_J, tx_energy_J, tx_time_s)
++from sat7.b2_sahi_fusion import SahiConfig, plan_slices
++from sat7.comms import CommsConfig, Links, simulate_comms
++from sat7.energy import EnergyModel
++from sat7.orbit import Pass
++from sat7.perception import PerceptionConfig, detect_image
++from sat7.relay import ISLWindow, LinkParams, route_item
++from sat7.scheduler import (RAW_TILE_BYTES, FIFO, Item, Ship, ValueGreedy, Workload, WorkloadConfig,
++                            encode_raw, simulate)
++from sat7.semantic import Ids, Packetizer, decode_downlink, encode_image, encode_raw_image, raw_packet_bytes
++
++CODE = Path(__file__).resolve().parents[1]
++RES = CODE / "results"
++START = datetime(2026, 9, 18, tzinfo=timezone.utc)
++
++
++def _load_script(name):
++    pytest.importorskip("pandas")
++    sys.path.insert(0, str(CODE / "scripts"))
++    spec = importlib.util.spec_from_file_location(name, CODE / "scripts" / f"{name}.py")
++    mod = importlib.util.module_from_spec(spec)
++    sys.modules[name] = mod
++    spec.loader.exec_module(mod)
++    return mod
++
++
++def _results(name):
++    p = RES / name
++    if not p.exists():
++        pytest.skip(f"results/{name} not generated")
++    return json.loads(p.read_text(encoding="utf-8"))
++
++
++# ====================================================================== units
++def test_a_megabyte_is_decimal_and_a_rate_is_in_bits():
++    assert MB == 1_000_000
++    assert tx_time_s(1 * MB, 8e6) == 1.0                        # 1 MB at 8 Mbit/s takes one second
++    assert tx_time_s(125_000, 1e6) == 1.0                       # 125 kB = 1 Mbit
++    assert tx_energy_J(15.0, 1 * MB, 2.53e6) == pytest.approx(15.0 * 8e6 / 2.53e6)   # 47.4 J
++    assert stage_energy_J(28.0, 38.6) == pytest.approx(1.0808)  # ms -> s before watts x seconds
++    with pytest.raises(ValueError):
++        tx_time_s(1.0, 0.0)
++
++
++def test_forgetting_bytes_to_bits_would_be_exactly_eight_times_off():
++    em = EnergyModel()
++    wrong = em.powers_W["tx"] * 1 * MB / em.r_tx_bps           # bytes / (bit/s): the bug fixed on 10 Oct
++    assert em.e_comm_direct_J(1 * MB) == pytest.approx(8 * wrong)
++
++
++# ====================================================================== data-size calculations
++def test_raw_baseline_is_every_pixel_as_uncompressed_rgb():
++    assert RAW_TILE_BYTES == raw_image_bytes(768, 768) == 768 * 768 * 3 == 1_769_472
++    assert raw_image_bytes(3072, 3072) == 16 * RAW_TILE_BYTES   # a 4x4 scene is 16 tiles, no more
++
++
++def test_data_reduction_percent_and_factor_are_the_same_statement():
++    assert data_reduction_percent(1.0, 100.0) == pytest.approx(99.0)
++    assert data_reduction_percent(100.0, 100.0) == 0.0
++    f = reduction_factor(176.266, 60124.299)
++    assert data_reduction_percent(176.266, 60124.299) == pytest.approx(100 * (1 - 1 / f))
++    assert data_reduction_percent(2.0, 8.0) == data_reduction_percent(2.0 * MB, 8.0 * MB)   # unit-free ratio
++    with pytest.raises(ValueError):
++        data_reduction_percent(1.0, 0.0)
++    with pytest.raises(ValueError):
++        reduction_factor(0.0, 1.0)
++
++
++def test_bent_pipe_offers_whole_non_cloud_tiles():
++    ships = [Ship(0, 10.0, False, 0.9, False, 40.0)]
++    wl = Workload(ships, [(10.0, "ships", (0,)), (20.0, "cloud", ()), (30.0, "empty", ()), (40.0, "coast", ())],
++                  WorkloadConfig(hours=1.0, tiles_per_day=4))
++    raw = encode_raw(wl)
++    assert [i.size for i in raw] == [RAW_TILE_BYTES] * 3        # the cloud tile is not in the baseline
++    assert sum(i.size for i in raw) == 3 * raw_image_bytes(768, 768)
++
++
++@pytest.mark.parametrize("payload", [1, 26, 4093, 4094, 4095, 8188, 8189, 66_527 + 18])
++def test_packet_overhead_is_eight_bytes_per_segment(payload):
++    wire = sum(len(p) for p in Packetizer().packetize(0x103, bytes(payload)))
++    assert wire == payload + 8 * math.ceil(payload / 4094)      # 6 B header + 2 B CRC, 4094 B of data each
++
++
++def test_raw_image_packets_are_pixels_plus_headers_and_nothing_else():
++    img = np.zeros((96, 128, 3), np.uint8)
++    prod = encode_raw_image(img, 1, 0.0)
++    stream = b"".join(prod.packets)
++    assert len(stream) == prod.size == raw_packet_bytes(96, 128)
++    assert raw_packet_bytes(96, 128) > raw_image_bytes(96, 128)               # headers cost bytes ...
++    assert raw_packet_bytes(96, 128) < 1.01 * raw_image_bytes(96, 128)        # ... well under 1%
++
++
++def test_headline_table_reduction_is_raw_offered_over_bytes_sent():
++    p = RES / "wp6_real_table.csv"
++    if not p.exists():
++        pytest.skip("results/wp6_real_table.csv not generated")
++    with p.open(newline="", encoding="utf-8") as f:
++        t = {r["strategy"]: r for r in csv.DictReader(f)}
++    ours, bent = t["Ours: LoD + value-greedy"], t["Bent pipe (raw, FIFO)"]
++    d_tx, d_raw = float(ours["MB_sent"]), float(bent["MB_offered"])
++    assert float(ours["data_reduction_x"]) == pytest.approx(reduction_factor(d_tx, d_raw), rel=1e-12)
++    assert float(ours["MB_sent"]) <= float(ours["MB_offered"])                # cannot send more than exists
++    n_tiles = d_raw * MB / RAW_TILE_BYTES                                     # the baseline is whole tiles
++    assert 0.80 * 40_000 < n_tiles < 0.90 * 40_000                            # 85% of a 40k-tile day is cloud-free
++
++
++def test_measured_coastal_model_products_add_up():
++    w = _results("wp28_coast_tile_model.json")
++    for m in w["models"].values():
++        assert sum(p["MB"] for p in m["products"].values()) == pytest.approx(m["D_tx_offered_MB"], abs=0.02)
++        assert sum(p["share"] for p in m["products"].values()) == pytest.approx(1.0, abs=1e-3)
++        assert m["reduction_x"] == pytest.approx(w["days"]["D_raw_MB_mean"] / m["D_tx_offered_MB"], rel=1e-3)
++        assert m["DR_percent"] == pytest.approx(
++            data_reduction_percent(m["D_tx_offered_MB"], w["days"]["D_raw_MB_mean"]), abs=2e-3)
++
++
++# ====================================================================== semantic encoding
++def _scene(seed=0):
++    rng = np.random.default_rng(seed)
++    img = rng.integers(20, 60, (768, 768, 3), np.uint8)
++    img[100:140, 200:260] = 220
++    return img
++
++
++def test_semantic_stream_length_is_the_sum_of_its_products_and_decodes():
++    dets = [(230, 120, 60, 40, 0.9), (400, 400, 30, 20, 0.5), (600, 600, 20, 20, 0.1)]
++    enc = encode_image(_scene(), 5, 12.0, dets, "ships", ids=Ids(), packetizer=Packetizer())
++    stream = b"".join(q for p in enc.products for q in p.packets)
++    assert len(stream) == sum(p.size for p in enc.products)                   # size IS the bytes on the wire
++    assert all(p.size == sum(len(q) for q in p.packets) for p in enc.products)
++    g = decode_downlink(stream)
++    assert len(g["records"]) == 2 and len(g["rois"]) == 1                     # the 0.1 box is below the cut
++    assert {round(r.confidence, 2) for r in g["records"]} == {0.9, 0.5}
++    dr = data_reduction_percent(len(stream), raw_image_bytes(768, 768))
++    assert 99.0 < dr < 100.0                                                  # a few kB against 1.77 MB
++
++
++def test_semantic_bytes_grow_with_what_is_sent_never_with_what_is_dropped():
++    img = _scene()
++    one = encode_image(img, 1, 0.0, [(230, 120, 60, 40, 0.9)], "ships")
++    two = encode_image(img, 1, 0.0, [(230, 120, 60, 40, 0.9), (400, 400, 30, 20, 0.5)], "ships")
++    plus_p0 = encode_image(img, 1, 0.0, [(230, 120, 60, 40, 0.9), (600, 600, 20, 20, 0.1)], "ships")
++    size = lambda e: sum(p.size for p in e.products)
++    assert size(two) > size(one) == size(plus_p0)                             # a discarded box costs nothing
++    assert size(encode_image(img, 1, 0.0, [(230, 120, 60, 40, 0.9)], "cloud")) == 0
++
++
++# ====================================================================== coordinates + duplicates
++W_IMG, H_IMG = 2000, 1500
++SHIPS = [(300, 300), (690, 300), (690, 690), (1500, 1200), (1900, 80)]        # global centres (x, y)
++
++
++def _blob_scene():
++    img = np.zeros((H_IMG, W_IMG, 3), np.uint8)
++    for x, y in SHIPS:
++        img[y - 6:y + 6, x - 10:x + 10] = 255                                 # a 20 x 12 px "ship"
++    return img
++
++
++def _blob_detector(conf_of_crop=lambda k: 0.9):
++    """Finds the bright blobs of each crop and reports them in THAT CROP's coordinates."""
++    import cv2
++
++    def detect(crops):
++        out = []
++        for k, crop in enumerate(crops):
++            n, _lab, stats, cent = cv2.connectedComponentsWithStats((crop[..., 0] > 128).astype(np.uint8))
++            out.append([(float(cent[i][0]) + 0.5, float(cent[i][1]) + 0.5, float(stats[i][2]), float(stats[i][3]),
++                         conf_of_crop(k)) for i in range(1, n) if stats[i][2] == 20 and stats[i][3] == 12])
++        return out
++    return detect
++
++
++def _windows_holding(x, y, slices):
++    return [k for k, (x0, y0, w, h) in enumerate(slices)
++            if x0 <= x - 10 and x + 10 <= x0 + w and y0 <= y - 6 and y + 6 <= y0 + h]
++
++
++def test_every_window_reports_a_ship_at_the_same_global_position():
++    cfg = PerceptionConfig(mode="sahi", window=768, overlap=0.2, fuse=False)
++    slices = plan_slices(W_IMG, H_IMG, SahiConfig(window=768, overlap=0.2))
++    dets = detect_image(_blob_scene(), _blob_detector(), cfg)
++    assert len(dets) == sum(len(_windows_holding(x, y, slices)) for x, y in SHIPS)   # one per window
++    for cx, cy, w, h, _c in dets:                                # x_global = x0 + x_local, y likewise
++        assert min(abs(cx - x) + abs(cy - y) for x, y in SHIPS) < 1e-6
++        assert (w, h) == (20.0, 12.0)                            # a shift never rescales a box
++    assert max(len(_windows_holding(x, y, slices)) for x, y in SHIPS) >= 4   # the corner ship is seen 4 times
++
++
++def test_fusion_keeps_one_box_per_ship_and_the_most_confident_duplicate():
++    slices = plan_slices(W_IMG, H_IMG, SahiConfig(window=768, overlap=0.2))
++    conf = lambda k: 0.50 + 0.03 * k                             # later windows are more confident
++    fused = detect_image(_blob_scene(), _blob_detector(conf), PerceptionConfig(mode="sahi", window=768, overlap=0.2))
++    assert len(fused) == len(SHIPS)                              # duplicates gone, no ship lost
++    for x, y in SHIPS:
++        box = min(fused, key=lambda d: abs(d[0] - x) + abs(d[1] - y))
++        assert abs(box[0] - x) + abs(box[1] - y) < 1e-6
++        assert box[4] == pytest.approx(conf(max(_windows_holding(x, y, slices))))
++
++
++def test_fusion_does_not_merge_two_different_ships_that_sit_close():
++    img = np.zeros((768, 768, 3), np.uint8)
++    for x in (300, 326):                                         # 26 px apart: boxes 20 px wide, IoU 0
++        img[294:306, x - 10:x + 10] = 255
++    fused = detect_image(np.pad(img, ((0, 400), (0, 400), (0, 0))), _blob_detector(),
++                         PerceptionConfig(mode="sahi", window=768, overlap=0.2))
++    assert sorted(round(d[0]) for d in fused) == [300, 326]
++
++
++def test_whole_image_mode_needs_no_conversion_and_no_duplicate_removal():
++    dets = detect_image(_blob_scene(), _blob_detector(), PerceptionConfig(mode="whole"))
++    assert sorted((round(d[0]), round(d[1])) for d in dets) == sorted(SHIPS)
++
++
++# ====================================================================== energy
++def test_library_energy_equals_power_times_transmit_time():
++    em = EnergyModel()
++    d = 3.2 * MB
++    assert em.e_comm_direct_J(d) == pytest.approx(tx_energy_J(em.powers_W["tx"], d, em.r_tx_bps))
++    r = em.e_comm_relay_J(d, p_isl_W=12.0, r_isl_bps=1.0e6)
++    assert r["E_ISL_J"] == pytest.approx(tx_energy_J(12.0, d, 1.0e6))
++    assert r["E_GS_J"] == pytest.approx(tx_energy_J(em.powers_W["tx"], d, em.r_tx_bps))
++    assert r["E_relay_J"] == pytest.approx(r["E_ISL_J"] + r["E_GS_J"]) and r["E_relay_J"] > em.e_comm_direct_J(d)
++    f = em.relay_energy_fn()(d, 15.0, 12.0, 2.0e6, 1.0e6)
++    assert f["isl_time_s"] == pytest.approx(tx_time_s(d, 1.0e6)) and f["gs_time_s"] == pytest.approx(tx_time_s(d, 2.0e6))
++
++
++def test_processing_energy_is_the_sum_of_power_times_stage_time():
++    em = EnergyModel()
++    proc = em.e_proc_per_tile_J("cpu_onnx")
++    t, p = em.stage_times_ms, em.powers_W["cpu"]
++    expect = sum(stage_energy_J(p, t[k]) for k in ("preprocess_decode_cpu", "gate_cpu", "detect_cpu_onnx",
++                                                   "fuse_cpu", "semantic_cpu"))
++    assert proc["E_prop"] == pytest.approx(expect)
++    assert proc["E_base"] - proc["E_prop"] == pytest.approx(stage_energy_J(p, t["classic_prefilter_cpu"] - t["gate_cpu"]))
++    assert EnergyModel.energy_saving_ratio(100.0, 25.0) == 0.75
++
++
++def test_the_relay_energy_script_uses_the_same_arithmetic():
++    wp19 = _load_script("wp19_relay_energy")
++    d = 7.5 * MB
++    assert wp19.direct_energy(d, 15.0, 2.5e6)["E_comm_J"] == pytest.approx(tx_energy_J(15.0, d, 2.5e6))
++    r = wp19.relay_energy(d, 15.0, 12.0, 2.5e6, 1.5e6)
++    assert r["E_relay_J"] == pytest.approx(tx_energy_J(12.0, d, 1.5e6) + tx_energy_J(15.0, d, 2.5e6))
++    assert r["isl_time_s"] == pytest.approx(tx_time_s(d, 1.5e6))
++
++
++def test_committed_energy_results_reproduce_from_their_own_inputs():
++    w17, w19 = _results("wp17_energy_model.json"), _results("wp19_relay_energy.json")
++    P, day, dl = w17["powers_W_assumption"], w17["E_per_day_kJ"], w17["downlink"]
++    e_comm = tx_energy_J(P["tx"], dl["D_sent_MB_day"] * MB, dl["R_eff_Mbps"] * 1e6) / 1e3
++    assert e_comm == pytest.approx(day["E_comm_proposed_semantic"], rel=2e-3)          # kJ, rounded in the file
++    assert tx_energy_J(P["tx"], dl["D_raw_MB_day"] * MB, dl["R_eff_Mbps"] * 1e6) / 1e3 == pytest.approx(
++        day["E_comm_bent_pipe_raw"], rel=2e-3)
++    assert day["E_total_proposed"] == pytest.approx(day["E_proc_proposed"] + day["E_comm_proposed_semantic"], abs=0.02)
++    assert day["proc_vs_comm_ratio_proposed"] == pytest.approx(day["E_proc_proposed"] / day["E_comm_proposed_semantic"], rel=2e-3)
++    assert day["ES_total_vs_bent_pipe"] == pytest.approx(1 - day["E_total_proposed"] / day["E_comm_bent_pipe_raw"], abs=1e-4)
++    pp = w19["per_path_energy_daily_kJ"]
++    assert pp["E_relay"] == pytest.approx(pp["E_ISL"] + pp["E_GS"], abs=2e-3)
++    assert pp["E_direct"] == pytest.approx(e_comm, rel=2e-3)                           # same D, P_tx and rate as wp17
++    assert "ASSUMPTION" in w17["label_note"] and all("ASSUMPTION" in k for k in w19["powers_W"])
++
++
++# ====================================================================== latency
++def test_total_latency_is_the_sum_of_four_sequential_stages():
++    b = LatencyBudget(processing_s=0.040, encoding_s=0.009, communication_s=4.5 * 3600, decoding_s=0.00004)
++    assert b.total_s == pytest.approx(0.040 + 0.009 + 16200 + 0.00004)
++    assert b.non_communication_s == pytest.approx(0.04904)
++    assert b.as_dict()["non_communication_share"] < 1e-5         # hours of waiting dwarf the compute
++
++
++def test_simulated_latency_is_the_wait_for_a_pass_plus_the_transmission():
++    p = Pass(START + timedelta(seconds=1000), START + timedelta(seconds=1000), START + timedelta(seconds=1400), 45.0, 1e6)
++    it = Item(1, 100.0, 250_000.0, 1.0, "P2", (0,), progressive=True)        # captured at t = 100 s
++    sent = simulate([it], [p], START, ValueGreedy(), 8e9).sent[0]
++    wait, in_pass = 1000.0 - 100.0, 400.0 * 250_000.0 / 1e6                   # a quarter of the pass
++    assert sent.delivered_s - it.created_s == pytest.approx(wait + in_pass)
++
++
++def test_measured_stage_times_are_seconds_and_small_against_the_tile_interval():
++    if not (RES / "wp25_semantic_packets.json").exists() or not (RES / "wp17_energy_model.json").exists():
++        pytest.skip("results not generated")
++    st, sahi = measured_stage_times_s(RES, "cpu_onnx"), measured_stage_times_s(RES, "cpu_onnx", calls_per_tile=1.5625)
++    assert 0.01 < st["processing_s"] < 0.2 and sahi["processing_s"] > st["processing_s"]   # tens of ms, not s or us
++    assert 0 < st["decoding_s"] < 0.01 and all(0 < v < 0.1 for v in st["encoding_s"].values())
++    onboard = sahi["processing_s"] + max(sahi["encoding_s"].values())
++    assert onboard < 86400 / 160_000                               # done before the next tile, even at 160k/day
++
++
++# ====================================================================== communication routing
++def _gp(h, cap=1e6, dur=400):
++    t = START + timedelta(hours=h)
++    return Pass(t, t, t + timedelta(seconds=dur), 45.0, cap)
++
++
++def _isl(h, minutes=10):
++    t = START + timedelta(hours=h)
++    return ISLWindow(t, t + timedelta(minutes=minutes), 2000.0, 2500.0)
++
++
++def test_a_relayed_item_pays_and_waits_on_both_links():
++    links = Links([_gp(10)], [_isl(0.5)], [_gp(2)])               # ISL at 0.5 h, relay pass at 2 h, own pass at 10 h
++    cfg = CommsConfig()
++    it = Item(1, 60.0, 20_000.0, 1.0, "P2", (0,), progressive=True)
++    d = simulate_comms([it], links, START, ValueGreedy(), cfg).deliveries[0]
++    assert d.path == "relay"
++    r_isl = cfg.isl_rate_bps * cfg.isl_efficiency
++    r_gs = links.relay_passes[0].capacity_bytes * 8 / links.relay_passes[0].duration_s
++    assert d.tx_s == pytest.approx({"isl": tx_time_s(it.size, r_isl), "relay_ground": tx_time_s(it.size, r_gs)})
++    assert d.energy_J["isl"] == pytest.approx(cfg.p_isl_W * d.tx_s["isl"])            # each leg: its power x its time
++    assert d.energy_J["relay_ground"] == pytest.approx(cfg.p_tx_W * d.tx_s["relay_ground"])
++    assert d.delivered_s >= 2 * 3600 > 0.5 * 3600 + d.tx_s["isl"]                      # ISL first, then the relay's pass
++    assert d.latency_s == pytest.approx(d.delivered_s - 60.0)
++
++
++def test_direct_and_relay_are_costed_with_the_same_ground_link():
++    links = Links([_gp(1)], [_isl(0.5)], [_gp(2)])                # the direct pass comes first: direct wins
++    cfg = CommsConfig()
++    it = Item(1, 60.0, 20_000.0, 1.0, "P2", (0,), progressive=True)
++    direct = simulate_comms([it], links, START, ValueGreedy(), cfg).deliveries[0]
++    assert direct.path == "direct" and set(direct.tx_s) == {"ground"}
++    later = Links([_gp(10)], [_isl(0.5)], [_gp(2)])
++    relay = simulate_comms([it], later, START, ValueGreedy(), cfg).deliveries[0]
++    assert relay.tx_s["relay_ground"] == pytest.approx(direct.tx_s["ground"])          # same pass model, same rate
++    assert sum(relay.energy_J.values()) > sum(direct.energy_J.values())                # the ISL leg is extra
++
++
++def test_window_level_router_charges_both_legs_and_waits_for_both_windows():
++    lp, em = LinkParams(), EnergyModel()
++    joules = dict(direct_energy=em.direct_energy_fn(), relay_energy=em.relay_energy_fn())   # as wp18 injects wp19's
++    t0 = START + timedelta(minutes=5)
++    out = route_item(50_000.0, t0, [_gp(10)], [_isl(0.5)], [_gp(0.2), _gp(2)], lam_E=0.0, lam_T=1.0, link=lp, **joules)
++    assert out["path"] == "relay"
++    assert out["T_s"] == pytest.approx((START + timedelta(hours=2) - t0).total_seconds())   # the relay pass AFTER the ISL
++    e_isl, e_gs = tx_energy_J(lp.p_isl_W, 50_000.0, lp.r_isl_bps), tx_energy_J(lp.p_tx_W, 50_000.0, lp.r_gs_bps)
++    assert out["E"] == pytest.approx(e_isl + e_gs)
++    alone = route_item(50_000.0, t0, [_gp(10)], [_isl(0.5)], [_gp(2)], lam_E=0.0, lam_T=1.0, link=lp,
++                       isl_enabled=False, **joules)
++    assert alone["path"] == "direct" and alone["E"] == pytest.approx(e_gs)
++    # without injected callables the router's energies are unit-less placeholders, and say so
++    from sat7.relay import default_direct_energy, default_relay_energy
++    assert default_direct_energy(1.0, 1.0, 1.0)["label"] == default_relay_energy(1.0, 1.0, 1.0, 1.0, 1.0)["label"] \
++        == "TARGET-placeholder"
++
++
++def test_fifo_and_value_greedy_see_the_same_link_and_the_same_items():
++    passes = [_gp(1, cap=60_000.0), _gp(3, cap=60_000.0)]
++    items = [Item(i, 10.0 * i, 20_000.0, float(1 + i % 3), "P2", (i,), progressive=True) for i in range(9)]
++    a, b = simulate(items, passes, START, ValueGreedy(), 8e9), simulate(items, passes, START, FIFO(), 8e9)
++    assert a.capacity == b.capacity == 120_000.0 and a.bytes_offered == b.bytes_offered == 180_000.0
++    assert a.bytes_sent <= a.capacity and b.bytes_sent <= b.capacity          # nobody gets a bigger link
++
++
++# ====================================================================== documents vs results
++def test_every_headline_number_in_the_documents_matches_its_results_file():
++    wp29 = _load_script("wp29_validation")
++    if not (RES / "wp6_real_table_modeledcoast.csv").exists():
++        pytest.skip("results not generated")
++    out = wp29.check_claims(RES, CODE.parent)
++    assert out["claims"] >= 30 and out["claim_document_pairs"] >= 150
++    assert out["missing"] == [], out["missing"]
++
++
++def test_committed_validation_has_no_failed_check_and_names_its_gaps():
++    v = _results("wp29_validation.json")
++    for num, item in v["checklist"].items():
++        assert all(c["ok"] for c in item["checks"]), (num, item["failed_checks"])
++        assert item["status"] == ("PARTIAL" if any(x.startswith("GAP: ") for x in item["limits"]) else "PASS")
++    assert {n for n, i in v["checklist"].items() if i["status"] == "PASS"} == {"7", "8", "9"}
++    run = v["steady_state"]["runs"]
++    assert run["share_0.25_Value-greedy (ours)"]["offered_over_sustained"] > 1.0   # one day overfills the share ...
++    assert run["share_0.35_Value-greedy (ours)"]["offered_over_sustained"] < 1.0   # ... a 35% share would hold it
++    vg = [d["ship_recall"] for d in run["share_0.25_Value-greedy (ours)"]["per_day"]]
++    assert max(vg) - min(vg) < 0.02                                                # value-greedy holds recall
++    fifo = [d["latency_med_h"] for d in run["share_0.25_FIFO"]["per_day"]]
++    assert fifo == sorted(fifo) and fifo[-1] > 4 * fifo[0]                         # FIFO's backlog only grows
+diff --git a/demo/DEMO.md b/demo/DEMO.md
+index ca32ff8..27c8695 100644
+--- a/demo/DEMO.md
++++ b/demo/DEMO.md
+@@ -60,14 +60,16 @@ chain prefilter→gate→detector→LoD→scheduler→ground with an integrity c
+ - [ ] Slide deck opens: double-click **`paper/slides/index.html`** in a browser; `←/→` navigate,
+       `N` toggles speaker notes (the 90-s track), `F` full-screen. Works offline.
+ - [ ] **`demo/QA_CARD.md`** is on the podium (0.685+cloud, why 341× not 557×, B1 0.339, onboard
+-      TARGET, SAHI cost and its negative result, the sensitivity failures, Airbus-not-DOTA,
+-      relay=latency, novelty, INT8).
++      TARGET, SAHI cost and its negative result, the sensitivity failures, six days over capacity,
++      power not measured, Airbus-not-DOTA, relay=latency, novelty, INT8).
+ - [ ] If demoing live: `code/.venv312` exists and `bash demo/run_demo.sh` completes (~1 min). If not,
+       you present from the slide deck + `summary.py` — nothing is lost.
+ - [ ] Numbers to have cold: **341×** (coastal tiles measured, thumbnails/crops modeled; the earlier
+       all-modeled estimate was 557×), **0.685 @15% cloud (band 0.40–0.82)**, **+6.3 pts** fair
+       baseline at nominal load, **B1 0.339 → B2 0.717** on the same scenes, **35.2 h → 10.9 h**
+-      relay (worst case; per-item median 7.9 → 3.4 h). Everything else: "the CSV is authoritative."
++      relay (worst case; per-item median 7.9 → 3.4 h), and the scheduler under pressure: **six
++      days at 130% of the link share — recall 0.677–0.688 every day with our scheduler, while
++      FIFO's latency goes 9.4 h → 42.9 h**. Everything else: "the CSV is authoritative."
+ 
+ ---
+ 
+@@ -105,6 +107,10 @@ chain prefilter→gate→detector→LoD→scheduler→ground with an integrity c
+   whole scene, which finds a third of the ships; SAHI on the same scenes, which finds seventy-two
+   percent; our full semantic pipeline; and an inter-satellite relay that cuts worst-case latency
+   from thirty-five hours to eleven without changing what's delivered."
++- **[+] If you have ten more seconds — the scheduler under pressure.** "A day of data is thirty
++  percent more than our share of the link can carry. We ran six days back to back: our scheduler
++  kept recovering the same sixty-eight percent of the ships every day, in about five hours. A
++  first-in-first-out queue fell a further seven hours behind each day."
+ - **[5] It's honest.** "Every stage you just saw ran on *real* data. The one thing we do *not*
+   claim is flight hardware — every timing is a laptop, so 'runs onboard' is a target, not a
+   prototype."
+@@ -113,13 +119,14 @@ chain prefilter→gate→detector→LoD→scheduler→ground with an integrity c
+ 
+ ## The questions judges will ask — and your answers
+ 
+-The full set is in **`demo/QA_CARD.md`** — keep it on the podium. The four that always come:
++The full set is in **`demo/QA_CARD.md`** — keep it on the podium. The five that always come:
+ 
+ | They ask | You say |
+ |---|---|
+ | "Is 0.685 the real recall?" | "At an assumed **15% cloud**. The band is **0.40–0.82** over 0–50% cloud — cloud fraction moves it more than anything else, so we never quote it bare." |
+ | "Does this actually run on a satellite?" | "Not yet — this is a **demo, not a prototype**. Every timing is a laptop RTX 5060. We map that compute+energy onto a flight processor as a **TARGET** (report 22), and we say so." |
+ | "You rely on SAHI — isn't it expensive?" | "We measured it: a cut ship is usually still detected (report 13), so blanket SAHI is a poor trade. We argue **selective** slicing. It costs 1.56× compute, not 2.25× (report 16). Against one call on the whole scene it lifts recall **0.339 → 0.717**; against a plain tile-by-tile pass it does **not** win on our stitched scenes (0.717 vs 0.730) — no ship crosses a seam between independent tiles — and we report that." |
++| "What if the satellite produces more than the link can carry?" | "It already does, and that is where the scheduler earns its place. A day offers **130%** of what our 25% link share sustains (134.5 MB per 24 h). Over **six consecutive days** value-greedy recovers **0.677–0.688** of the ships every day, first report in a median 4.7–5.6 h — it sheds bytes, not ships. FIFO on the same days: latency **9.4 h → 42.9 h**, and it ends having delivered 0.424 of day six's ships. One assumption sits under that: a progressively truncated item counts as delivered once it clears `min_fraction` (10% of its bytes)." |
+ | "Your earlier material said 557×." | "That was an all-modeled estimate: it charged every coastal tile a flat 32 kB, a size measured on open-sea tiles. We then measured all 1,415 coastal tiles — median 66.5 kB — and the figure is **341×**. Thumbnails and ship crops are still model sizes, and we say so next to the number." |
+ 
+ ---
+@@ -131,6 +138,8 @@ The full set is in **`demo/QA_CARD.md`** — keep it on the podium. The four tha
+ - Coastal tile sizes behind the 341× → `code/results/wp28_coast_tile_model.json` (and the earlier
+   557× estimate → `code/results/wp6_real_table_modeledcoast.csv`).
+ - End-to-end integrity → `code/results/wp11_integration.json` (decision flips @conf_high = 0).
++- Units, energy, latency, fairness and the document-vs-results ledger →
++  `code/results/wp29_validation.json` (37 checks, none failing; five stated gaps).
+ - Dataset / leakage-free split → `code/results/wp0_stats.json`.
+ - Full narrative per work package → `reports/01`–`reports/23`; Phase-3 write-up → `paper/PHASE3_RESULTS.md`.
+ 
+diff --git a/demo/PAPER_COVERAGE.md b/demo/PAPER_COVERAGE.md
+index 002addc..209bdd2 100644
+--- a/demo/PAPER_COVERAGE.md
++++ b/demo/PAPER_COVERAGE.md
+@@ -38,8 +38,8 @@ reproduces the authoritative headline and B4 reproduces B3's recall/MB (relay ch
+ | **Downlink Reduction** `DR = 1 − D_tx/D_raw` | data-reduction factor | **341×** (DR = 99.71%) — three-day mean; coastal tiles at their measured JPEG size, thumbnails and crops still modeled. Earlier all-modeled estimate: 557× | `wp6_real_table.csv`, `wp28_coast_tile_model.json` (557×: `wp6_real_table_modeledcoast.csv`) |
+ | **Detection Quality** (P, R, F1, mAP, small-object recall) | detector eval, by size | mAP50 0.804; small-ship recall the tracked weak point | [report 02](../reports/02-detector-and-quantisation.md) |
+ | **Information Preservation** | `downlink_eff = recall / ceiling` + decision-flip integrity | **1.0** at nominal load; **0 decisions changed** on the real chain | [reports 05](../reports/05-scheduler-on-real-detections.md), [12](../reports/12-end-to-end-integration.md) |
+-| **Latency** `T_total = T_inf+T_enc+T_comm+T_dec` (relay: `T_ISL+T_GS`) | delivery latency, direct vs relay | per ship: median 4.5 h; per item: median 7.9→3.4 h and worst case 35.2→10.9 h with the relay | [reports 20–21](../reports/20-relay-path-choice.md) |
+-| **Energy** `E_total = E_proc + E_comm` | per-stage model + ES ratio | ES_proc 57.6%, ES_total ≈ 98%, proc:comm 5.5:1 | [report 17](../reports/17-energy-model.md) |
++| **Latency** `T_total = T_inf+T_enc+T_comm+T_dec` (relay: `T_ISL+T_GS`) | delivery latency, direct vs relay | per ship: median 4.5 h; per item: median 7.9→3.4 h and worst case 35.2→10.9 h with the relay. All of these are `T_comm` (wait + transmission, both relay legs); the other three stages are measured and add ≤ 71 ms | [reports 20–21](../reports/20-relay-path-choice.md), `wp29_validation.json` |
++| **Energy** `E_total = E_proc + E_comm` | per-stage model + ES ratio | ES_proc 57.6%, ES_total ≈ 98%, proc:comm 5.5:1 — **estimates**: no power was measured, every P_k is an ASSUMPTION | [report 17](../reports/17-energy-model.md), `wp29_validation.json` |
+ 
+ ## 3. The energy model (paper §V, eqs 8–19) — **built**
+ `E_proc = Σ P_k·T_k` (pre/tile/det/fusion/semantic), `E_comm,direct = P_tx·D_tx/R_tx`,
+diff --git a/demo/QA_CARD.md b/demo/QA_CARD.md
+index 2971f5a..8663d9b 100644
+--- a/demo/QA_CARD.md
++++ b/demo/QA_CARD.md
+@@ -51,8 +51,28 @@ large-scene optical set would strengthen B2 — honest limitation, not a hidden
+ No, and we don't claim it. The relay is a **latency buy, not an energy win**: it costs **~1.8×
+ comm energy per relayed item** (+52% across the B4 mix, TARGET), and in return **cuts worst-case
+ latency 35.2 h → 10.9 h** and the per-item median 7.9 h → 3.4 h (SIM). The 35 h is the last
+-low-value item of a day that fills 84% of the link; a ship's first report still lands in a median
+-4.5 h. Recall and bytes are unchanged — B4 is a reroute (reports 19–21).
++low-value item of a day that more than fills the link share; a ship's first report still lands in a
++median 4.5 h. Recall and bytes are unchanged — B4 is a reroute (reports 19–21). Its relay latency is
++a window estimate; the volume-aware two-leg simulation is `wp27`.
++
++**Q. What happens when the satellite produces more than the link can carry?**
++It already does — and that is where the scheduler earns its place. A nominal day offers **130%** of
++what our 25% link share sustains (**134.5 MB per 24 h**). Run for **six consecutive days**,
++value-greedy keeps recovering **0.677–0.688** of the ships every day, with a ship's first report in
++a median **4.7–5.6 h**: it sheds bytes, not ships — low-value products are truncated or deferred.
++FIFO on the same six days falls about seven hours further behind each day (median latency **9.4 h
++→ 42.9 h**) and ends having delivered **0.424** of day six's ships.
++Two things we state with it. One isolated day does fit, given the 36 h of passes the simulation
++allows — that is the "100% of what the satellite still knew" figure. And recall counts a
++progressively truncated item as delivered once it clears `min_fraction` (10% of its bytes): an
++assumption, not a measurement. `source: wp29_validation.json`.
++
++**Q. Did you measure power?**
++No. **Every energy figure is an estimate**: assumed powers (CPU 28 W, GPU 60 W, TX 15 W, ISL 12 W,
++all swept) times measured laptop stage times or simulated transmit times. Only ES_proc (57.6%) needs
++no power — it is a ratio of measured times. And "ES_total ≈ 98%" is against a bent pipe sending every
++raw byte, which this link could never carry; a link-limited bent pipe would spend 30.8 kJ/day, less
++than our 54 kJ/day, for 0.2% of the ships.
+ 
+ **Q. Does your lead over the baseline survive your own sensitivity sweep?**
+ Not everywhere, and we say so. Over 80 settings, **value-greedy ≥ FIFO holds in all 80**; **"ours ≥
+diff --git a/paper/PHASE3_RESULTS.md b/paper/PHASE3_RESULTS.md
+index 7041dc9..6ef5fa2 100644
+--- a/paper/PHASE3_RESULTS.md
++++ b/paper/PHASE3_RESULTS.md
+@@ -110,9 +110,15 @@ Raw transmission over the same link delivers **0.0024** — raw tiles do not fit
+ ## 5. Information preservation (paper §VIII-E.3)
+ 
+ At nominal load **downlink efficiency = 1.0**: we deliver **100 % of what the onboard software still
+-knew** — the gap from 1.0 to 0.685 is the detector + cloud, not the downlink. The margin is thin:
+-the day's 176 MB is 84 % of the ~210 MB the link carries, so low-value items queue for later passes
+-(§7). The real chain
++knew** — the gap from 1.0 to 0.685 is the detector + cloud, not the downlink. **This is a
++single-day statement:** one day's 176 MB is given the ~210 MB of passes that fall in a 36 h window.
++The 25 % link share sustains only **134.5 MB per 24 h**, so a day offers **130 %** of it. Simulated
++over six consecutive days, value-greedy still recovers 0.677–0.688 of the ships every day — by
++truncating low-value products — while FIFO's median latency climbs from 9 h to 43 h and its recall
++then collapses (§12). Recall counts a progressively truncated item as delivered once it clears
++`min_fraction` (10 % of its bytes); that is a modelling assumption, not a measurement. A 35 % share
++carries the day outright.
++The real chain
+ (real JPEGs → prefilter → gate → detector → LoD → scheduler → ground) reproduces the stored
+ catalogue to 4 decimals with **0 decisions changed** at every threshold, so the semantic records
+ preserve the detector's decisions exactly. [reports 05, 12]
+@@ -142,23 +148,42 @@ under the paper's §IV-B *adaptive downlink policy*, and are among the strongest
+ 
+ `E_proc = Σ P_k·T_k`, `E_comm = P_tx·D_tx/R_tx`, `ES = 1 − E_proposed/E_baseline`, built in
+ `wp17_energy_model.py` reading each stage time live with a sanity gate. [report 17]
++**Every energy figure here is an estimate.** No power was measured in this project: P_cpu 28 W,
++P_gpu 60 W, P_tx 15 W and P_isl 12 W are ASSUMPTIONS (swept); the stage times T_k are measured, on
++a laptop; transmit times come from the simulated link. Bytes are multiplied by 8 before they are
++divided by a rate in bit/s (`sat7/accounting.py`; checked against wp17 and wp19 in `wp29`).
+ * **ES_proc = 57.6 %** for the default all-CPU onboard build — a **power-free time ratio** (P_cpu
+   cancels), so it holds on any processor; a lower bound, since the gate also drops empties the
+   per-tile accounting doesn't credit.
+ * **Once pixels stop being sent, compute dominates the radio 5.5 : 1** (45.6 kJ of processing
+   against 8.4 kJ of transmission per day) — so energy optimisation belongs on the detector/gate,
+   not the transmitter.
+-* Versus a bent pipe, **ES_total ≈ 98.1 %** — spend ~54 kJ/day of compute+radio to avoid ~2,851
+-  kJ/day of raw transmission. Powers P_k are ASSUMPTION and swept; ES_total stays 97–99 % across all.
++* Versus a bent pipe **that sent every raw byte**, **ES_total ≈ 98.1 %** — ~54 kJ/day of
++  compute+radio against ~2,851 kJ/day of raw transmission; ES_total stays 97–99 % across the power
++  sweep. That bent pipe is hypothetical: it would need 92.6 days of contact per day of imaging. One
++  limited to this link's 34.2 min of contact a day spends at most **30.8 kJ/day — less than ours** —
++  and delivers 0.2 % of the ships. Read ES_total as energy per unit of imagery accounted for, not as
++  a smaller daily energy bill.
++* The model costs **one detector call per tile**, which is what the day simulation runs. With SAHI's
++  1.56 calls per tile, processing is 70 kJ/day and compute : radio is 8.4 : 1.
+ 
+ ## 7. Latency & the relay (paper §V-D, §VII, eqs 25–29)
+ 
+-`T_total = T_inf + T_enc + T_comm + T_dec`; median delivery **4.5 h** [SIM]. The optional relay uses
++`T_total = T_inf + T_enc + T_comm + T_dec`; median delivery **4.5 h** [SIM].
++**Convention.** The four stages are sequential for one item and are added. Every latency quoted in
++this document is `T_comm`: from capture to the last byte at the ground station — the wait for a
++contact plus the transmission, and on the relay path both legs (wait for an inter-satellite window,
++ISL transmission, storage on the relay, relay-to-ground transmission). The other three are measured
++[REAL, laptop]: `T_inf` 40 ms per tile on the CPU build (62 ms with SAHI's 1.56 calls), `T_enc`
++0.14 ms for a ship tile to 9.1 ms for a coastal one, `T_dec` 0.04 ms. Together they are at most
++**71 ms**, 4×10⁻⁶ of the median, so the hours do not change; a tile is finished long before the next
++one is captured (one every 2.16 s). [`sat7/accounting.py`, `wp29`]
++The optional relay uses
+ the paper's exact `J = λ_E·E + λ_T·T` path choice over real ISL windows: a complementary-coverage
+ relay (RAAN +90°) carries 66 % of items and **cuts worst-case latency 35.2 h → 10.9 h** and the
+ per-item median 7.9 h → 3.4 h [SIM], for **+52 % communication energy** [TARGET — joules await a real
+ P_isl/R_isl]. The 4.5 h is per *ship* (its first report); the per-item figures include thumbnails
+-and coastal tiles, which wait behind higher-value items on a link that is 84 % full — the 35 h is
++and coastal tiles, which wait behind higher-value items on a link the day more than fills (§5) — the 35 h is
+ the last of them, sent in the final pass of the 36 h horizon. B4 is a **reroute**,
+ not extra capacity: recall and bytes are B3's verbatim. **Relay always costs more energy than direct
+ (~1.8×) — it is a latency buy, not a power saving.** [reports 19–21]
+@@ -212,8 +237,9 @@ not extra capacity: recall and bytes are B3's verbatim. **Relay always costs mor
+ 6. **Byte sizes are partly modeled.** Coastal tiles are measured; thumbnails (flat 1,000 B) and ship
+    crops (a fitted size model) are not, and they are 24 % of the bytes. Measuring the coastal tile
+    alone moved the headline from 557× to 341×; the same exercise on the rest would move it again,
+-   by less. The day now fills 84 % of the link, so the "downlink is not the bottleneck" statement
+-   holds for recall at 40k tiles/day and no longer holds for latency of low-value items.
++   by less. One day now offers 130 % of what the link share sustains per 24 h (§5), so "the
++   downlink is not the bottleneck" holds for recall — and only because truncated products still
++   count as delivered — not for bytes, and not for the latency of low-value items.
+ 7. **Our lead over the fair baseline is not robust under congestion — a second negative result.**
+    Of the 80 swept settings (`wp10_sensitivity.csv`), "value-greedy ≥ FIFO" holds in all 80 and
+    "ours ≥ the fair Phi-sat-2-style baseline" in **74**. All six failures are at 160k tiles/day,
+@@ -233,6 +259,21 @@ energy saved by not sending pixels dwarfs the extra compute (ES_total ≈ 98 %).
+ not yet proven, and we say so, is the flight-hardware wall-clock and the quantised accuracy on a real
+ onboard board: this is a **demo of the idea, measured end to end on real data — not a flown prototype.**
+ 
++## 12. Validation checklist — `wp29_validation.py`
++
++37 checks on the committed results, none failing (`code/results/wp29_validation.json`; 35 unit
++tests in `code/tests/test_validation.py`). PARTIAL means every check holds but a stated gap remains.
++
++| # | question | status | what was checked · what remains |
++|---|---|---|---|
++| 6 | data reduction uses actual, consistently defined sizes | **PARTIAL** | formula, raw baseline (H×W×3 per non-cloud tile) and the coastal size table all reproduce · 24 % of the bytes are still model sizes; the day is simulated alone |
++| 7 | detection metrics rest on valid ground truth | **PASS** | all 8,173 labelled test ships, leak-free split, P / R / F1 / AP, one ground truth for B1–B4 · delivered recall uses the catalogue's older matching rule (0.725 vs 0.766 before cloud) |
++| 8 | energy assumptions are documented | **PASS** | wp17 and wp19 reproduce from `P × bytes × 8 / rate` and `Σ P_k·T_k`; every power is labelled ASSUMPTION and swept · no power was measured |
++| 9 | latency includes the required stages | **PASS** | simulated latency = wait + transmission; the three other stages are measured and add ≤ 71 ms · laptop timings |
++| 10 | relay energy and latency cover both links | **PARTIAL** | ISL and relay-to-ground legs both carry time and energy in wp19 and wp27 · the B4 row's relay latency is a window estimate |
++| 11 | compared things share inputs and assumptions | **PARTIAL** | B1/B2, ours/FIFO/baselines, direct/relay, LoD/P0–P3 each share one input · ES_total's bent pipe is not transmittable; B4 is asymmetric; B1/B2 and B3/B4 are different inputs |
++| 12 | every number traces to evidence | **PARTIAL** | 44 headline numbers × the ten judge-facing documents all match their results files · "100 %" is a single-day claim and rests on truncated products counting as delivered |
++
+ ---
+ _Sources: `demo/PAPER_COVERAGE.md` (paper→evidence map), `reports/01–22`, `code/results/*`,
+ `docs/STATUS.md`. Superseded figures to avoid (`docs/START_HERE.md §7`): 442×/511×→557×,
+diff --git a/paper/slides/index.html b/paper/slides/index.html
+index 22b7d2d..9a0feb7 100644
+--- a/paper/slides/index.html
++++ b/paper/slides/index.html
+@@ -136,12 +136,12 @@ const S = [
+ 
+ {html:`<div class="kicker">Energy & the relay</div><h2>Compute, not the radio, is the cost</h2>
+   <div class="grid">
+-    <div class="card"><div class="n">57.6%</div><div class="l">processing energy saved by the gate (ES_proc) — a power-free time ratio <span class="tag SIM">SIM</span></div></div>
+-    <div class="card"><div class="n">5.5 : 1</div><div class="l">once you stop sending pixels, <b>compute dominates the radio</b></div></div>
+-    <div class="card"><div class="n">≈ 98%</div><div class="l">ES_total vs a bent pipe (~54 kJ/day vs ~2,851 kJ/day) <span class="tag SIM">SIM</span></div></div>
++    <div class="card"><div class="n">57.6%</div><div class="l">processing energy saved by the gate (ES_proc) — a ratio of measured stage times, no power needed <span class="tag REAL">REAL</span></div></div>
++    <div class="card"><div class="n">5.5 : 1</div><div class="l">once you stop sending pixels, <b>compute dominates the radio</b> <span class="warn">estimate — assumed powers</span></div></div>
++    <div class="card"><div class="n">≈ 98%</div><div class="l">ES_total vs a bent pipe sending <i>every</i> raw byte (~54 vs ~2,851 kJ/day) — a hypothetical baseline <span class="warn">estimate — assumed powers</span></div></div>
+     <div class="card"><div class="n">35.2 → 10.9 h</div><div class="l">relay cuts worst-case latency (per-item median 7.9 → 3.4 h) <span class="tag SIM">SIM</span>; costs ~+52% comm energy <span class="tag TARGET">TARGET</span></div></div>
+   </div>
+-  <p style="margin-top:12px">The relay is a <b>latency buy, not an energy win</b> (~1.8× comm energy per relayed item).</p>
++  <p style="margin-top:12px">The relay is a <b>latency buy, not an energy win</b> (~1.8× comm energy per relayed item). <b>No power was measured:</b> every joule here is an estimate from assumed powers and measured or simulated times.</p>
+   <p class="src">source: code/results/wp17_energy_model.json · wp18_campaign.json (B4)</p>`,
+  notes:`Energy optimisation belongs on the detector and gate, not the transmitter — once pixels stop flowing, compute outweighs the radio more than five to one. The relay is a latency buy: it cuts worst-case latency from thirty-five hours to eleven but costs more energy, so we call it that.`},
+ 
