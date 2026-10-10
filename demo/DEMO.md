@@ -80,7 +80,7 @@ chain prefilter→gate→detector→LoD→scheduler→ground with an integrity c
 1. Open a terminal.
 2. `cd` into the project:
    ```bash
-   cd "C:/Users/Mega-PC/Desktop/IASTAM_Problem7"
+   cd path/to/iastam-p7-semantic-downlink
    ```
 3. Run the backup summary first so a good screen is already up:
    ```bash
