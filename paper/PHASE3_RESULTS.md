@@ -120,8 +120,12 @@ then collapses (§12). Recall counts a progressively truncated item as delivered
 carries the day outright.
 The real chain
 (real JPEGs → prefilter → gate → detector → LoD → scheduler → ground) reproduces the stored
-catalogue to 4 decimals with **0 decisions changed** at every threshold, so the semantic records
-preserve the detector's decisions exactly. [reports 05, 12]
+catalogue to 4 decimals. Over all 5,320 test tiles and 8,173 ships, **one ship changes side** at
+the 0.25 onboard cut (`wp11_integration.json` counts it under `det_thr` and under `conf_low`, which
+are the same 0.25 threshold in that run) and none at `conf_high`, which the script checks at 0.9
+rather than the 0.670 now in use. The ship is still found: two predictions overlapped it almost
+equally and a different one is credited (report 12). So the semantic records preserve the
+detector's decisions on all but one ship in 8,173, not exactly. [reports 05, 12]
 
 ## 5b. Adaptive downlink policy — contributions folded under paper §IV-B
 
