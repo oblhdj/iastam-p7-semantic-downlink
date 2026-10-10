@@ -105,6 +105,7 @@ def test_compute_saving_cannot_exceed_the_empty_fraction(tradeoff):
 # ----------------------------------------------------------------- the model itself
 
 
+@pytest.mark.inference
 def test_gate_model_is_small_and_well_formed():
     """~47k parameters, scores in (0, 1), one score per tile, and a deterministic forward pass."""
     pytest.importorskip("torch.utils.data", reason="no working torch in .venv; use .venv312")
@@ -131,6 +132,7 @@ def test_gate_model_is_small_and_well_formed():
         assert sum(p.numel() for p in loaded.parameters()) == n_par
 
 
+@pytest.mark.inference
 def test_trained_gate_separates_ships_from_empty():
     """The trained checkpoint must score a textured tile differently from a flat one.
 

@@ -9,6 +9,7 @@ REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO / "code" / "scripts"))
 
 
+@pytest.mark.inference
 def test_single_image_without_ground_truth(tmp_path, monkeypatch):
     pytest.importorskip("onnxruntime")
     import detect_image

@@ -134,6 +134,7 @@ def test_cross_check_counts_threshold_flips_and_unpaired_boxes():
 
 # ------------------------------------------------------------------------------ end to end
 
+@pytest.mark.inference
 def test_end_to_end_on_bundled_tiles(tmp_path, monkeypatch):
     pytest.importorskip("onnxruntime")
     monkeypatch.setattr(sys, "argv", ["run_demo.py", "--out", str(tmp_path)])

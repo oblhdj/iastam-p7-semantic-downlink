@@ -1,0 +1,26 @@
+# Detector-in-the-loop environment (code/.venv312): training, the learned gate, and every script
+# that runs the detector on the Airbus split. Python 3.12.
+#
+# These are the versions of the working environment on the development laptop (RTX 5060, CUDA
+# 12.8), recorded on 10 Oct 2026 with `pip freeze`. They were NOT installed from this file into a
+# clean environment: treat it as a record of what produced the results, and expect to adjust the
+# torch line to your CUDA version.
+#
+#   python -m venv .venv312                                    (with a Python 3.12 interpreter)
+#   .venv312/Scripts/python -m pip install torch==2.11.0 torchvision==0.26.0 --index-url https://download.pytorch.org/whl/cu128
+#   .venv312/Scripts/python -m pip install -r requirements-gpu.txt
+#
+# CPU-only torch also works for inference (the scripts pick CUDA when it is available); training
+# was done on a Kaggle T4 (kaggle/wp1_train_kaggle.ipynb), not on the laptop.
+ultralytics==8.4.160            # YOLOv8n training, validation, export; brings opencv-python 5.0.0.93
+onnx==1.23.0                    # ONNX export of the detector (wp1)
+onnxslim==0.1.96
+onnxruntime==1.30.0             # the CPU build of the detector (wp1_export, wp24, wp26, the demos)
+numpy==2.5.3
+pandas==3.0.6
+matplotlib==3.11.2
+skyfield==1.55                  # orbit and contact windows (wp11 and wp18 schedule as well as detect)
+sgp4==2.27
+pytest==9.1.1                   # the whole test suite runs here too, the two torch tests included
+# installed separately, from the PyTorch index (see above):
+#   torch==2.11.0+cu128   torchvision==0.26.0+cu128

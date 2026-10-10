@@ -26,8 +26,18 @@ import demo_data as D  # noqa: E402
 
 HAVE_ORT = importlib.util.find_spec("onnxruntime") is not None
 HAVE_ST = importlib.util.find_spec("streamlit") is not None
-live = pytest.mark.skipif(not HAVE_ORT, reason="onnxruntime not installed (demo/requirements-dashboard.txt)")
-page = pytest.mark.skipif(not (HAVE_ST and HAVE_ORT), reason="streamlit / onnxruntime not installed")
+
+
+def live(fn):
+    """A test that runs the detector on CPU: tier `inference`, skipped without onnxruntime."""
+    skip = pytest.mark.skipif(not HAVE_ORT, reason="onnxruntime not installed (demo/requirements-dashboard.txt)")
+    return pytest.mark.inference(skip(fn))
+
+
+def page(fn):
+    """A test that renders the dashboard (and so runs the detector): tiers `page` and `inference`."""
+    skip = pytest.mark.skipif(not (HAVE_ST and HAVE_ORT), reason="streamlit / onnxruntime not installed")
+    return pytest.mark.page(pytest.mark.inference(skip(fn)))
 
 
 # ------------------------------------------------------------------------------ canon

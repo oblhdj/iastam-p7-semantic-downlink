@@ -130,6 +130,7 @@ def test_load_detector_rejects_missing_and_unknown_weights(tmp_path):
         load_detector(bad)
 
 
+@pytest.mark.inference
 def test_onnx_detector_maps_a_letterboxed_crop_back_to_the_tile():
     pytest.importorskip("onnxruntime")
     import cv2

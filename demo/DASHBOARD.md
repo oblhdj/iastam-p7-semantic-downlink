@@ -12,8 +12,13 @@ Canonical numbers are not written in the page or in this file. The page reads th
 
 ```bash
 python -m pip install -r demo/requirements-dashboard.txt   # once: quickstart deps + streamlit
-streamlit run demo/dashboard.py
+python demo/launch.py                                      # checks the environment, then starts the page
 ```
+
+`python demo/launch.py` runs `python -m streamlit run demo/dashboard.py` after checking that what it
+needs is installed; `streamlit run demo/dashboard.py` still works. The launcher behaves the same in
+Git Bash, PowerShell and cmd, and has one flag per path: `--fallback`, `--quickstart`, `--summary`,
+`--gpu`, `--check` (start nothing, report the environment), `--install`.
 
 First load takes a few seconds (model load, one run on the bundled 3×3 swath). The browser opens
 on `http://localhost:8501` by itself.
@@ -26,11 +31,11 @@ no firewall dialog; and it sends no usage statistics. The page makes no request 
 
 | Path | Command | Needs |
 |---|---|---|
-| Dashboard, live | `streamlit run demo/dashboard.py` | `requirements-dashboard.txt`; the tracked `demo/quickstart/model/best.onnx` |
-| Dashboard, static fallback | same command; it switches by itself when the pipeline cannot run. Rehearse it with `P7_DEMO_FORCE_FALLBACK=1 streamlit run demo/dashboard.py` | streamlit only |
-| Terminal quickstart | `python demo/quickstart/run_demo.py` | `demo/quickstart/requirements.txt` |
-| Summary of committed results | `python demo/summary.py` | any Python |
-| Full demo on the real split | `bash demo/run_demo.sh` (`--full` for all 5,320 tiles) | `code/.venv312` (torch, GPU), the Airbus split, `gate.pt`, `best.pt` |
+| Dashboard, live | `python demo/launch.py` | `requirements-dashboard.txt`; the tracked `demo/quickstart/model/best.onnx` |
+| Dashboard, static fallback | same command; it switches by itself when the pipeline cannot run. Rehearse it with `python demo/launch.py --fallback` | streamlit only |
+| Terminal quickstart | `python demo/launch.py --quickstart` | `demo/quickstart/requirements.txt` |
+| Summary of committed results | `python demo/launch.py --summary` | any Python |
+| Detector in the loop on the real split | `python demo/launch.py --gpu` (`--full` for all 5,320 tiles) | `code/.venv312` (torch, GPU), the Airbus split, `gate.pt`, `best.pt` |
 
 ## What runs live, and what does not
 
@@ -89,7 +94,8 @@ both fail on a stale set. Uploads and the settings sliders need the live pipelin
 - [ ] `streamlit run demo/dashboard.py` opens; in the sidebar's *Environment check* nothing is ❌.
       (Two ➖ rows, the Airbus split and the GPU environment, are normal on a clone: only the
       full demo uses them.)
-- [ ] `P7_DEMO_FORCE_FALLBACK=1 streamlit run demo/dashboard.py` opens on the static results.
+- [ ] `python demo/launch.py --fallback` opens on the static results. (It sets
+      `P7_DEMO_FORCE_FALLBACK=1`, which is written differently in every shell.)
 - [ ] No network is needed once the packages are installed. Installing them does need it:
       a few minutes, about 500 MB on disk.
 
@@ -128,6 +134,8 @@ got through.
 | `demo/demo_data.py` | standard library only: canon reader, environment report, fallback loader, exports |
 | `demo/demo_pipeline.py` | the live run, through `sat7.campaign`, `sat7.semantic`, `sat7.comms` |
 | `demo/make_fallback_assets.py` | writes and checks `demo/fallback_assets/` |
+| `demo/launch.py` | one command per path, with the environment checked first |
+| `demo/LIVE_DEMO_SCRIPT.md` | where the demo sits in a presentation, and the five-minute script |
 | `demo/requirements-dashboard.txt` | quickstart requirements + streamlit |
 | `demo/host_power.py` | standard library only: opts the demo process out of Windows power throttling |
 | `demo/.streamlit/config.toml` | first-run settings: no email prompt, localhost only, no usage statistics |
