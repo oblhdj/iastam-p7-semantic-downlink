@@ -43,7 +43,9 @@ REPO = HERE.parents[1]
 CODE = REPO / "code"
 RESULTS = CODE / "results"
 sys.path.insert(0, str(CODE))
+sys.path.insert(0, str(HERE.parent))
 
+import host_power  # noqa: E402  (demo/host_power.py: keeps Windows from throttling this process)
 from sat7.b2_sahi_fusion import _iou, plan_slices  # noqa: E402  (_iou: the rule wp12/wp16 validated)
 from sat7.perception import (OnnxDetector, PerceptionConfig, decode_yolo,  # noqa: E402
                              detect_image, nms_xyxy, slice_count)
@@ -260,6 +262,7 @@ def main() -> int:
     ap.add_argument("--out", type=Path, default=HERE / "_out")
     args = ap.parse_args()
     t_start = time.perf_counter()
+    host_power.keep_full_speed()        # a terminal behind another window is throttled on battery
 
     if not args.model.exists():
         sys.exit(f"model not found: {args.model}\n  It is checked in at demo/quickstart/model/best.onnx;"

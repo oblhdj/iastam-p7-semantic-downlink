@@ -33,6 +33,11 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
 import demo_data as D  # noqa: E402  (standard library only: always importable)
+import host_power  # noqa: E402  (standard library only)
+
+# Before the detector loads: on battery Windows slows a background process down about 25-fold, and
+# this server is in the background whenever the browser is in front.
+POWER = host_power.keep_full_speed()
 
 try:                                    # the live pipeline: OpenCV, onnxruntime, sat7
     import demo_pipeline as P  # noqa: E402
@@ -189,6 +194,7 @@ with st.sidebar:
                         + ("" if r["ok"] else f"  \n↳ needed for {r['needed_for']}. Fix: {r['fix']}"))
         st.caption("✅ present · ❌ missing and used by this page · ➖ absent, and only the full "
                    "dataset / GPU demo needs it")
+        st.caption(f"Windows power throttling — {POWER}.")
 
 SETTINGS = (float(conf), int(window), float(overlap), context, float(capture_h), True)
 

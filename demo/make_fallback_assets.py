@@ -25,6 +25,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
 import demo_data as D  # noqa: E402
+import host_power  # noqa: E402
 
 TILE_SAMPLES = (("01_synthetic_00113a75c", "single tile — open sea, several ships"),
                 ("04_synthetic_03204a586", "single tile — coast"),
@@ -51,6 +52,7 @@ def generate(out: Path) -> int:
             print(f"  missing: {r['name']} -- {r['detail']}\n    fix: {r['fix']}")
         return 2
     import demo_pipeline as P
+    print("power throttling:", host_power.keep_full_speed())
     t_all = time.perf_counter()
     det, model = P.load_model()
     settings = P.Settings()
