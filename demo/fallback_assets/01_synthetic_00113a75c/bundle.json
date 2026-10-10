@@ -1,0 +1,2237 @@
+{
+ "bundle_version": 1,
+ "meta": {
+  "generated_at": "2026-10-10 16:41 UTC",
+  "commit": "cff3945",
+  "python": "3.12.14",
+  "machine": "Windows AMD64",
+  "backend": "onnxruntime 1.31.0 CPU",
+  "model": "best.onnx",
+  "model_sha256_16": "5463fc7272df5c31",
+  "elapsed_s": 0.25
+ },
+ "source": {
+  "kind": "sample",
+  "label": "SYNTH",
+  "synthetic": true,
+  "key": "01_synthetic_00113a75c",
+  "note": "a bundled synthetic stand-in tile (no Airbus pixels)"
+ },
+ "input": {
+  "name": "01_synthetic_00113a75c.jpg",
+  "format": "JPEG",
+  "width": 768,
+  "height": 768,
+  "channels_in": 3,
+  "file_bytes": 53426,
+  "raw_bytes": 1769472,
+  "notes": [],
+  "ground_truth": null
+ },
+ "settings": {
+  "conf": 0.25,
+  "window": 768,
+  "overlap": 0.2,
+  "context": "prefilter",
+  "capture_h": 2.0,
+  "sweep": true
+ },
+ "grid": {
+  "rows": 1,
+  "cols": 1,
+  "t_prefilter_s": 0.04919100002734922,
+  "context_source": "pre-filter decides (default)",
+  "tiles": [
+   {
+    "row": 0,
+    "col": 0,
+    "box": [
+     0,
+     0,
+     768,
+     768
+    ],
+    "prefilter": "candidates",
+    "context": "ships"
+   }
+  ]
+ },
+ "perception": {
+  "whole": {
+   "seconds": 0.03148669999791309,
+   "calls": 1,
+   "n_raw": 9,
+   "n_at_or_above_cut": 5,
+   "detections": [
+    {
+     "cx": 541.0,
+     "cy": 140.3,
+     "w": 40.1,
+     "h": 44.9,
+     "confidence": 0.9133,
+     "class": "ship",
+     "at_or_above_cut": true
+    },
+    {
+     "cx": 260.4,
+     "cy": 70.2,
+     "w": 66.1,
+     "h": 45.9,
+     "confidence": 0.8792,
+     "class": "ship",
+     "at_or_above_cut": true
+    },
+    {
+     "cx": 718.9,
+     "cy": 57.0,
+     "w": 42.6,
+     "h": 32.1,
+     "confidence": 0.8469,
+     "class": "ship",
+     "at_or_above_cut": true
+    },
+    {
+     "cx": 162.5,
+     "cy": 302.1,
+     "w": 35.5,
+     "h": 23.7,
+     "confidence": 0.8208,
+     "class": "ship",
+     "at_or_above_cut": true
+    },
+    {
+     "cx": 175.1,
+     "cy": 284.4,
+     "w": 46.6,
+     "h": 19.5,
+     "confidence": 0.7179,
+     "class": "ship",
+     "at_or_above_cut": true
+    },
+    {
+     "cx": 585.5,
+     "cy": 194.5,
+     "w": 8.1,
+     "h": 8.8,
+     "confidence": 0.1142,
+     "class": "ship",
+     "at_or_above_cut": false
+    },
+    {
+     "cx": 584.8,
+     "cy": 193.3,
+     "w": 11.7,
+     "h": 12.7,
+     "confidence": 0.0974,
+     "class": "ship",
+     "at_or_above_cut": false
+    },
+    {
+     "cx": 165.3,
+     "cy": 292.5,
+     "w": 40.1,
+     "h": 11.0,
+     "confidence": 0.074,
+     "class": "ship",
+     "at_or_above_cut": false
+    },
+    {
+     "cx": 583.9,
+     "cy": 192.7,
+     "w": 14.5,
+     "h": 15.6,
+     "confidence": 0.0596,
+     "class": "ship",
+     "at_or_above_cut": false
+    }
+   ],
+   "describe": {
+    "ground_truth": false,
+    "note": "no ground truth: counts and confidences only -- these are NOT accuracy metrics",
+    "n_detections": 9,
+    "conf_thr": 0.25,
+    "n_at_or_above_thr": 5,
+    "confidence_all": {
+     "min": 0.0596,
+     "median": 0.7179,
+     "mean": 0.5026,
+     "max": 0.9133
+    },
+    "confidence_at_or_above_0.25": {
+     "min": 0.7179,
+     "median": 0.8469,
+     "mean": 0.8357,
+     "max": 0.9133
+    }
+   },
+   "quality": null
+  },
+  "sahi": {
+   "seconds": 0.033773800008930266,
+   "calls": 1,
+   "n_raw": 8,
+   "n_at_or_above_cut": 5,
+   "detections": [
+    {
+     "cx": 541.0,
+     "cy": 140.3,
+     "w": 40.1,
+     "h": 44.9,
+     "confidence": 0.9133,
+     "class": "ship",
+     "at_or_above_cut": true
+    },
+    {
+     "cx": 260.4,
+     "cy": 70.2,
+     "w": 66.1,
+     "h": 45.9,
+     "confidence": 0.8792,
+     "class": "ship",
+     "at_or_above_cut": true
+    },
+    {
+     "cx": 718.9,
+     "cy": 57.0,
+     "w": 42.6,
+     "h": 32.1,
+     "confidence": 0.8469,
+     "class": "ship",
+     "at_or_above_cut": true
+    },
+    {
+     "cx": 162.5,
+     "cy": 302.1,
+     "w": 35.5,
+     "h": 23.7,
+     "confidence": 0.8208,
+     "class": "ship",
+     "at_or_above_cut": true
+    },
+    {
+     "cx": 175.1,
+     "cy": 284.4,
+     "w": 46.6,
+     "h": 19.5,
+     "confidence": 0.7179,
+     "class": "ship",
+     "at_or_above_cut": true
+    },
+    {
+     "cx": 585.5,
+     "cy": 194.5,
+     "w": 8.1,
+     "h": 8.8,
+     "confidence": 0.1142,
+     "class": "ship",
+     "at_or_above_cut": false
+    },
+    {
+     "cx": 584.8,
+     "cy": 193.3,
+     "w": 11.7,
+     "h": 12.7,
+     "confidence": 0.0974,
+     "class": "ship",
+     "at_or_above_cut": false
+    },
+    {
+     "cx": 165.3,
+     "cy": 292.5,
+     "w": 40.1,
+     "h": 11.0,
+     "confidence": 0.074,
+     "class": "ship",
+     "at_or_above_cut": false
+    }
+   ],
+   "describe": {
+    "ground_truth": false,
+    "note": "no ground truth: counts and confidences only -- these are NOT accuracy metrics",
+    "n_detections": 8,
+    "conf_thr": 0.25,
+    "n_at_or_above_thr": 5,
+    "confidence_all": {
+     "min": 0.074,
+     "median": 0.7694,
+     "mean": 0.558,
+     "max": 0.9133
+    },
+    "confidence_at_or_above_0.25": {
+     "min": 0.7179,
+     "median": 0.8469,
+     "mean": 0.8357,
+     "max": 0.9133
+    }
+   },
+   "quality": null
+  },
+  "note": "The image fits one detector window, so plain YOLO and SAHI are the same single detector call. They can still differ by a box: SAHI's fusion step merges boxes overlapping above IoU 0.5 that the detector's own NMS (0.7) kept. SAHI only changes what the detector sees on an image larger than the window.",
+  "one_window": true
+ },
+ "modes": {
+  "B0": {
+   "mode": "B0",
+   "paper": "no onboard detection, transmit the full image",
+   "perception": "none",
+   "payload": "raw_image",
+   "relay": false,
+   "detector_calls": 0,
+   "n_detections_onboard": 0,
+   "n_transmitted": 0,
+   "transmitted_share_of_onboard": null,
+   "level_histogram": null,
+   "levels": null,
+   "bytes": {
+    "total": 1772954,
+    "payload": 1769472,
+    "overhead": 3482,
+    "payload_parts": {
+     "semantic records": 0,
+     "JPEG image data": 0,
+     "raw pixels": 1769472
+    },
+    "overhead_parts": {
+     "CCSDS packet headers + CRC (8 B per packet)": 3464,
+     "image headers (18 B per image)": 18,
+     "JPEG headers (tables, frame, scan)": 0
+    },
+    "by_kind": {
+     "RAW": {
+      "products": 1,
+      "packets": 433,
+      "bytes": 1772954
+     }
+    },
+    "packets": 433,
+    "on_air_with_TM_framing": 2048958
+   },
+   "n_items": 1,
+   "items": [
+    {
+     "id": 1,
+     "kind": "raw",
+     "bytes": 1772954,
+     "value": 1.0,
+     "progressive": false,
+     "min_fraction": 1.0
+    }
+   ],
+   "records": [],
+   "rois": [],
+   "contexts": [],
+   "ground_decode": {
+    "records": 0,
+    "rois": 0,
+    "contexts": 0,
+    "crc": "every packet checked"
+   },
+   "timing_s": {
+    "processing": 0.0,
+    "processing_stages": {
+     "detector": 0.0
+    },
+    "encoding": 0.005791500007035211,
+    "decoding": 0.08033649998833425,
+    "decoding_note": null,
+    "encoding_note": null
+   },
+   "quality": null
+  },
+  "B1": {
+   "mode": "B1",
+   "paper": "YOLO on the original image, transmit detection output",
+   "perception": "whole",
+   "payload": "detections",
+   "relay": false,
+   "detector_calls": 1,
+   "n_detections_onboard": 5,
+   "n_transmitted": 5,
+   "transmitted_share_of_onboard": 1.0,
+   "level_histogram": null,
+   "levels": [
+    1,
+    1,
+    1,
+    1,
+    1,
+    0,
+    0,
+    0,
+    0
+   ],
+   "bytes": {
+    "total": 170,
+    "payload": 130,
+    "overhead": 40,
+    "payload_parts": {
+     "semantic records": 130,
+     "JPEG image data": 0,
+     "raw pixels": 0
+    },
+    "overhead_parts": {
+     "CCSDS packet headers + CRC (8 B per packet)": 40,
+     "image headers (18 B per image)": 0,
+     "JPEG headers (tables, frame, scan)": 0
+    },
+    "by_kind": {
+     "P1": {
+      "products": 5,
+      "packets": 5,
+      "bytes": 170
+     }
+    },
+    "packets": 5,
+    "on_air_with_TM_framing": 1279
+   },
+   "n_items": 5,
+   "items": [
+    {
+     "id": 1,
+     "kind": "P1",
+     "bytes": 34,
+     "value": 1.0,
+     "progressive": false,
+     "min_fraction": 1.0
+    },
+    {
+     "id": 2,
+     "kind": "P1",
+     "bytes": 34,
+     "value": 1.0,
+     "progressive": false,
+     "min_fraction": 1.0
+    },
+    {
+     "id": 3,
+     "kind": "P1",
+     "bytes": 34,
+     "value": 1.0,
+     "progressive": false,
+     "min_fraction": 1.0
+    },
+    {
+     "id": 4,
+     "kind": "P1",
+     "bytes": 34,
+     "value": 1.0,
+     "progressive": false,
+     "min_fraction": 1.0
+    },
+    {
+     "id": 5,
+     "kind": "P1",
+     "bytes": 34,
+     "value": 1.0,
+     "progressive": false,
+     "min_fraction": 1.0
+    }
+   ],
+   "records": [
+    {
+     "image_id": 1,
+     "class": "ship",
+     "confidence": 0.9133,
+     "cx": 541.0,
+     "cy": 140.3,
+     "w": 40.1,
+     "h": 44.9,
+     "level": "P1",
+     "coastal": false,
+     "roi_id": null,
+     "context_id": null
+    },
+    {
+     "image_id": 1,
+     "class": "ship",
+     "confidence": 0.8792,
+     "cx": 260.4,
+     "cy": 70.2,
+     "w": 66.1,
+     "h": 45.9,
+     "level": "P1",
+     "coastal": false,
+     "roi_id": null,
+     "context_id": null
+    },
+    {
+     "image_id": 1,
+     "class": "ship",
+     "confidence": 0.8469,
+     "cx": 718.9,
+     "cy": 57.0,
+     "w": 42.6,
+     "h": 32.1,
+     "level": "P1",
+     "coastal": false,
+     "roi_id": null,
+     "context_id": null
+    },
+    {
+     "image_id": 1,
+     "class": "ship",
+     "confidence": 0.8208,
+     "cx": 162.5,
+     "cy": 302.1,
+     "w": 35.5,
+     "h": 23.7,
+     "level": "P1",
+     "coastal": false,
+     "roi_id": null,
+     "context_id": null
+    },
+    {
+     "image_id": 1,
+     "class": "ship",
+     "confidence": 0.7179,
+     "cx": 175.1,
+     "cy": 284.4,
+     "w": 46.6,
+     "h": 19.5,
+     "level": "P1",
+     "coastal": false,
+     "roi_id": null,
+     "context_id": null
+    }
+   ],
+   "rois": [],
+   "contexts": [],
+   "ground_decode": {
+    "records": 5,
+    "rois": 0,
+    "contexts": 0,
+    "crc": "every packet checked"
+   },
+   "timing_s": {
+    "processing": 0.03148669999791309,
+    "processing_stages": {
+     "detector": 0.03148669999791309
+    },
+    "encoding": 0.00011760002234950662,
+    "decoding": 1.5199999324977398e-05,
+    "decoding_note": null,
+    "encoding_note": null
+   },
+   "quality": null
+  },
+  "B2": {
+   "mode": "B2",
+   "paper": "SAHI + YOLO, transmit detection output",
+   "perception": "sahi",
+   "payload": "detections",
+   "relay": false,
+   "detector_calls": 1,
+   "n_detections_onboard": 5,
+   "n_transmitted": 5,
+   "transmitted_share_of_onboard": 1.0,
+   "level_histogram": null,
+   "levels": [
+    1,
+    1,
+    1,
+    1,
+    1,
+    0,
+    0,
+    0
+   ],
+   "bytes": {
+    "total": 170,
+    "payload": 130,
+    "overhead": 40,
+    "payload_parts": {
+     "semantic records": 130,
+     "JPEG image data": 0,
+     "raw pixels": 0
+    },
+    "overhead_parts": {
+     "CCSDS packet headers + CRC (8 B per packet)": 40,
+     "image headers (18 B per image)": 0,
+     "JPEG headers (tables, frame, scan)": 0
+    },
+    "by_kind": {
+     "P1": {
+      "products": 5,
+      "packets": 5,
+      "bytes": 170
+     }
+    },
+    "packets": 5,
+    "on_air_with_TM_framing": 1279
+   },
+   "n_items": 5,
+   "items": [
+    {
+     "id": 1,
+     "kind": "P1",
+     "bytes": 34,
+     "value": 1.0,
+     "progressive": false,
+     "min_fraction": 1.0
+    },
+    {
+     "id": 2,
+     "kind": "P1",
+     "bytes": 34,
+     "value": 1.0,
+     "progressive": false,
+     "min_fraction": 1.0
+    },
+    {
+     "id": 3,
+     "kind": "P1",
+     "bytes": 34,
+     "value": 1.0,
+     "progressive": false,
+     "min_fraction": 1.0
+    },
+    {
+     "id": 4,
+     "kind": "P1",
+     "bytes": 34,
+     "value": 1.0,
+     "progressive": false,
+     "min_fraction": 1.0
+    },
+    {
+     "id": 5,
+     "kind": "P1",
+     "bytes": 34,
+     "value": 1.0,
+     "progressive": false,
+     "min_fraction": 1.0
+    }
+   ],
+   "records": [
+    {
+     "image_id": 1,
+     "class": "ship",
+     "confidence": 0.9133,
+     "cx": 541.0,
+     "cy": 140.3,
+     "w": 40.1,
+     "h": 44.9,
+     "level": "P1",
+     "coastal": false,
+     "roi_id": null,
+     "context_id": null
+    },
+    {
+     "image_id": 1,
+     "class": "ship",
+     "confidence": 0.8792,
+     "cx": 260.4,
+     "cy": 70.2,
+     "w": 66.1,
+     "h": 45.9,
+     "level": "P1",
+     "coastal": false,
+     "roi_id": null,
+     "context_id": null
+    },
+    {
+     "image_id": 1,
+     "class": "ship",
+     "confidence": 0.8469,
+     "cx": 718.9,
+     "cy": 57.0,
+     "w": 42.6,
+     "h": 32.1,
+     "level": "P1",
+     "coastal": false,
+     "roi_id": null,
+     "context_id": null
+    },
+    {
+     "image_id": 1,
+     "class": "ship",
+     "confidence": 0.8208,
+     "cx": 162.5,
+     "cy": 302.1,
+     "w": 35.5,
+     "h": 23.7,
+     "level": "P1",
+     "coastal": false,
+     "roi_id": null,
+     "context_id": null
+    },
+    {
+     "image_id": 1,
+     "class": "ship",
+     "confidence": 0.7179,
+     "cx": 175.1,
+     "cy": 284.4,
+     "w": 46.6,
+     "h": 19.5,
+     "level": "P1",
+     "coastal": false,
+     "roi_id": null,
+     "context_id": null
+    }
+   ],
+   "rois": [],
+   "contexts": [],
+   "ground_decode": {
+    "records": 5,
+    "rois": 0,
+    "contexts": 0,
+    "crc": "every packet checked"
+   },
+   "timing_s": {
+    "processing": 0.033773800008930266,
+    "processing_stages": {
+     "detector": 0.033773800008930266
+    },
+    "encoding": 7.180002285167575e-05,
+    "decoding": 1.1999974958598614e-05,
+    "decoding_note": null,
+    "encoding_note": null
+   },
+   "quality": null
+  },
+  "B3": {
+   "mode": "B3",
+   "paper": "SAHI + YOLO + semantic policy, metadata + optional ROI",
+   "perception": "sahi",
+   "payload": "semantic",
+   "relay": false,
+   "detector_calls": 1,
+   "n_detections_onboard": 5,
+   "n_transmitted": 5,
+   "transmitted_share_of_onboard": 1.0,
+   "level_histogram": {
+    "P0-discard": 3,
+    "P1-meta": 5,
+    "P2-roi": 0,
+    "P3-context": 0
+   },
+   "levels": [
+    1,
+    1,
+    1,
+    1,
+    1,
+    0,
+    0,
+    0
+   ],
+   "bytes": {
+    "total": 170,
+    "payload": 130,
+    "overhead": 40,
+    "payload_parts": {
+     "semantic records": 130,
+     "JPEG image data": 0,
+     "raw pixels": 0
+    },
+    "overhead_parts": {
+     "CCSDS packet headers + CRC (8 B per packet)": 40,
+     "image headers (18 B per image)": 0,
+     "JPEG headers (tables, frame, scan)": 0
+    },
+    "by_kind": {
+     "P1": {
+      "products": 5,
+      "packets": 5,
+      "bytes": 170
+     }
+    },
+    "packets": 5,
+    "on_air_with_TM_framing": 1279
+   },
+   "n_items": 5,
+   "items": [
+    {
+     "id": 1,
+     "kind": "P1",
+     "bytes": 34,
+     "value": 1.0,
+     "progressive": false,
+     "min_fraction": 1.0
+    },
+    {
+     "id": 2,
+     "kind": "P1",
+     "bytes": 34,
+     "value": 1.0,
+     "progressive": false,
+     "min_fraction": 1.0
+    },
+    {
+     "id": 3,
+     "kind": "P1",
+     "bytes": 34,
+     "value": 1.0,
+     "progressive": false,
+     "min_fraction": 1.0
+    },
+    {
+     "id": 4,
+     "kind": "P1",
+     "bytes": 34,
+     "value": 1.0,
+     "progressive": false,
+     "min_fraction": 1.0
+    },
+    {
+     "id": 5,
+     "kind": "P1",
+     "bytes": 34,
+     "value": 1.0,
+     "progressive": false,
+     "min_fraction": 1.0
+    }
+   ],
+   "records": [
+    {
+     "image_id": 1,
+     "class": "ship",
+     "confidence": 0.9133,
+     "cx": 541.0,
+     "cy": 140.3,
+     "w": 40.1,
+     "h": 44.9,
+     "level": "P1",
+     "coastal": false,
+     "roi_id": null,
+     "context_id": null
+    },
+    {
+     "image_id": 1,
+     "class": "ship",
+     "confidence": 0.8792,
+     "cx": 260.4,
+     "cy": 70.2,
+     "w": 66.1,
+     "h": 45.9,
+     "level": "P1",
+     "coastal": false,
+     "roi_id": null,
+     "context_id": null
+    },
+    {
+     "image_id": 1,
+     "class": "ship",
+     "confidence": 0.8469,
+     "cx": 718.9,
+     "cy": 57.0,
+     "w": 42.6,
+     "h": 32.1,
+     "level": "P1",
+     "coastal": false,
+     "roi_id": null,
+     "context_id": null
+    },
+    {
+     "image_id": 1,
+     "class": "ship",
+     "confidence": 0.8208,
+     "cx": 162.5,
+     "cy": 302.1,
+     "w": 35.5,
+     "h": 23.7,
+     "level": "P1",
+     "coastal": false,
+     "roi_id": null,
+     "context_id": null
+    },
+    {
+     "image_id": 1,
+     "class": "ship",
+     "confidence": 0.7179,
+     "cx": 175.1,
+     "cy": 284.4,
+     "w": 46.6,
+     "h": 19.5,
+     "level": "P1",
+     "coastal": false,
+     "roi_id": null,
+     "context_id": null
+    }
+   ],
+   "rois": [],
+   "contexts": [],
+   "ground_decode": {
+    "records": 5,
+    "rois": 0,
+    "contexts": 0,
+    "crc": "every packet checked"
+   },
+   "timing_s": {
+    "processing": 0.08296480003627948,
+    "processing_stages": {
+     "detector": 0.033773800008930266,
+     "pre-filter (tile context)": 0.04919100002734922
+    },
+    "encoding": 0.00014000001829117537,
+    "decoding": 1.1299998732283711e-05,
+    "decoding_note": null,
+    "encoding_note": null
+   },
+   "quality": null
+  },
+  "B4": {
+   "mode": "B4",
+   "paper": "B3 + direct / optional relay communication",
+   "perception": "sahi",
+   "payload": "semantic",
+   "relay": true,
+   "detector_calls": 1,
+   "n_detections_onboard": 5,
+   "n_transmitted": 5,
+   "transmitted_share_of_onboard": 1.0,
+   "level_histogram": {
+    "P0-discard": 3,
+    "P1-meta": 5,
+    "P2-roi": 0,
+    "P3-context": 0
+   },
+   "levels": [
+    1,
+    1,
+    1,
+    1,
+    1,
+    0,
+    0,
+    0
+   ],
+   "bytes": {
+    "total": 170,
+    "payload": 130,
+    "overhead": 40,
+    "payload_parts": {
+     "semantic records": 130,
+     "JPEG image data": 0,
+     "raw pixels": 0
+    },
+    "overhead_parts": {
+     "CCSDS packet headers + CRC (8 B per packet)": 40,
+     "image headers (18 B per image)": 0,
+     "JPEG headers (tables, frame, scan)": 0
+    },
+    "by_kind": {
+     "P1": {
+      "products": 5,
+      "packets": 5,
+      "bytes": 170
+     }
+    },
+    "packets": 5,
+    "on_air_with_TM_framing": 1279
+   },
+   "n_items": 5,
+   "items": [
+    {
+     "id": 1,
+     "kind": "P1",
+     "bytes": 34,
+     "value": 1.0,
+     "progressive": false,
+     "min_fraction": 1.0
+    },
+    {
+     "id": 2,
+     "kind": "P1",
+     "bytes": 34,
+     "value": 1.0,
+     "progressive": false,
+     "min_fraction": 1.0
+    },
+    {
+     "id": 3,
+     "kind": "P1",
+     "bytes": 34,
+     "value": 1.0,
+     "progressive": false,
+     "min_fraction": 1.0
+    },
+    {
+     "id": 4,
+     "kind": "P1",
+     "bytes": 34,
+     "value": 1.0,
+     "progressive": false,
+     "min_fraction": 1.0
+    },
+    {
+     "id": 5,
+     "kind": "P1",
+     "bytes": 34,
+     "value": 1.0,
+     "progressive": false,
+     "min_fraction": 1.0
+    }
+   ],
+   "records": [
+    {
+     "image_id": 1,
+     "class": "ship",
+     "confidence": 0.9133,
+     "cx": 541.0,
+     "cy": 140.3,
+     "w": 40.1,
+     "h": 44.9,
+     "level": "P1",
+     "coastal": false,
+     "roi_id": null,
+     "context_id": null
+    },
+    {
+     "image_id": 1,
+     "class": "ship",
+     "confidence": 0.8792,
+     "cx": 260.4,
+     "cy": 70.2,
+     "w": 66.1,
+     "h": 45.9,
+     "level": "P1",
+     "coastal": false,
+     "roi_id": null,
+     "context_id": null
+    },
+    {
+     "image_id": 1,
+     "class": "ship",
+     "confidence": 0.8469,
+     "cx": 718.9,
+     "cy": 57.0,
+     "w": 42.6,
+     "h": 32.1,
+     "level": "P1",
+     "coastal": false,
+     "roi_id": null,
+     "context_id": null
+    },
+    {
+     "image_id": 1,
+     "class": "ship",
+     "confidence": 0.8208,
+     "cx": 162.5,
+     "cy": 302.1,
+     "w": 35.5,
+     "h": 23.7,
+     "level": "P1",
+     "coastal": false,
+     "roi_id": null,
+     "context_id": null
+    },
+    {
+     "image_id": 1,
+     "class": "ship",
+     "confidence": 0.7179,
+     "cx": 175.1,
+     "cy": 284.4,
+     "w": 46.6,
+     "h": 19.5,
+     "level": "P1",
+     "coastal": false,
+     "roi_id": null,
+     "context_id": null
+    }
+   ],
+   "rois": [],
+   "contexts": [],
+   "ground_decode": {
+    "records": 5,
+    "rois": 0,
+    "contexts": 0,
+    "crc": "every packet checked"
+   },
+   "timing_s": {
+    "processing": 0.08296480003627948,
+    "processing_stages": {
+     "detector": 0.033773800008930266,
+     "pre-filter (tile context)": 0.04919100002734922
+    },
+    "encoding": 0.00011470000026747584,
+    "decoding": 1.170000177808106e-05,
+    "decoding_note": null,
+    "encoding_note": null
+   },
+   "quality": null
+  }
+ },
+ "comms": {
+  "label": "SIM",
+  "capture_h": 2.0,
+  "capture_utc": "18 Sep 02:00",
+  "plan": {
+   "label": "SIM",
+   "epoch_utc": "2026-09-18T00:00:00+00:00",
+   "horizon_h": 36.0,
+   "primary_passes": [
+    {
+     "rise_utc": "18 Sep 00:05",
+     "rise_h": 0.09,
+     "duration_s": 399,
+     "capacity_MB": 24.87,
+     "payload_rate_Mbps": 0.499,
+     "physical_rate_Mbps": 1.994,
+     "max_elevation_deg": 13.3
+    },
+    {
+     "rise_utc": "18 Sep 11:36",
+     "rise_h": 11.61,
+     "duration_s": 548,
+     "capacity_MB": 60.08,
+     "payload_rate_Mbps": 0.877,
+     "physical_rate_Mbps": 3.509,
+     "max_elevation_deg": 66.7
+    },
+    {
+     "rise_utc": "18 Sep 13:12",
+     "rise_h": 13.21,
+     "duration_s": 176,
+     "capacity_MB": 8.58,
+     "payload_rate_Mbps": 0.39,
+     "physical_rate_Mbps": 1.56,
+     "max_elevation_deg": 6.2
+    },
+    {
+     "rise_utc": "18 Sep 22:11",
+     "rise_h": 22.2,
+     "duration_s": 437,
+     "capacity_MB": 29.98,
+     "payload_rate_Mbps": 0.548,
+     "physical_rate_Mbps": 2.193,
+     "max_elevation_deg": 16.9
+    },
+    {
+     "rise_utc": "18 Sep 23:44",
+     "rise_h": 23.75,
+     "duration_s": 490,
+     "capacity_MB": 38.8,
+     "payload_rate_Mbps": 0.633,
+     "physical_rate_Mbps": 2.533,
+     "max_elevation_deg": 23.7
+    },
+    {
+     "rise_utc": "19 Sep 11:16",
+     "rise_h": 35.28,
+     "duration_s": 522,
+     "capacity_MB": 47.59,
+     "payload_rate_Mbps": 0.73,
+     "physical_rate_Mbps": 2.919,
+     "max_elevation_deg": 33.9
+    }
+   ],
+   "relay_passes": [
+    {
+     "rise_utc": "18 Sep 04:48",
+     "rise_h": 4.82,
+     "duration_s": 541,
+     "capacity_MB": 56.61,
+     "payload_rate_Mbps": 0.837,
+     "physical_rate_Mbps": 3.35,
+     "max_elevation_deg": 53.1
+    },
+    {
+     "rise_utc": "18 Sep 06:25",
+     "rise_h": 6.43,
+     "duration_s": 224,
+     "capacity_MB": 11.24,
+     "payload_rate_Mbps": 0.402,
+     "physical_rate_Mbps": 1.609,
+     "max_elevation_deg": 6.9
+    },
+    {
+     "rise_utc": "18 Sep 16:24",
+     "rise_h": 16.41,
+     "duration_s": 101,
+     "capacity_MB": 4.77,
+     "payload_rate_Mbps": 0.378,
+     "physical_rate_Mbps": 1.512,
+     "max_elevation_deg": 5.4
+    },
+    {
+     "rise_utc": "18 Sep 17:54",
+     "rise_h": 17.91,
+     "duration_s": 546,
+     "capacity_MB": 59.59,
+     "payload_rate_Mbps": 0.873,
+     "physical_rate_Mbps": 3.492,
+     "max_elevation_deg": 64.8
+    },
+    {
+     "rise_utc": "19 Sep 04:29",
+     "rise_h": 28.49,
+     "duration_s": 503,
+     "capacity_MB": 42.85,
+     "payload_rate_Mbps": 0.681,
+     "physical_rate_Mbps": 2.723,
+     "max_elevation_deg": 28.3
+    },
+    {
+     "rise_utc": "19 Sep 06:04",
+     "rise_h": 30.07,
+     "duration_s": 406,
+     "capacity_MB": 25.64,
+     "payload_rate_Mbps": 0.505,
+     "physical_rate_Mbps": 2.021,
+     "max_elevation_deg": 13.7
+    }
+   ],
+   "isl_windows": [
+    {
+     "start_h": 0.28,
+     "duration_s": 840
+    },
+    {
+     "start_h": 1.06,
+     "duration_s": 860
+    },
+    {
+     "start_h": 1.86,
+     "duration_s": 840
+    },
+    {
+     "start_h": 2.64,
+     "duration_s": 860
+    },
+    {
+     "start_h": 3.43,
+     "duration_s": 850
+    },
+    {
+     "start_h": 4.22,
+     "duration_s": 870
+    },
+    {
+     "start_h": 5.01,
+     "duration_s": 850
+    },
+    {
+     "start_h": 5.8,
+     "duration_s": 870
+    },
+    {
+     "start_h": 6.59,
+     "duration_s": 850
+    },
+    {
+     "start_h": 7.38,
+     "duration_s": 870
+    },
+    {
+     "start_h": 8.17,
+     "duration_s": 850
+    },
+    {
+     "start_h": 8.95,
+     "duration_s": 870
+    },
+    {
+     "start_h": 9.74,
+     "duration_s": 850
+    },
+    {
+     "start_h": 10.53,
+     "duration_s": 870
+    },
+    {
+     "start_h": 11.32,
+     "duration_s": 850
+    },
+    {
+     "start_h": 12.11,
+     "duration_s": 870
+    },
+    {
+     "start_h": 12.9,
+     "duration_s": 850
+    },
+    {
+     "start_h": 13.69,
+     "duration_s": 870
+    },
+    {
+     "start_h": 14.48,
+     "duration_s": 850
+    },
+    {
+     "start_h": 15.26,
+     "duration_s": 870
+    },
+    {
+     "start_h": 16.06,
+     "duration_s": 850
+    },
+    {
+     "start_h": 16.84,
+     "duration_s": 870
+    },
+    {
+     "start_h": 17.63,
+     "duration_s": 850
+    },
+    {
+     "start_h": 18.42,
+     "duration_s": 870
+    },
+    {
+     "start_h": 19.21,
+     "duration_s": 850
+    },
+    {
+     "start_h": 20.0,
+     "duration_s": 870
+    },
+    {
+     "start_h": 20.79,
+     "duration_s": 850
+    },
+    {
+     "start_h": 21.58,
+     "duration_s": 870
+    },
+    {
+     "start_h": 22.37,
+     "duration_s": 850
+    },
+    {
+     "start_h": 23.16,
+     "duration_s": 860
+    },
+    {
+     "start_h": 23.95,
+     "duration_s": 840
+    },
+    {
+     "start_h": 24.73,
+     "duration_s": 860
+    },
+    {
+     "start_h": 25.53,
+     "duration_s": 840
+    },
+    {
+     "start_h": 26.31,
+     "duration_s": 860
+    },
+    {
+     "start_h": 27.1,
+     "duration_s": 840
+    },
+    {
+     "start_h": 27.89,
+     "duration_s": 860
+    },
+    {
+     "start_h": 28.68,
+     "duration_s": 850
+    },
+    {
+     "start_h": 29.47,
+     "duration_s": 870
+    },
+    {
+     "start_h": 30.26,
+     "duration_s": 850
+    },
+    {
+     "start_h": 31.04,
+     "duration_s": 870
+    },
+    {
+     "start_h": 31.84,
+     "duration_s": 850
+    },
+    {
+     "start_h": 32.62,
+     "duration_s": 870
+    },
+    {
+     "start_h": 33.41,
+     "duration_s": 850
+    },
+    {
+     "start_h": 34.2,
+     "duration_s": 870
+    },
+    {
+     "start_h": 34.99,
+     "duration_s": 850
+    },
+    {
+     "start_h": 35.78,
+     "duration_s": 800
+    }
+   ],
+   "assumptions": {
+    "ground link model": "cubesat_sband: 2 MHz, SNR 12 dB at zenith, modem cap 8 Mbps, coding efficiency 0.8",
+    "link share of each ground pass": 0.25,
+    "relay ground-pass share": 0.25,
+    "ground transmit power (W)": 15.0,
+    "inter-satellite rate (Mbps, after coding)": 2.024,
+    "inter-satellite transmit power (W)": 12.0,
+    "relay orbital plane (RAAN, deg)": 90.0,
+    "routing objective": "J = lam_E x E + lam_T x T, lam_T = 1/3600 per s, lam_E = 0",
+    "ground station": "Sfax (ENIS), minimum elevation 5 deg",
+    "orbit": "500 km sun-synchronous, SGP4-propagated"
+   },
+   "assumption_label": "ASSUMPTION: every rate and power (reports 17, 19); windows are geometry"
+  },
+  "runs": {
+   "B0": {
+    "direct": {
+     "label": "SIM",
+     "route": "direct",
+     "chosen_by": "fixed: direct only",
+     "items": 1,
+     "delivered_items": 1,
+     "undelivered_items": 0,
+     "relay_items": 0,
+     "direct_items": 1,
+     "bytes_offered": 1772954,
+     "bytes_delivered": 1772954,
+     "latency_first_s": 34599.0526344233,
+     "latency_last_s": 34599.0526344233,
+     "latency_median_s": 34599.0526344233,
+     "tx_s": {
+      "ground": 4.041529105825767,
+      "isl": 0.0,
+      "relay_ground": 0.0
+     },
+     "tx_s_total": 4.041529105825767,
+     "energy_J": {
+      "ground": 60.62293658738651,
+      "isl": 0.0,
+      "relay_ground": 0.0
+     },
+     "energy_J_total": 60.62293658738651,
+     "link_use": {
+      "ground": {
+       "MB": 1.773,
+       "capacity_MB": 209.901,
+       "used": 0.0084
+      },
+      "isl": {
+       "MB": 0.0,
+       "capacity_MB": 0.0,
+       "used": 0.0
+      },
+      "relay_ground": {
+       "MB": 0.0,
+       "capacity_MB": 200.698,
+       "used": 0.0
+      }
+     },
+     "deliveries": [
+      {
+       "item": 1,
+       "kind": "raw",
+       "bytes": 1772954,
+       "fraction": 1.0,
+       "path": "direct",
+       "delivered_h": 11.611,
+       "latency_h": 9.611,
+       "tx_s": 4.04153,
+       "energy_J": 60.62294
+      }
+     ]
+    }
+   },
+   "B1": {
+    "direct": {
+     "label": "SIM",
+     "route": "direct",
+     "chosen_by": "fixed: direct only",
+     "items": 5,
+     "delivered_items": 5,
+     "undelivered_items": 0,
+     "relay_items": 0,
+     "direct_items": 5,
+     "bytes_offered": 170,
+     "bytes_delivered": 170,
+     "latency_first_s": 34582.88682801817,
+     "latency_last_s": 34582.88806809086,
+     "latency_median_s": 34582.88744805451,
+     "tx_s": {
+      "ground": 0.0003875227151919229,
+      "isl": 0.0,
+      "relay_ground": 0.0
+     },
+     "tx_s_total": 0.0003875227151919229,
+     "energy_J": {
+      "ground": 0.005812840727878843,
+      "isl": 0.0,
+      "relay_ground": 0.0
+     },
+     "energy_J_total": 0.005812840727878843,
+     "link_use": {
+      "ground": {
+       "MB": 0.0,
+       "capacity_MB": 209.901,
+       "used": 0.0
+      },
+      "isl": {
+       "MB": 0.0,
+       "capacity_MB": 0.0,
+       "used": 0.0
+      },
+      "relay_ground": {
+       "MB": 0.0,
+       "capacity_MB": 200.698,
+       "used": 0.0
+      }
+     },
+     "deliveries": [
+      {
+       "item": 1,
+       "kind": "P1",
+       "bytes": 34,
+       "fraction": 1.0,
+       "path": "direct",
+       "delivered_h": 11.606,
+       "latency_h": 9.606,
+       "tx_s": 8e-05,
+       "energy_J": 0.00116
+      },
+      {
+       "item": 2,
+       "kind": "P1",
+       "bytes": 34,
+       "fraction": 1.0,
+       "path": "direct",
+       "delivered_h": 11.606,
+       "latency_h": 9.606,
+       "tx_s": 8e-05,
+       "energy_J": 0.00116
+      },
+      {
+       "item": 3,
+       "kind": "P1",
+       "bytes": 34,
+       "fraction": 1.0,
+       "path": "direct",
+       "delivered_h": 11.606,
+       "latency_h": 9.606,
+       "tx_s": 8e-05,
+       "energy_J": 0.00116
+      },
+      {
+       "item": 4,
+       "kind": "P1",
+       "bytes": 34,
+       "fraction": 1.0,
+       "path": "direct",
+       "delivered_h": 11.606,
+       "latency_h": 9.606,
+       "tx_s": 8e-05,
+       "energy_J": 0.00116
+      },
+      {
+       "item": 5,
+       "kind": "P1",
+       "bytes": 34,
+       "fraction": 1.0,
+       "path": "direct",
+       "delivered_h": 11.606,
+       "latency_h": 9.606,
+       "tx_s": 8e-05,
+       "energy_J": 0.00116
+      }
+     ]
+    }
+   },
+   "B2": {
+    "direct": {
+     "label": "SIM",
+     "route": "direct",
+     "chosen_by": "fixed: direct only",
+     "items": 5,
+     "delivered_items": 5,
+     "undelivered_items": 0,
+     "relay_items": 0,
+     "direct_items": 5,
+     "bytes_offered": 170,
+     "bytes_delivered": 170,
+     "latency_first_s": 34582.88682801817,
+     "latency_last_s": 34582.88806809086,
+     "latency_median_s": 34582.88744805451,
+     "tx_s": {
+      "ground": 0.0003875227151919229,
+      "isl": 0.0,
+      "relay_ground": 0.0
+     },
+     "tx_s_total": 0.0003875227151919229,
+     "energy_J": {
+      "ground": 0.005812840727878843,
+      "isl": 0.0,
+      "relay_ground": 0.0
+     },
+     "energy_J_total": 0.005812840727878843,
+     "link_use": {
+      "ground": {
+       "MB": 0.0,
+       "capacity_MB": 209.901,
+       "used": 0.0
+      },
+      "isl": {
+       "MB": 0.0,
+       "capacity_MB": 0.0,
+       "used": 0.0
+      },
+      "relay_ground": {
+       "MB": 0.0,
+       "capacity_MB": 200.698,
+       "used": 0.0
+      }
+     },
+     "deliveries": [
+      {
+       "item": 1,
+       "kind": "P1",
+       "bytes": 34,
+       "fraction": 1.0,
+       "path": "direct",
+       "delivered_h": 11.606,
+       "latency_h": 9.606,
+       "tx_s": 8e-05,
+       "energy_J": 0.00116
+      },
+      {
+       "item": 2,
+       "kind": "P1",
+       "bytes": 34,
+       "fraction": 1.0,
+       "path": "direct",
+       "delivered_h": 11.606,
+       "latency_h": 9.606,
+       "tx_s": 8e-05,
+       "energy_J": 0.00116
+      },
+      {
+       "item": 3,
+       "kind": "P1",
+       "bytes": 34,
+       "fraction": 1.0,
+       "path": "direct",
+       "delivered_h": 11.606,
+       "latency_h": 9.606,
+       "tx_s": 8e-05,
+       "energy_J": 0.00116
+      },
+      {
+       "item": 4,
+       "kind": "P1",
+       "bytes": 34,
+       "fraction": 1.0,
+       "path": "direct",
+       "delivered_h": 11.606,
+       "latency_h": 9.606,
+       "tx_s": 8e-05,
+       "energy_J": 0.00116
+      },
+      {
+       "item": 5,
+       "kind": "P1",
+       "bytes": 34,
+       "fraction": 1.0,
+       "path": "direct",
+       "delivered_h": 11.606,
+       "latency_h": 9.606,
+       "tx_s": 8e-05,
+       "energy_J": 0.00116
+      }
+     ]
+    }
+   },
+   "B3": {
+    "direct": {
+     "label": "SIM",
+     "route": "direct",
+     "chosen_by": "fixed: direct only",
+     "items": 5,
+     "delivered_items": 5,
+     "undelivered_items": 0,
+     "relay_items": 0,
+     "direct_items": 5,
+     "bytes_offered": 170,
+     "bytes_delivered": 170,
+     "latency_first_s": 34582.88682801817,
+     "latency_last_s": 34582.88806809086,
+     "latency_median_s": 34582.88744805451,
+     "tx_s": {
+      "ground": 0.0003875227151919229,
+      "isl": 0.0,
+      "relay_ground": 0.0
+     },
+     "tx_s_total": 0.0003875227151919229,
+     "energy_J": {
+      "ground": 0.005812840727878843,
+      "isl": 0.0,
+      "relay_ground": 0.0
+     },
+     "energy_J_total": 0.005812840727878843,
+     "link_use": {
+      "ground": {
+       "MB": 0.0,
+       "capacity_MB": 209.901,
+       "used": 0.0
+      },
+      "isl": {
+       "MB": 0.0,
+       "capacity_MB": 0.0,
+       "used": 0.0
+      },
+      "relay_ground": {
+       "MB": 0.0,
+       "capacity_MB": 200.698,
+       "used": 0.0
+      }
+     },
+     "deliveries": [
+      {
+       "item": 1,
+       "kind": "P1",
+       "bytes": 34,
+       "fraction": 1.0,
+       "path": "direct",
+       "delivered_h": 11.606,
+       "latency_h": 9.606,
+       "tx_s": 8e-05,
+       "energy_J": 0.00116
+      },
+      {
+       "item": 2,
+       "kind": "P1",
+       "bytes": 34,
+       "fraction": 1.0,
+       "path": "direct",
+       "delivered_h": 11.606,
+       "latency_h": 9.606,
+       "tx_s": 8e-05,
+       "energy_J": 0.00116
+      },
+      {
+       "item": 3,
+       "kind": "P1",
+       "bytes": 34,
+       "fraction": 1.0,
+       "path": "direct",
+       "delivered_h": 11.606,
+       "latency_h": 9.606,
+       "tx_s": 8e-05,
+       "energy_J": 0.00116
+      },
+      {
+       "item": 4,
+       "kind": "P1",
+       "bytes": 34,
+       "fraction": 1.0,
+       "path": "direct",
+       "delivered_h": 11.606,
+       "latency_h": 9.606,
+       "tx_s": 8e-05,
+       "energy_J": 0.00116
+      },
+      {
+       "item": 5,
+       "kind": "P1",
+       "bytes": 34,
+       "fraction": 1.0,
+       "path": "direct",
+       "delivered_h": 11.606,
+       "latency_h": 9.606,
+       "tx_s": 8e-05,
+       "energy_J": 0.00116
+      }
+     ]
+    }
+   },
+   "B4": {
+    "direct": {
+     "label": "SIM",
+     "route": "direct",
+     "chosen_by": "fixed: direct only",
+     "items": 5,
+     "delivered_items": 5,
+     "undelivered_items": 0,
+     "relay_items": 0,
+     "direct_items": 5,
+     "bytes_offered": 170,
+     "bytes_delivered": 170,
+     "latency_first_s": 34582.88682801817,
+     "latency_last_s": 34582.88806809086,
+     "latency_median_s": 34582.88744805451,
+     "tx_s": {
+      "ground": 0.0003875227151919229,
+      "isl": 0.0,
+      "relay_ground": 0.0
+     },
+     "tx_s_total": 0.0003875227151919229,
+     "energy_J": {
+      "ground": 0.005812840727878843,
+      "isl": 0.0,
+      "relay_ground": 0.0
+     },
+     "energy_J_total": 0.005812840727878843,
+     "link_use": {
+      "ground": {
+       "MB": 0.0,
+       "capacity_MB": 209.901,
+       "used": 0.0
+      },
+      "isl": {
+       "MB": 0.0,
+       "capacity_MB": 0.0,
+       "used": 0.0
+      },
+      "relay_ground": {
+       "MB": 0.0,
+       "capacity_MB": 200.698,
+       "used": 0.0
+      }
+     },
+     "deliveries": [
+      {
+       "item": 1,
+       "kind": "P1",
+       "bytes": 34,
+       "fraction": 1.0,
+       "path": "direct",
+       "delivered_h": 11.606,
+       "latency_h": 9.606,
+       "tx_s": 8e-05,
+       "energy_J": 0.00116
+      },
+      {
+       "item": 2,
+       "kind": "P1",
+       "bytes": 34,
+       "fraction": 1.0,
+       "path": "direct",
+       "delivered_h": 11.606,
+       "latency_h": 9.606,
+       "tx_s": 8e-05,
+       "energy_J": 0.00116
+      },
+      {
+       "item": 3,
+       "kind": "P1",
+       "bytes": 34,
+       "fraction": 1.0,
+       "path": "direct",
+       "delivered_h": 11.606,
+       "latency_h": 9.606,
+       "tx_s": 8e-05,
+       "energy_J": 0.00116
+      },
+      {
+       "item": 4,
+       "kind": "P1",
+       "bytes": 34,
+       "fraction": 1.0,
+       "path": "direct",
+       "delivered_h": 11.606,
+       "latency_h": 9.606,
+       "tx_s": 8e-05,
+       "energy_J": 0.00116
+      },
+      {
+       "item": 5,
+       "kind": "P1",
+       "bytes": 34,
+       "fraction": 1.0,
+       "path": "direct",
+       "delivered_h": 11.606,
+       "latency_h": 9.606,
+       "tx_s": 8e-05,
+       "energy_J": 0.00116
+      }
+     ]
+    },
+    "policy": {
+     "label": "SIM",
+     "route": "policy",
+     "chosen_by": "policy (min J per item)",
+     "items": 5,
+     "delivered_items": 5,
+     "undelivered_items": 0,
+     "relay_items": 5,
+     "direct_items": 0,
+     "bytes_offered": 170,
+     "bytes_delivered": 170,
+     "latency_first_s": 10136.072832785576,
+     "latency_last_s": 10136.074131927868,
+     "latency_median_s": 10136.073482356722,
+     "tx_s": {
+      "ground": 0.0,
+      "isl": 0.0006719367588932806,
+      "relay_ground": 0.0004059819668286594
+     },
+     "tx_s_total": 0.00107791872572194,
+     "energy_J": {
+      "ground": 0.0,
+      "isl": 0.008063241106719366,
+      "relay_ground": 0.006089729502429891
+     },
+     "energy_J_total": 0.014152970609149258,
+     "link_use": {
+      "ground": {
+       "MB": 0.0,
+       "capacity_MB": 209.901,
+       "used": 0.0
+      },
+      "isl": {
+       "MB": 0.0,
+       "capacity_MB": 9963.14,
+       "used": 0.0
+      },
+      "relay_ground": {
+       "MB": 0.0,
+       "capacity_MB": 200.698,
+       "used": 0.0
+      }
+     },
+     "deliveries": [
+      {
+       "item": 1,
+       "kind": "P1",
+       "bytes": 34,
+       "fraction": 1.0,
+       "path": "relay",
+       "delivered_h": 4.816,
+       "latency_h": 2.816,
+       "tx_s": 0.00022,
+       "energy_J": 0.00283
+      },
+      {
+       "item": 2,
+       "kind": "P1",
+       "bytes": 34,
+       "fraction": 1.0,
+       "path": "relay",
+       "delivered_h": 4.816,
+       "latency_h": 2.816,
+       "tx_s": 0.00022,
+       "energy_J": 0.00283
+      },
+      {
+       "item": 3,
+       "kind": "P1",
+       "bytes": 34,
+       "fraction": 1.0,
+       "path": "relay",
+       "delivered_h": 4.816,
+       "latency_h": 2.816,
+       "tx_s": 0.00022,
+       "energy_J": 0.00283
+      },
+      {
+       "item": 4,
+       "kind": "P1",
+       "bytes": 34,
+       "fraction": 1.0,
+       "path": "relay",
+       "delivered_h": 4.816,
+       "latency_h": 2.816,
+       "tx_s": 0.00022,
+       "energy_J": 0.00283
+      },
+      {
+       "item": 5,
+       "kind": "P1",
+       "bytes": 34,
+       "fraction": 1.0,
+       "path": "relay",
+       "delivered_h": 4.816,
+       "latency_h": 2.816,
+       "tx_s": 0.00022,
+       "energy_J": 0.00283
+      }
+     ]
+    },
+    "relay": {
+     "label": "SIM",
+     "route": "relay",
+     "chosen_by": "manual: relay forced",
+     "items": 5,
+     "delivered_items": 5,
+     "undelivered_items": 0,
+     "relay_items": 5,
+     "direct_items": 0,
+     "bytes_offered": 170,
+     "bytes_delivered": 170,
+     "latency_first_s": 10136.072832785576,
+     "latency_last_s": 10136.074131927868,
+     "latency_median_s": 10136.073482356722,
+     "tx_s": {
+      "ground": 0.0,
+      "isl": 0.0006719367588932806,
+      "relay_ground": 0.0004059819668286594
+     },
+     "tx_s_total": 0.00107791872572194,
+     "energy_J": {
+      "ground": 0.0,
+      "isl": 0.008063241106719366,
+      "relay_ground": 0.006089729502429891
+     },
+     "energy_J_total": 0.014152970609149258,
+     "link_use": {
+      "ground": {
+       "MB": 0.0,
+       "capacity_MB": 0.0,
+       "used": 0.0
+      },
+      "isl": {
+       "MB": 0.0,
+       "capacity_MB": 9963.14,
+       "used": 0.0
+      },
+      "relay_ground": {
+       "MB": 0.0,
+       "capacity_MB": 200.698,
+       "used": 0.0
+      }
+     },
+     "deliveries": [
+      {
+       "item": 1,
+       "kind": "P1",
+       "bytes": 34,
+       "fraction": 1.0,
+       "path": "relay",
+       "delivered_h": 4.816,
+       "latency_h": 2.816,
+       "tx_s": 0.00022,
+       "energy_J": 0.00283
+      },
+      {
+       "item": 2,
+       "kind": "P1",
+       "bytes": 34,
+       "fraction": 1.0,
+       "path": "relay",
+       "delivered_h": 4.816,
+       "latency_h": 2.816,
+       "tx_s": 0.00022,
+       "energy_J": 0.00283
+      },
+      {
+       "item": 3,
+       "kind": "P1",
+       "bytes": 34,
+       "fraction": 1.0,
+       "path": "relay",
+       "delivered_h": 4.816,
+       "latency_h": 2.816,
+       "tx_s": 0.00022,
+       "energy_J": 0.00283
+      },
+      {
+       "item": 4,
+       "kind": "P1",
+       "bytes": 34,
+       "fraction": 1.0,
+       "path": "relay",
+       "delivered_h": 4.816,
+       "latency_h": 2.816,
+       "tx_s": 0.00022,
+       "energy_J": 0.00283
+      },
+      {
+       "item": 5,
+       "kind": "P1",
+       "bytes": 34,
+       "fraction": 1.0,
+       "path": "relay",
+       "delivered_h": 4.816,
+       "latency_h": 2.816,
+       "tx_s": 0.00022,
+       "energy_J": 0.00283
+      }
+     ]
+    }
+   }
+  },
+  "sweep": {
+   "what": "hours from capture until the LAST item of the semantic packet is on the ground, for an image captured at each hour of the simulated day",
+   "rows": [
+    {
+     "capture_h": 0,
+     "direct_h": 0.0908914375215423,
+     "policy_h": 0.0908914375215423,
+     "policy_relay_items": 0,
+     "items": 5
+    },
+    {
+     "capture_h": 1,
+     "direct_h": 10.606357796691906,
+     "policy_h": 3.8155761477577412,
+     "policy_relay_items": 5,
+     "items": 5
+    },
+    {
+     "capture_h": 2,
+     "direct_h": 9.606357796691906,
+     "policy_h": 2.8155761477577412,
+     "policy_relay_items": 5,
+     "items": 5
+    },
+    {
+     "capture_h": 3,
+     "direct_h": 8.606357796691906,
+     "policy_h": 1.815576147757741,
+     "policy_relay_items": 5,
+     "items": 5
+    },
+    {
+     "capture_h": 4,
+     "direct_h": 7.606357796691906,
+     "policy_h": 0.815576147757741,
+     "policy_relay_items": 5,
+     "items": 5
+    },
+    {
+     "capture_h": 5,
+     "direct_h": 6.606357796691906,
+     "policy_h": 1.4262984701320107,
+     "policy_relay_items": 5,
+     "items": 5
+    },
+    {
+     "capture_h": 6,
+     "direct_h": 5.606357796691906,
+     "policy_h": 5.606357796691906,
+     "policy_relay_items": 0,
+     "items": 5
+    },
+    {
+     "capture_h": 7,
+     "direct_h": 4.606357796691906,
+     "policy_h": 4.606357796691906,
+     "policy_relay_items": 0,
+     "items": 5
+    },
+    {
+     "capture_h": 8,
+     "direct_h": 3.6063577966919063,
+     "policy_h": 3.6063577966919063,
+     "policy_relay_items": 0,
+     "items": 5
+    },
+    {
+     "capture_h": 9,
+     "direct_h": 2.6063577966919063,
+     "policy_h": 2.6063577966919063,
+     "policy_relay_items": 0,
+     "items": 5
+    },
+    {
+     "capture_h": 10,
+     "direct_h": 1.6063577966919063,
+     "policy_h": 1.6063577966919063,
+     "policy_relay_items": 0,
+     "items": 5
+    },
+    {
+     "capture_h": 11,
+     "direct_h": 0.6063577966919063,
+     "policy_h": 0.6063577966919063,
+     "policy_relay_items": 0,
+     "items": 5
+    },
+    {
+     "capture_h": 12,
+     "direct_h": 1.210485499743928,
+     "policy_h": 1.210485499743928,
+     "policy_relay_items": 0,
+     "items": 5
+    },
+    {
+     "capture_h": 13,
+     "direct_h": 0.210485499743928,
+     "policy_h": 0.210485499743928,
+     "policy_relay_items": 0,
+     "items": 5
+    },
+    {
+     "capture_h": 14,
+     "direct_h": 8.19733942312093,
+     "policy_h": 2.4089838164621504,
+     "policy_relay_items": 5,
+     "items": 5
+    },
+    {
+     "capture_h": 15,
+     "direct_h": 7.197339423120931,
+     "policy_h": 1.4089838164621507,
+     "policy_relay_items": 5,
+     "items": 5
+    },
+    {
+     "capture_h": 16,
+     "direct_h": 6.197339423120931,
+     "policy_h": 0.4089838164621506,
+     "policy_relay_items": 5,
+     "items": 5
+    },
+    {
+     "capture_h": 17,
+     "direct_h": 5.197339423120931,
+     "policy_h": 0.9149176152789975,
+     "policy_relay_items": 5,
+     "items": 5
+    },
+    {
+     "capture_h": 18,
+     "direct_h": 4.197339423120931,
+     "policy_h": 4.197339423120931,
+     "policy_relay_items": 0,
+     "items": 5
+    },
+    {
+     "capture_h": 19,
+     "direct_h": 3.1973394231209307,
+     "policy_h": 3.1973394231209307,
+     "policy_relay_items": 0,
+     "items": 5
+    },
+    {
+     "capture_h": 20,
+     "direct_h": 2.1973394231209307,
+     "policy_h": 2.1973394231209307,
+     "policy_relay_items": 0,
+     "items": 5
+    },
+    {
+     "capture_h": 21,
+     "direct_h": 1.1973394231209304,
+     "policy_h": 1.1973394231209304,
+     "policy_relay_items": 0,
+     "items": 5
+    },
+    {
+     "capture_h": 22,
+     "direct_h": 0.1973394231209305,
+     "policy_h": 0.1973394231209305,
+     "policy_relay_items": 0,
+     "items": 5
+    },
+    {
+     "capture_h": 23,
+     "direct_h": 0.7491099431321022,
+     "policy_h": 0.7491099431321022,
+     "policy_relay_items": 0,
+     "items": 5
+    }
+   ]
+  }
+ },
+ "assumptions": {
+  "p_cpu_W": 28.0,
+  "p_tx_W": 15.0,
+  "p_isl_W": 12.0,
+  "label": "ASSUMPTION: no power was measured in this project (report 17)"
+ },
+ "labels": {
+  "bytes": "MEASURED on this image: the length of the serialized packets",
+  "times": "MEASURED on this machine (wall clock); a laptop, not flight hardware",
+  "link": "SIM: propagated orbits, geometric windows, link-budget rates",
+  "energy": "ESTIMATE: assumed power x measured or simulated time",
+  "accuracy": "none: no ground truth, so counts and confidences only"
+ }
+}

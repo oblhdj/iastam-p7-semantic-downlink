@@ -1,0 +1,112 @@
+{
+ "bundle_version": 1,
+ "what": "pre-generated dashboard results from a known-good live run; shown when the live pipeline cannot run. SYNTH: synthetic stand-in images, not measurements.",
+ "generated_at": "2026-10-10 16:41 UTC",
+ "commit": "cff3945",
+ "backend": "onnxruntime 1.31.0 CPU",
+ "model_sha256_16": "5463fc7272df5c31",
+ "settings": {
+  "conf": 0.25,
+  "window": 768,
+  "overlap": 0.2,
+  "context": "prefilter",
+  "capture_h": 2.0,
+  "sweep": true
+ },
+ "canon_at_generation": {
+  "reduction_x": 341.1,
+  "MB_sent_per_day": 176.3,
+  "B1_recall": 0.3385,
+  "B2_recall": 0.7174,
+  "sensitivity": [
+   74,
+   80
+  ],
+  "six_day_recall": [
+   0.6769,
+   0.6875
+  ],
+  "fifo_latency_h": [
+   9.37,
+   42.88
+  ]
+ },
+ "samples": [
+  {
+   "key": "swath",
+   "title": "3\u00d73 synthetic swath, 2304 \u00d7 2304 px (shows SAHI against plain YOLO)",
+   "files": [
+    "detections_plain_yolo.jpg",
+    "detections_sahi.jpg",
+    "downlink_B3.bin",
+    "original.jpg",
+    "semantic_levels.jpg"
+   ],
+   "B3_bytes": 45681,
+   "B3_levels": {
+    "P0-discard": 13,
+    "P1-meta": 7,
+    "P2-roi": 4,
+    "P3-context": 3
+   },
+   "elapsed_s": 1.56
+  },
+  {
+   "key": "01_synthetic_00113a75c",
+   "title": "single tile \u2014 open sea, several ships",
+   "files": [
+    "detections_plain_yolo.jpg",
+    "detections_sahi.jpg",
+    "downlink_B3.bin",
+    "original.jpg",
+    "semantic_levels.jpg"
+   ],
+   "B3_bytes": 170,
+   "B3_levels": {
+    "P0-discard": 3,
+    "P1-meta": 5,
+    "P2-roi": 0,
+    "P3-context": 0
+   },
+   "elapsed_s": 0.25
+  },
+  {
+   "key": "04_synthetic_03204a586",
+   "title": "single tile \u2014 coast",
+   "files": [
+    "detections_plain_yolo.jpg",
+    "detections_sahi.jpg",
+    "downlink_B3.bin",
+    "original.jpg",
+    "semantic_levels.jpg"
+   ],
+   "B3_bytes": 19262,
+   "B3_levels": {
+    "P0-discard": 2,
+    "P1-meta": 0,
+    "P2-roi": 0,
+    "P3-context": 1
+   },
+   "elapsed_s": 0.28
+  },
+  {
+   "key": "09_synthetic_024e6ba29",
+   "title": "single tile \u2014 cloud (everything dropped)",
+   "files": [
+    "detections_plain_yolo.jpg",
+    "detections_sahi.jpg",
+    "downlink_B3.bin",
+    "original.jpg",
+    "semantic_levels.jpg"
+   ],
+   "B3_bytes": 0,
+   "B3_levels": {
+    "P0-discard": 0,
+    "P1-meta": 0,
+    "P2-roi": 0,
+    "P3-context": 0
+   },
+   "elapsed_s": 0.24
+  }
+ ]
+}

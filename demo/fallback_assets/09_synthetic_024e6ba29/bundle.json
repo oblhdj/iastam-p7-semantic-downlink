@@ -1,0 +1,1065 @@
+{
+ "bundle_version": 1,
+ "meta": {
+  "generated_at": "2026-10-10 16:41 UTC",
+  "commit": "cff3945",
+  "python": "3.12.14",
+  "machine": "Windows AMD64",
+  "backend": "onnxruntime 1.31.0 CPU",
+  "model": "best.onnx",
+  "model_sha256_16": "5463fc7272df5c31",
+  "elapsed_s": 0.24
+ },
+ "source": {
+  "kind": "sample",
+  "label": "SYNTH",
+  "synthetic": true,
+  "key": "09_synthetic_024e6ba29",
+  "note": "a bundled synthetic stand-in tile (no Airbus pixels)"
+ },
+ "input": {
+  "name": "09_synthetic_024e6ba29.jpg",
+  "format": "JPEG",
+  "width": 768,
+  "height": 768,
+  "channels_in": 3,
+  "file_bytes": 43121,
+  "raw_bytes": 1769472,
+  "notes": [],
+  "ground_truth": null
+ },
+ "settings": {
+  "conf": 0.25,
+  "window": 768,
+  "overlap": 0.2,
+  "context": "prefilter",
+  "capture_h": 2.0,
+  "sweep": true
+ },
+ "grid": {
+  "rows": 1,
+  "cols": 1,
+  "t_prefilter_s": 0.033039000001735985,
+  "context_source": "pre-filter decides (default)",
+  "tiles": [
+   {
+    "row": 0,
+    "col": 0,
+    "box": [
+     0,
+     0,
+     768,
+     768
+    ],
+    "prefilter": "cloud",
+    "context": "cloud"
+   }
+  ]
+ },
+ "perception": {
+  "whole": {
+   "seconds": 0.034225899988086894,
+   "calls": 1,
+   "n_raw": 0,
+   "n_at_or_above_cut": 0,
+   "detections": [],
+   "describe": {
+    "ground_truth": false,
+    "note": "no ground truth: counts and confidences only -- these are NOT accuracy metrics",
+    "n_detections": 0,
+    "conf_thr": 0.25,
+    "n_at_or_above_thr": 0,
+    "confidence_all": null,
+    "confidence_at_or_above_0.25": null
+   },
+   "quality": null
+  },
+  "sahi": {
+   "seconds": 0.03587560000596568,
+   "calls": 1,
+   "n_raw": 0,
+   "n_at_or_above_cut": 0,
+   "detections": [],
+   "describe": {
+    "ground_truth": false,
+    "note": "no ground truth: counts and confidences only -- these are NOT accuracy metrics",
+    "n_detections": 0,
+    "conf_thr": 0.25,
+    "n_at_or_above_thr": 0,
+    "confidence_all": null,
+    "confidence_at_or_above_0.25": null
+   },
+   "quality": null
+  },
+  "note": "The image fits one detector window, so plain YOLO and SAHI are the same single detector call. They can still differ by a box: SAHI's fusion step merges boxes overlapping above IoU 0.5 that the detector's own NMS (0.7) kept. SAHI only changes what the detector sees on an image larger than the window.",
+  "one_window": true
+ },
+ "modes": {
+  "B0": {
+   "mode": "B0",
+   "paper": "no onboard detection, transmit the full image",
+   "perception": "none",
+   "payload": "raw_image",
+   "relay": false,
+   "detector_calls": 0,
+   "n_detections_onboard": 0,
+   "n_transmitted": 0,
+   "transmitted_share_of_onboard": null,
+   "level_histogram": null,
+   "levels": null,
+   "bytes": {
+    "total": 1772954,
+    "payload": 1769472,
+    "overhead": 3482,
+    "payload_parts": {
+     "semantic records": 0,
+     "JPEG image data": 0,
+     "raw pixels": 1769472
+    },
+    "overhead_parts": {
+     "CCSDS packet headers + CRC (8 B per packet)": 3464,
+     "image headers (18 B per image)": 18,
+     "JPEG headers (tables, frame, scan)": 0
+    },
+    "by_kind": {
+     "RAW": {
+      "products": 1,
+      "packets": 433,
+      "bytes": 1772954
+     }
+    },
+    "packets": 433,
+    "on_air_with_TM_framing": 2048958
+   },
+   "n_items": 1,
+   "items": [
+    {
+     "id": 1,
+     "kind": "raw",
+     "bytes": 1772954,
+     "value": 1.0,
+     "progressive": false,
+     "min_fraction": 1.0
+    }
+   ],
+   "records": [],
+   "rois": [],
+   "contexts": [],
+   "ground_decode": {
+    "records": 0,
+    "rois": 0,
+    "contexts": 0,
+    "crc": "every packet checked"
+   },
+   "timing_s": {
+    "processing": 0.0,
+    "processing_stages": {
+     "detector": 0.0
+    },
+    "encoding": 0.005836900003487244,
+    "decoding": 0.0757488000090234,
+    "decoding_note": null,
+    "encoding_note": null
+   },
+   "quality": null
+  },
+  "B1": {
+   "mode": "B1",
+   "paper": "YOLO on the original image, transmit detection output",
+   "perception": "whole",
+   "payload": "detections",
+   "relay": false,
+   "detector_calls": 1,
+   "n_detections_onboard": 0,
+   "n_transmitted": 0,
+   "transmitted_share_of_onboard": null,
+   "level_histogram": null,
+   "levels": [],
+   "bytes": {
+    "total": 0,
+    "payload": 0,
+    "overhead": 0,
+    "payload_parts": {
+     "semantic records": 0,
+     "JPEG image data": 0,
+     "raw pixels": 0
+    },
+    "overhead_parts": {
+     "CCSDS packet headers + CRC (8 B per packet)": 0,
+     "image headers (18 B per image)": 0,
+     "JPEG headers (tables, frame, scan)": 0
+    },
+    "by_kind": {},
+    "packets": 0,
+    "on_air_with_TM_framing": 0
+   },
+   "n_items": 0,
+   "items": [],
+   "records": [],
+   "rois": [],
+   "contexts": [],
+   "ground_decode": {
+    "records": 0,
+    "rois": 0,
+    "contexts": 0,
+    "crc": "every packet checked"
+   },
+   "timing_s": {
+    "processing": 0.034225899988086894,
+    "processing_stages": {
+     "detector": 0.034225899988086894
+    },
+    "encoding": 4.9299997044727206e-05,
+    "decoding": 1.4999823179095984e-06,
+    "decoding_note": null,
+    "encoding_note": null
+   },
+   "quality": null
+  },
+  "B2": {
+   "mode": "B2",
+   "paper": "SAHI + YOLO, transmit detection output",
+   "perception": "sahi",
+   "payload": "detections",
+   "relay": false,
+   "detector_calls": 1,
+   "n_detections_onboard": 0,
+   "n_transmitted": 0,
+   "transmitted_share_of_onboard": null,
+   "level_histogram": null,
+   "levels": [],
+   "bytes": {
+    "total": 0,
+    "payload": 0,
+    "overhead": 0,
+    "payload_parts": {
+     "semantic records": 0,
+     "JPEG image data": 0,
+     "raw pixels": 0
+    },
+    "overhead_parts": {
+     "CCSDS packet headers + CRC (8 B per packet)": 0,
+     "image headers (18 B per image)": 0,
+     "JPEG headers (tables, frame, scan)": 0
+    },
+    "by_kind": {},
+    "packets": 0,
+    "on_air_with_TM_framing": 0
+   },
+   "n_items": 0,
+   "items": [],
+   "records": [],
+   "rois": [],
+   "contexts": [],
+   "ground_decode": {
+    "records": 0,
+    "rois": 0,
+    "contexts": 0,
+    "crc": "every packet checked"
+   },
+   "timing_s": {
+    "processing": 0.03587560000596568,
+    "processing_stages": {
+     "detector": 0.03587560000596568
+    },
+    "encoding": 1.5400000847876072e-05,
+    "decoding": 1.400010660290718e-06,
+    "decoding_note": null,
+    "encoding_note": null
+   },
+   "quality": null
+  },
+  "B3": {
+   "mode": "B3",
+   "paper": "SAHI + YOLO + semantic policy, metadata + optional ROI",
+   "perception": "sahi",
+   "payload": "semantic",
+   "relay": false,
+   "detector_calls": 1,
+   "n_detections_onboard": 0,
+   "n_transmitted": 0,
+   "transmitted_share_of_onboard": null,
+   "level_histogram": {
+    "P0-discard": 0,
+    "P1-meta": 0,
+    "P2-roi": 0,
+    "P3-context": 0
+   },
+   "levels": [],
+   "bytes": {
+    "total": 0,
+    "payload": 0,
+    "overhead": 0,
+    "payload_parts": {
+     "semantic records": 0,
+     "JPEG image data": 0,
+     "raw pixels": 0
+    },
+    "overhead_parts": {
+     "CCSDS packet headers + CRC (8 B per packet)": 0,
+     "image headers (18 B per image)": 0,
+     "JPEG headers (tables, frame, scan)": 0
+    },
+    "by_kind": {},
+    "packets": 0,
+    "on_air_with_TM_framing": 0
+   },
+   "n_items": 0,
+   "items": [],
+   "records": [],
+   "rois": [],
+   "contexts": [],
+   "ground_decode": {
+    "records": 0,
+    "rois": 0,
+    "contexts": 0,
+    "crc": "every packet checked"
+   },
+   "timing_s": {
+    "processing": 0.06891460000770167,
+    "processing_stages": {
+     "detector": 0.03587560000596568,
+     "pre-filter (tile context)": 0.033039000001735985
+    },
+    "encoding": 7.899972843006253e-06,
+    "decoding": 9.00006853044033e-07,
+    "decoding_note": null,
+    "encoding_note": null
+   },
+   "quality": null
+  },
+  "B4": {
+   "mode": "B4",
+   "paper": "B3 + direct / optional relay communication",
+   "perception": "sahi",
+   "payload": "semantic",
+   "relay": true,
+   "detector_calls": 1,
+   "n_detections_onboard": 0,
+   "n_transmitted": 0,
+   "transmitted_share_of_onboard": null,
+   "level_histogram": {
+    "P0-discard": 0,
+    "P1-meta": 0,
+    "P2-roi": 0,
+    "P3-context": 0
+   },
+   "levels": [],
+   "bytes": {
+    "total": 0,
+    "payload": 0,
+    "overhead": 0,
+    "payload_parts": {
+     "semantic records": 0,
+     "JPEG image data": 0,
+     "raw pixels": 0
+    },
+    "overhead_parts": {
+     "CCSDS packet headers + CRC (8 B per packet)": 0,
+     "image headers (18 B per image)": 0,
+     "JPEG headers (tables, frame, scan)": 0
+    },
+    "by_kind": {},
+    "packets": 0,
+    "on_air_with_TM_framing": 0
+   },
+   "n_items": 0,
+   "items": [],
+   "records": [],
+   "rois": [],
+   "contexts": [],
+   "ground_decode": {
+    "records": 0,
+    "rois": 0,
+    "contexts": 0,
+    "crc": "every packet checked"
+   },
+   "timing_s": {
+    "processing": 0.06891460000770167,
+    "processing_stages": {
+     "detector": 0.03587560000596568,
+     "pre-filter (tile context)": 0.033039000001735985
+    },
+    "encoding": 4.5000051613897085e-06,
+    "decoding": 8.00006091594696e-07,
+    "decoding_note": null,
+    "encoding_note": null
+   },
+   "quality": null
+  }
+ },
+ "comms": {
+  "label": "SIM",
+  "capture_h": 2.0,
+  "capture_utc": "18 Sep 02:00",
+  "plan": {
+   "label": "SIM",
+   "epoch_utc": "2026-09-18T00:00:00+00:00",
+   "horizon_h": 36.0,
+   "primary_passes": [
+    {
+     "rise_utc": "18 Sep 00:05",
+     "rise_h": 0.09,
+     "duration_s": 399,
+     "capacity_MB": 24.87,
+     "payload_rate_Mbps": 0.499,
+     "physical_rate_Mbps": 1.994,
+     "max_elevation_deg": 13.3
+    },
+    {
+     "rise_utc": "18 Sep 11:36",
+     "rise_h": 11.61,
+     "duration_s": 548,
+     "capacity_MB": 60.08,
+     "payload_rate_Mbps": 0.877,
+     "physical_rate_Mbps": 3.509,
+     "max_elevation_deg": 66.7
+    },
+    {
+     "rise_utc": "18 Sep 13:12",
+     "rise_h": 13.21,
+     "duration_s": 176,
+     "capacity_MB": 8.58,
+     "payload_rate_Mbps": 0.39,
+     "physical_rate_Mbps": 1.56,
+     "max_elevation_deg": 6.2
+    },
+    {
+     "rise_utc": "18 Sep 22:11",
+     "rise_h": 22.2,
+     "duration_s": 437,
+     "capacity_MB": 29.98,
+     "payload_rate_Mbps": 0.548,
+     "physical_rate_Mbps": 2.193,
+     "max_elevation_deg": 16.9
+    },
+    {
+     "rise_utc": "18 Sep 23:44",
+     "rise_h": 23.75,
+     "duration_s": 490,
+     "capacity_MB": 38.8,
+     "payload_rate_Mbps": 0.633,
+     "physical_rate_Mbps": 2.533,
+     "max_elevation_deg": 23.7
+    },
+    {
+     "rise_utc": "19 Sep 11:16",
+     "rise_h": 35.28,
+     "duration_s": 522,
+     "capacity_MB": 47.59,
+     "payload_rate_Mbps": 0.73,
+     "physical_rate_Mbps": 2.919,
+     "max_elevation_deg": 33.9
+    }
+   ],
+   "relay_passes": [
+    {
+     "rise_utc": "18 Sep 04:48",
+     "rise_h": 4.82,
+     "duration_s": 541,
+     "capacity_MB": 56.61,
+     "payload_rate_Mbps": 0.837,
+     "physical_rate_Mbps": 3.35,
+     "max_elevation_deg": 53.1
+    },
+    {
+     "rise_utc": "18 Sep 06:25",
+     "rise_h": 6.43,
+     "duration_s": 224,
+     "capacity_MB": 11.24,
+     "payload_rate_Mbps": 0.402,
+     "physical_rate_Mbps": 1.609,
+     "max_elevation_deg": 6.9
+    },
+    {
+     "rise_utc": "18 Sep 16:24",
+     "rise_h": 16.41,
+     "duration_s": 101,
+     "capacity_MB": 4.77,
+     "payload_rate_Mbps": 0.378,
+     "physical_rate_Mbps": 1.512,
+     "max_elevation_deg": 5.4
+    },
+    {
+     "rise_utc": "18 Sep 17:54",
+     "rise_h": 17.91,
+     "duration_s": 546,
+     "capacity_MB": 59.59,
+     "payload_rate_Mbps": 0.873,
+     "physical_rate_Mbps": 3.492,
+     "max_elevation_deg": 64.8
+    },
+    {
+     "rise_utc": "19 Sep 04:29",
+     "rise_h": 28.49,
+     "duration_s": 503,
+     "capacity_MB": 42.85,
+     "payload_rate_Mbps": 0.681,
+     "physical_rate_Mbps": 2.723,
+     "max_elevation_deg": 28.3
+    },
+    {
+     "rise_utc": "19 Sep 06:04",
+     "rise_h": 30.07,
+     "duration_s": 406,
+     "capacity_MB": 25.64,
+     "payload_rate_Mbps": 0.505,
+     "physical_rate_Mbps": 2.021,
+     "max_elevation_deg": 13.7
+    }
+   ],
+   "isl_windows": [
+    {
+     "start_h": 0.28,
+     "duration_s": 840
+    },
+    {
+     "start_h": 1.06,
+     "duration_s": 860
+    },
+    {
+     "start_h": 1.86,
+     "duration_s": 840
+    },
+    {
+     "start_h": 2.64,
+     "duration_s": 860
+    },
+    {
+     "start_h": 3.43,
+     "duration_s": 850
+    },
+    {
+     "start_h": 4.22,
+     "duration_s": 870
+    },
+    {
+     "start_h": 5.01,
+     "duration_s": 850
+    },
+    {
+     "start_h": 5.8,
+     "duration_s": 870
+    },
+    {
+     "start_h": 6.59,
+     "duration_s": 850
+    },
+    {
+     "start_h": 7.38,
+     "duration_s": 870
+    },
+    {
+     "start_h": 8.17,
+     "duration_s": 850
+    },
+    {
+     "start_h": 8.95,
+     "duration_s": 870
+    },
+    {
+     "start_h": 9.74,
+     "duration_s": 850
+    },
+    {
+     "start_h": 10.53,
+     "duration_s": 870
+    },
+    {
+     "start_h": 11.32,
+     "duration_s": 850
+    },
+    {
+     "start_h": 12.11,
+     "duration_s": 870
+    },
+    {
+     "start_h": 12.9,
+     "duration_s": 850
+    },
+    {
+     "start_h": 13.69,
+     "duration_s": 870
+    },
+    {
+     "start_h": 14.48,
+     "duration_s": 850
+    },
+    {
+     "start_h": 15.26,
+     "duration_s": 870
+    },
+    {
+     "start_h": 16.06,
+     "duration_s": 850
+    },
+    {
+     "start_h": 16.84,
+     "duration_s": 870
+    },
+    {
+     "start_h": 17.63,
+     "duration_s": 850
+    },
+    {
+     "start_h": 18.42,
+     "duration_s": 870
+    },
+    {
+     "start_h": 19.21,
+     "duration_s": 850
+    },
+    {
+     "start_h": 20.0,
+     "duration_s": 870
+    },
+    {
+     "start_h": 20.79,
+     "duration_s": 850
+    },
+    {
+     "start_h": 21.58,
+     "duration_s": 870
+    },
+    {
+     "start_h": 22.37,
+     "duration_s": 850
+    },
+    {
+     "start_h": 23.16,
+     "duration_s": 860
+    },
+    {
+     "start_h": 23.95,
+     "duration_s": 840
+    },
+    {
+     "start_h": 24.73,
+     "duration_s": 860
+    },
+    {
+     "start_h": 25.53,
+     "duration_s": 840
+    },
+    {
+     "start_h": 26.31,
+     "duration_s": 860
+    },
+    {
+     "start_h": 27.1,
+     "duration_s": 840
+    },
+    {
+     "start_h": 27.89,
+     "duration_s": 860
+    },
+    {
+     "start_h": 28.68,
+     "duration_s": 850
+    },
+    {
+     "start_h": 29.47,
+     "duration_s": 870
+    },
+    {
+     "start_h": 30.26,
+     "duration_s": 850
+    },
+    {
+     "start_h": 31.04,
+     "duration_s": 870
+    },
+    {
+     "start_h": 31.84,
+     "duration_s": 850
+    },
+    {
+     "start_h": 32.62,
+     "duration_s": 870
+    },
+    {
+     "start_h": 33.41,
+     "duration_s": 850
+    },
+    {
+     "start_h": 34.2,
+     "duration_s": 870
+    },
+    {
+     "start_h": 34.99,
+     "duration_s": 850
+    },
+    {
+     "start_h": 35.78,
+     "duration_s": 800
+    }
+   ],
+   "assumptions": {
+    "ground link model": "cubesat_sband: 2 MHz, SNR 12 dB at zenith, modem cap 8 Mbps, coding efficiency 0.8",
+    "link share of each ground pass": 0.25,
+    "relay ground-pass share": 0.25,
+    "ground transmit power (W)": 15.0,
+    "inter-satellite rate (Mbps, after coding)": 2.024,
+    "inter-satellite transmit power (W)": 12.0,
+    "relay orbital plane (RAAN, deg)": 90.0,
+    "routing objective": "J = lam_E x E + lam_T x T, lam_T = 1/3600 per s, lam_E = 0",
+    "ground station": "Sfax (ENIS), minimum elevation 5 deg",
+    "orbit": "500 km sun-synchronous, SGP4-propagated"
+   },
+   "assumption_label": "ASSUMPTION: every rate and power (reports 17, 19); windows are geometry"
+  },
+  "runs": {
+   "B0": {
+    "direct": {
+     "label": "SIM",
+     "route": "direct",
+     "chosen_by": "fixed: direct only",
+     "items": 1,
+     "delivered_items": 1,
+     "undelivered_items": 0,
+     "relay_items": 0,
+     "direct_items": 1,
+     "bytes_offered": 1772954,
+     "bytes_delivered": 1772954,
+     "latency_first_s": 34599.0526344233,
+     "latency_last_s": 34599.0526344233,
+     "latency_median_s": 34599.0526344233,
+     "tx_s": {
+      "ground": 4.041529105825767,
+      "isl": 0.0,
+      "relay_ground": 0.0
+     },
+     "tx_s_total": 4.041529105825767,
+     "energy_J": {
+      "ground": 60.62293658738651,
+      "isl": 0.0,
+      "relay_ground": 0.0
+     },
+     "energy_J_total": 60.62293658738651,
+     "link_use": {
+      "ground": {
+       "MB": 1.773,
+       "capacity_MB": 209.901,
+       "used": 0.0084
+      },
+      "isl": {
+       "MB": 0.0,
+       "capacity_MB": 0.0,
+       "used": 0.0
+      },
+      "relay_ground": {
+       "MB": 0.0,
+       "capacity_MB": 200.698,
+       "used": 0.0
+      }
+     },
+     "deliveries": [
+      {
+       "item": 1,
+       "kind": "raw",
+       "bytes": 1772954,
+       "fraction": 1.0,
+       "path": "direct",
+       "delivered_h": 11.611,
+       "latency_h": 9.611,
+       "tx_s": 4.04153,
+       "energy_J": 60.62294
+      }
+     ]
+    }
+   },
+   "B1": {
+    "direct": {
+     "label": "SIM",
+     "route": "direct",
+     "chosen_by": "fixed: direct only",
+     "items": 0,
+     "delivered_items": 0,
+     "undelivered_items": 0,
+     "relay_items": 0,
+     "direct_items": 0,
+     "bytes_offered": 0,
+     "bytes_delivered": 0,
+     "latency_first_s": null,
+     "latency_last_s": null,
+     "latency_median_s": null,
+     "tx_s": {
+      "ground": 0.0,
+      "isl": 0.0,
+      "relay_ground": 0.0
+     },
+     "tx_s_total": 0.0,
+     "energy_J": {
+      "ground": 0.0,
+      "isl": 0.0,
+      "relay_ground": 0.0
+     },
+     "energy_J_total": 0.0,
+     "link_use": {
+      "ground": {
+       "MB": 0.0,
+       "capacity_MB": 209.901,
+       "used": 0.0
+      },
+      "isl": {
+       "MB": 0.0,
+       "capacity_MB": 0.0,
+       "used": 0.0
+      },
+      "relay_ground": {
+       "MB": 0.0,
+       "capacity_MB": 200.698,
+       "used": 0.0
+      }
+     },
+     "deliveries": []
+    }
+   },
+   "B2": {
+    "direct": {
+     "label": "SIM",
+     "route": "direct",
+     "chosen_by": "fixed: direct only",
+     "items": 0,
+     "delivered_items": 0,
+     "undelivered_items": 0,
+     "relay_items": 0,
+     "direct_items": 0,
+     "bytes_offered": 0,
+     "bytes_delivered": 0,
+     "latency_first_s": null,
+     "latency_last_s": null,
+     "latency_median_s": null,
+     "tx_s": {
+      "ground": 0.0,
+      "isl": 0.0,
+      "relay_ground": 0.0
+     },
+     "tx_s_total": 0.0,
+     "energy_J": {
+      "ground": 0.0,
+      "isl": 0.0,
+      "relay_ground": 0.0
+     },
+     "energy_J_total": 0.0,
+     "link_use": {
+      "ground": {
+       "MB": 0.0,
+       "capacity_MB": 209.901,
+       "used": 0.0
+      },
+      "isl": {
+       "MB": 0.0,
+       "capacity_MB": 0.0,
+       "used": 0.0
+      },
+      "relay_ground": {
+       "MB": 0.0,
+       "capacity_MB": 200.698,
+       "used": 0.0
+      }
+     },
+     "deliveries": []
+    }
+   },
+   "B3": {
+    "direct": {
+     "label": "SIM",
+     "route": "direct",
+     "chosen_by": "fixed: direct only",
+     "items": 0,
+     "delivered_items": 0,
+     "undelivered_items": 0,
+     "relay_items": 0,
+     "direct_items": 0,
+     "bytes_offered": 0,
+     "bytes_delivered": 0,
+     "latency_first_s": null,
+     "latency_last_s": null,
+     "latency_median_s": null,
+     "tx_s": {
+      "ground": 0.0,
+      "isl": 0.0,
+      "relay_ground": 0.0
+     },
+     "tx_s_total": 0.0,
+     "energy_J": {
+      "ground": 0.0,
+      "isl": 0.0,
+      "relay_ground": 0.0
+     },
+     "energy_J_total": 0.0,
+     "link_use": {
+      "ground": {
+       "MB": 0.0,
+       "capacity_MB": 209.901,
+       "used": 0.0
+      },
+      "isl": {
+       "MB": 0.0,
+       "capacity_MB": 0.0,
+       "used": 0.0
+      },
+      "relay_ground": {
+       "MB": 0.0,
+       "capacity_MB": 200.698,
+       "used": 0.0
+      }
+     },
+     "deliveries": []
+    }
+   },
+   "B4": {
+    "direct": {
+     "label": "SIM",
+     "route": "direct",
+     "chosen_by": "fixed: direct only",
+     "items": 0,
+     "delivered_items": 0,
+     "undelivered_items": 0,
+     "relay_items": 0,
+     "direct_items": 0,
+     "bytes_offered": 0,
+     "bytes_delivered": 0,
+     "latency_first_s": null,
+     "latency_last_s": null,
+     "latency_median_s": null,
+     "tx_s": {
+      "ground": 0.0,
+      "isl": 0.0,
+      "relay_ground": 0.0
+     },
+     "tx_s_total": 0.0,
+     "energy_J": {
+      "ground": 0.0,
+      "isl": 0.0,
+      "relay_ground": 0.0
+     },
+     "energy_J_total": 0.0,
+     "link_use": {
+      "ground": {
+       "MB": 0.0,
+       "capacity_MB": 209.901,
+       "used": 0.0
+      },
+      "isl": {
+       "MB": 0.0,
+       "capacity_MB": 0.0,
+       "used": 0.0
+      },
+      "relay_ground": {
+       "MB": 0.0,
+       "capacity_MB": 200.698,
+       "used": 0.0
+      }
+     },
+     "deliveries": []
+    },
+    "policy": {
+     "label": "SIM",
+     "route": "policy",
+     "chosen_by": "policy (min J per item)",
+     "items": 0,
+     "delivered_items": 0,
+     "undelivered_items": 0,
+     "relay_items": 0,
+     "direct_items": 0,
+     "bytes_offered": 0,
+     "bytes_delivered": 0,
+     "latency_first_s": null,
+     "latency_last_s": null,
+     "latency_median_s": null,
+     "tx_s": {
+      "ground": 0.0,
+      "isl": 0.0,
+      "relay_ground": 0.0
+     },
+     "tx_s_total": 0.0,
+     "energy_J": {
+      "ground": 0.0,
+      "isl": 0.0,
+      "relay_ground": 0.0
+     },
+     "energy_J_total": 0.0,
+     "link_use": {
+      "ground": {
+       "MB": 0.0,
+       "capacity_MB": 209.901,
+       "used": 0.0
+      },
+      "isl": {
+       "MB": 0.0,
+       "capacity_MB": 9963.14,
+       "used": 0.0
+      },
+      "relay_ground": {
+       "MB": 0.0,
+       "capacity_MB": 200.698,
+       "used": 0.0
+      }
+     },
+     "deliveries": []
+    },
+    "relay": {
+     "label": "SIM",
+     "route": "relay",
+     "chosen_by": "manual: relay forced",
+     "items": 0,
+     "delivered_items": 0,
+     "undelivered_items": 0,
+     "relay_items": 0,
+     "direct_items": 0,
+     "bytes_offered": 0,
+     "bytes_delivered": 0,
+     "latency_first_s": null,
+     "latency_last_s": null,
+     "latency_median_s": null,
+     "tx_s": {
+      "ground": 0.0,
+      "isl": 0.0,
+      "relay_ground": 0.0
+     },
+     "tx_s_total": 0.0,
+     "energy_J": {
+      "ground": 0.0,
+      "isl": 0.0,
+      "relay_ground": 0.0
+     },
+     "energy_J_total": 0.0,
+     "link_use": {
+      "ground": {
+       "MB": 0.0,
+       "capacity_MB": 0.0,
+       "used": 0.0
+      },
+      "isl": {
+       "MB": 0.0,
+       "capacity_MB": 9963.14,
+       "used": 0.0
+      },
+      "relay_ground": {
+       "MB": 0.0,
+       "capacity_MB": 200.698,
+       "used": 0.0
+      }
+     },
+     "deliveries": []
+    }
+   }
+  },
+  "sweep": null
+ },
+ "assumptions": {
+  "p_cpu_W": 28.0,
+  "p_tx_W": 15.0,
+  "p_isl_W": 12.0,
+  "label": "ASSUMPTION: no power was measured in this project (report 17)"
+ },
+ "labels": {
+  "bytes": "MEASURED on this image: the length of the serialized packets",
+  "times": "MEASURED on this machine (wall clock); a laptop, not flight hardware",
+  "link": "SIM: propagated orbits, geometric windows, link-budget rates",
+  "energy": "ESTIMATE: assumed power x measured or simulated time",
+  "accuracy": "none: no ground truth, so counts and confidences only"
+ }
+}

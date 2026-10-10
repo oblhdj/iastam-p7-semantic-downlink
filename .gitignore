@@ -17,6 +17,7 @@ code/results/wp0_duplicates_grid.jpg
 # --- environments ---
 code/.venv/
 code/.venv312/
+code/.venv-demo/
 
 # --- python ---
 __pycache__/
@@ -43,3 +44,6 @@ code/results/*1epoch*
 
 # --- quickstart demo outputs (regenerated every run) ---
 demo/quickstart/_out/
+
+# --- local preview launcher for the dashboard (editor tooling, not part of the repo) ---
+.claude/
