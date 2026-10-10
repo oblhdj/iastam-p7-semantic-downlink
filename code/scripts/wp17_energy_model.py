@@ -140,6 +140,74 @@ def e_proc_per_tile(cfg: str, P: dict, T: dict) -> dict:
             "E_base": sum(base.values()), "E_prop": sum(prop.values())}
 
 
+def sahi_variant(proc: dict, results: Path, tiles_per_day: int, e_comm_J: float, e_bent_J: float):
+    """The same model with the detector called once per SAHI window instead of once per tile.
+
+    A labelled VARIANT: the default block is untouched and stays the one that describes the simulated
+    day, whose detections come from one detector call per native 768 px tile. Three choices, stated:
+
+      * detector calls per tile -- read live from the same-input run (wp26): 25 windows per 4x4-tile
+        scene = 1.5625. Applied to the baseline and the proposed pipeline alike.
+      * the gate stays at ONE call per tile. That is how it is trained and run everywhere it runs
+        (wp3, wp3_score_tiles, wp11): one 128 px view of a whole 768 px tile. No per-window gate
+        exists in the repo; the per-window figure is reported as a sensitivity only.
+      * fusion (global-coordinate lift + cross-window NMS) is charged 0 ms. ASSUMPTION: no timing
+        of it exists anywhere in the repo.
+    Returns None when wp26_b0_b4.json is absent (the default model does not need it).
+    """
+    path = results / "wp26_b0_b4.json"
+    if not path.exists():
+        return None
+    w26 = json.loads(path.read_text(encoding="utf-8"))
+    windows = float(w26["checks"]["3_B2_sahi_fusion"]["windows_per_scene"])
+    tiles_per_scene = int(w26["inputs"]["per_side"]) ** 2
+    calls = windows / tiles_per_scene
+
+    def build(gate_calls: float) -> dict:
+        base, prop = dict(proc["baseline"]), dict(proc["proposed"])
+        base["detect"], prop["detect"] = base["detect"] * calls, prop["detect"] * calls
+        prop["gate_or_prefilter"] = prop["gate_or_prefilter"] * gate_calls     # the classic stage is per tile
+        e_base, e_prop = sum(base.values()), sum(prop.values())
+        day = e_prop * tiles_per_day
+        return {"baseline": base, "proposed": prop, "E_base": e_base, "E_prop": e_prop,
+                "ES_proc": 1 - e_prop / e_base, "E_proc_day_J": day, "E_base_day_J": e_base * tiles_per_day,
+                "E_total_J": day + e_comm_J}
+    v, w = build(1.0), build(calls)
+    return {
+        "label": "VARIANT, not the default: the detector is called once per SAHI window instead of once per "
+                 "tile. Stage times REAL (laptop RTX 5060 / CPU, not flight hw); powers ASSUMPTION; fusion "
+                 "time ASSUMPTION (0 ms, never measured) -> every joule here is an ESTIMATE",
+        "config": "cpu_onnx",
+        "applies_to": "a pipeline that slices scenes with SAHI (the paper's B2 / B3). The simulated day takes "
+                      "its detections from one detector call per native 768 px tile, which is what the "
+                      "default block above costs.",
+        "detector_calls_per_tile": calls,
+        "detector_calls_source": f"results/wp26_b0_b4.json: {windows:g} windows per scene / {tiles_per_scene} "
+                                 f"tiles per scene (window 768, overlap 0.20)",
+        "gate_calls_per_tile": 1.0,
+        "gate_note": "once per tile, as the gate is trained and run everywhere it runs (wp3, wp3_score_tiles, "
+                     "wp11): one 128 px view of a whole 768 px tile. No per-window gate exists in the repo.",
+        "fuse_cpu_ms": 0.0,
+        "fuse_note": "ASSUMPTION: the global-coordinate lift + cross-window NMS has never been timed anywhere "
+                     "in the repo, so there is no evidence for or against 0 ms",
+        "E_proc_per_tile_J": {"baseline": v["baseline"], "proposed": v["proposed"],
+                              "E_base": round(v["E_base"], 4), "E_prop": round(v["E_prop"], 4),
+                              "ES_proc": round(v["ES_proc"], 4)},
+        "E_per_day_kJ": {
+            "tiles_per_day": tiles_per_day,
+            "E_proc_proposed": round(v["E_proc_day_J"] / 1000, 2),
+            "E_proc_baseline": round(v["E_base_day_J"] / 1000, 2),
+            "E_comm_proposed_semantic": round(e_comm_J / 1000, 2),
+            "E_total_proposed": round(v["E_total_J"] / 1000, 2),
+            "proc_vs_comm_ratio_proposed": round(v["E_proc_day_J"] / e_comm_J, 2),
+            "ES_total_vs_bent_pipe": round(1 - v["E_total_J"] / e_bent_J, 4)},
+        "sensitivity_if_the_gate_ran_once_per_window": {
+            "note": "NOT how the gate runs; shown only because the choice moves ES_proc",
+            "gate_calls_per_tile": calls, "E_prop_J_per_tile": round(w["E_prop"], 4),
+            "E_proc_proposed_kJ_day": round(w["E_proc_day_J"] / 1000, 2), "ES_proc": round(w["ES_proc"], 4)},
+    }
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -280,6 +348,9 @@ def main() -> None:
         },
         "sensitivity_P_sweep": sweep,
     }
+    sahi = sahi_variant(proc["cpu_onnx"], args.results, tpd, Ecomm_prop_day, E_base_bentpipe)
+    if sahi is not None:                                    # appended last: the default block is unchanged
+        rep["sahi_variant"] = sahi
     (args.out / "wp17_energy_model.json").write_text(json.dumps(rep, indent=2))
 
     # stage CSV (default config)
@@ -309,6 +380,13 @@ def main() -> None:
     print("\nsensitivity (ES robust across the P_k sweep):")
     for k, v in sweep.items():
         print(f"  {k} {v['range_W']} W -> ES_proc_gpu {v['ES_proc_gpu']}, ES_total {v['ES_total']}")
+    if sahi is not None:
+        d, s = sahi["E_per_day_kJ"], sahi["E_proc_per_tile_J"]
+        print(f"\nVARIANT (not the default) -- SAHI, {sahi['detector_calls_per_tile']:g} detector calls per tile, "
+              f"gate once per tile, fusion 0 ms [ASSUMPTION]:")
+        print(f"  E_proc {d['E_proc_proposed']} kJ/day (default {Eproc_prop_day / 1000:.2f}), ES_proc "
+              f"{s['ES_proc']:+.1%} (default {es_proc['cpu_onnx']:+.1%}), proc:comm "
+              f"{d['proc_vs_comm_ratio_proposed']}:1, ES_total {d['ES_total_vs_bent_pipe']:.1%}")
     print(f"\nSaved wp17_energy_model.json, wp17_energy_stages.csv in {args.out}")
 
 

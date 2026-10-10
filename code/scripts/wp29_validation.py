@@ -113,6 +113,20 @@ def claims_ledger(res: Path, steady: dict | None = None) -> list[dict]:
     def c(cid, value, forms, docs, source):
         return {"id": cid, "value": value, "forms": forms, "docs": docs, "source": source}
     extra = []
+    if "sahi_variant" in w17:
+        sv = w17["sahi_variant"]
+        es_w = sv["sensitivity_if_the_gate_ran_once_per_window"]["ES_proc"]
+        extra += [
+            c("sahi_variant_E_proc_kJ_per_day", sv["E_per_day_kJ"]["E_proc_proposed"],
+              [f"{sv['E_per_day_kJ']['E_proc_proposed']:.1f} kJ"], [D["PHASE3"]], "wp17_energy_model.json sahi_variant"),
+            c("sahi_variant_ES_proc_percent", 100 * sv["E_proc_per_tile_J"]["ES_proc"],
+              [f"{100 * sv['E_proc_per_tile_J']['ES_proc']:.1f} %"], [D["PHASE3"]], "wp17_energy_model.json sahi_variant"),
+            c("sahi_variant_proc_to_comm", sv["E_per_day_kJ"]["proc_vs_comm_ratio_proposed"],
+              [f"{sv['E_per_day_kJ']['proc_vs_comm_ratio_proposed']:.1f} : 1"], [D["PHASE3"]],
+              "wp17_energy_model.json sahi_variant"),
+            c("sahi_variant_ES_proc_gate_per_window_percent", 100 * es_w, [f"{100 * es_w:.1f} %"], [D["PHASE3"]],
+              "wp17_energy_model.json sahi_variant (sensitivity)"),
+        ]
     if steady is not None:
         vg = steady["runs"]["share_0.25_Value-greedy (ours)"]
         rec = [d["ship_recall"] for d in vg["per_day"]]
@@ -121,7 +135,7 @@ def claims_ledger(res: Path, steady: dict | None = None) -> list[dict]:
         bent_kJ = w17["powers_W_assumption"]["tx"] * w17["downlink"]["contact_min_day"] * 60 / 1e3
         fifo = steady["runs"]["share_0.25_FIFO"]["per_day"]
         lat = [d["latency_med_h"] for d in vg["per_day"]]
-        extra = [
+        extra += [
             c("sustained_link_share_MB_per_24h", vg["sustained_capacity_MB_per_24h"],
               [f"{vg['sustained_capacity_MB_per_24h']:.1f} MB"], [D["README"], D["PHASE3"], D["QA"], D["DEMO"]],
               "wp29_validation.json steady_state"),
@@ -459,7 +473,15 @@ def run_checklist(res: Path, repo: Path, steady: dict) -> dict:
                                                                      max(max(v["ES_total"]) for v in w17["sensitivity_P_sweep"].values())])
     enc = w25["timing_ms_per_tile"]["T_enc_onboard_median"]
     enc_avg = 0.05 * enc["coast"] + 0.20 * enc["ships"]               # orbit mix: 5% coast, 20% ships, rest send nothing
-    sahi_tile = e_tile + 0.5625 * stage_energy_J(P["cpu"], T["detect_cpu_onnx"])
+    sv = w17["sahi_variant"]
+    calls = sv["detector_calls_per_tile"]
+    sahi_tile = e_tile + (calls - 1.0) * stage_energy_J(P["cpu"], T["detect_cpu_onnx"])
+    chk(it, "the SAHI variant block is the default stages with the detector term x its calls per tile",
+        abs(sahi_tile - sv["E_proc_per_tile_J"]["E_prop"]) < 1e-3 and sv["gate_calls_per_tile"] == 1.0 and
+        sv["fuse_cpu_ms"] == 0.0 and "ASSUMPTION" in sv["fuse_note"] and "VARIANT" in sv["label"] and
+        abs(sahi_tile * day["tiles_per_day"] / 1e3 - sv["E_per_day_kJ"]["E_proc_proposed"]) < 0.02,
+        detector_calls_per_tile=calls, recomputed_J_per_tile=round(sahi_tile, 4),
+        block_J_per_tile=sv["E_proc_per_tile_J"]["E_prop"], block_ES_proc=sv["E_proc_per_tile_J"]["ES_proc"])
     it["limits"] += [
         "NO power was measured in this project. P_cpu 28 W, P_gpu 60 W, P_tx 15 W and P_isl 12 W are "
         "ASSUMPTIONS; stage times are measured on a laptop; so every joule is an ESTIMATE. Only ES_proc for "
@@ -467,9 +489,14 @@ def run_checklist(res: Path, repo: Path, steady: dict) -> dict:
         f"semantic_cpu = 0.5 ms is an ASSUMPTION in wp17. wp25 has since measured the encoder: "
         f"{enc['ships']} ms on a ship tile, {enc['coast']} ms on a coastal tile, i.e. about {enc_avg:.2f} ms per "
         f"tile over the assumed orbit mix -- consistent with the assumption, so wp17 was not regenerated.",
-        f"E_processing is for ONE detector call per tile, which is what the day simulation runs. With SAHI's "
-        f"1.5625 calls per tile it would be {sahi_tile:.3f} J/tile, {sahi_tile * day['tiles_per_day'] / 1e3:.1f} kJ/day "
-        f"({sahi_tile * day['tiles_per_day'] / 1e3 / day['E_comm_proposed_semantic']:.1f} : 1 against the radio).",
+        f"The default E_processing is for ONE detector call per tile, which is what the day simulation runs. "
+        f"The labelled variant results/wp17_energy_model.json -> sahi_variant costs SAHI's {calls:g} calls per "
+        f"tile: {sv['E_per_day_kJ']['E_proc_proposed']} kJ/day instead of {day['E_proc_proposed']}, ES_proc "
+        f"{100 * sv['E_proc_per_tile_J']['ES_proc']:.1f}% instead of "
+        f"{100 * w17['E_proc_per_tile_J']['cpu_onnx_DEFAULT']['ES_proc']:.1f}%, "
+        f"{sv['E_per_day_kJ']['proc_vs_comm_ratio_proposed']:.1f} : 1 against the radio. In it the gate stays "
+        f"at one call per tile (how it is trained and run; no per-window gate exists) and fusion is charged "
+        f"0 ms, an ASSUMPTION: it has never been timed.",
         "wp18 and the docs label the relay's energy 'TARGET'. It is an estimate from assumed P_isl and R_isl, "
         "not a design goal; the label is kept as report 19 wrote it.",
     ]

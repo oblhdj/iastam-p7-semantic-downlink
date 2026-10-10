@@ -278,6 +278,28 @@ def test_committed_energy_results_reproduce_from_their_own_inputs():
     assert "ASSUMPTION" in w17["label_note"] and all("ASSUMPTION" in k for k in w19["powers_W"])
 
 
+def test_sahi_energy_variant_is_the_default_plus_extra_detector_calls_and_nothing_else():
+    w17 = _results("wp17_energy_model.json")
+    if "sahi_variant" not in w17:
+        pytest.skip("wp17 generated without wp26_b0_b4.json")
+    sv, dflt = w17["sahi_variant"], w17["E_proc_per_tile_J"]["cpu_onnx_DEFAULT"]
+    P, T, calls = w17["powers_W_assumption"], w17["stage_times_ms"], w17["sahi_variant"]["detector_calls_per_tile"]
+    assert calls == 25 / 16                                        # 25 windows on a 4x4-tile scene
+    detect = stage_energy_J(P["cpu"], T["detect_cpu_onnx"])
+    for which, key in (("proposed", "E_prop"), ("baseline", "E_base")):
+        stages = sv["E_proc_per_tile_J"][which]
+        assert stages["detect"] == pytest.approx(calls * detect)
+        assert {k: v for k, v in stages.items() if k != "detect"} == \
+            {k: v for k, v in dflt[which].items() if k != "detect"}           # gate, prefilter, the rest: untouched
+        assert sv["E_proc_per_tile_J"][key] == pytest.approx(dflt[key] + (calls - 1) * detect, abs=1e-3)
+    assert sv["gate_calls_per_tile"] == 1.0 and sv["fuse_cpu_ms"] == 0.0 and "ASSUMPTION" in sv["fuse_note"]
+    d = sv["E_per_day_kJ"]
+    assert d["E_proc_proposed"] == pytest.approx(sv["E_proc_per_tile_J"]["E_prop"] * d["tiles_per_day"] / 1e3, abs=0.03)
+    assert d["E_comm_proposed_semantic"] == w17["E_per_day_kJ"]["E_comm_proposed_semantic"]   # the radio does not change
+    assert sv["E_proc_per_tile_J"]["ES_proc"] < dflt["ES_proc"]            # detection is a bigger share, so the gate saves less
+    assert "VARIANT" in sv["label"] and "ESTIMATE" in sv["label"]
+
+
 # ====================================================================== latency
 def test_total_latency_is_the_sum_of_four_sequential_stages():
     b = LatencyBudget(processing_s=0.040, encoding_s=0.009, communication_s=4.5 * 3600, decoding_s=0.00004)

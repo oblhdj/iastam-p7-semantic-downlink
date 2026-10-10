@@ -85,7 +85,7 @@ catalogue-driven simulation to four decimal places — see
 | [`demo/quickstart/`](demo/quickstart/) | the chain live on a laptop CPU in ~2 s: no GPU, no torch, no dataset (synthetic stand-in tiles) |
 | `code/sat7/` | the package: perception (YOLO / SAHI), encoder, scheduler, exact optimum, orbit, pre-filter, dedup |
 | `code/scripts/` | one script per work package, each with a docstring saying *why* it exists |
-| `code/tests/` | 253 tests (5 skip in `.venv`: 2 need torch, 3 need onnxruntime) — 14 fault-injection, exact-solver checks, and the gate's claims pinned |
+| `code/tests/` | 254 tests (5 skip in `.venv`: 2 need torch, 3 need onnxruntime) — 14 fault-injection, exact-solver checks, and the gate's claims pinned |
 | `code/results/` | generated artefacts — CSV, PNG, JSON, logs. Machine-written, not prose |
 
 ## Running it
@@ -106,7 +106,7 @@ are synthetic and how to run it on the real ones.
 
 ```bash
 cd code
-.venv/Scripts/python.exe    -m pytest tests -q        # 248 pass, 5 skip (need torch / onnxruntime)
+.venv/Scripts/python.exe    -m pytest tests -q        # 249 pass, 5 skip (need torch / onnxruntime)
 .venv312/Scripts/python.exe scripts/wp11_integration_demo.py --tiles 400
 ```
 
@@ -165,7 +165,7 @@ baseline" in only **74 of 80**. All six failures are at 160,000 tiles/day, where
 fails): `thumb_value` 0.05 (−0.5 points) and 0.10 (−1.9), `conf_high` 0.90 (−0.02) and 0.99 (−0.4), `conf_low` 0.05 (−1.6) and 0.10 (−0.8). Each of those settings makes the encoder spend more bytes — on thumbnails, on crops
 for confident ships, or on low-confidence detections — which a saturated link cannot afford.
 
-**What a check of our own numbers found.** `code/scripts/wp29_validation.py` runs 37 checks on units,
+**What a check of our own numbers found.** `code/scripts/wp29_validation.py` runs 38 checks on units,
 data sizes, energy, latency and fairness against the committed results. None fails; five gaps are
 stated rather than fixed:
 (1) the headline day is simulated alone, with 36 h of passes — it offers 130% of what the 25% link

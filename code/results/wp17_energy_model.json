@@ -148,5 +148,51 @@
         0.9891
       ]
     }
+  },
+  "sahi_variant": {
+    "label": "VARIANT, not the default: the detector is called once per SAHI window instead of once per tile. Stage times REAL (laptop RTX 5060 / CPU, not flight hw); powers ASSUMPTION; fusion time ASSUMPTION (0 ms, never measured) -> every joule here is an ESTIMATE",
+    "config": "cpu_onnx",
+    "applies_to": "a pipeline that slices scenes with SAHI (the paper's B2 / B3). The simulated day takes its detections from one detector call per native 768 px tile, which is what the default block above costs.",
+    "detector_calls_per_tile": 1.5625,
+    "detector_calls_source": "results/wp26_b0_b4.json: 25 windows per scene / 16 tiles per scene (window 768, overlap 0.20)",
+    "gate_calls_per_tile": 1.0,
+    "gate_note": "once per tile, as the gate is trained and run everywhere it runs (wp3, wp3_score_tiles, wp11): one 128 px view of a whole 768 px tile. No per-window gate exists in the repo.",
+    "fuse_cpu_ms": 0.0,
+    "fuse_note": "ASSUMPTION: the global-coordinate lift + cross-window NMS has never been timed anywhere in the repo, so there is no evidence for or against 0 ms",
+    "E_proc_per_tile_J": {
+      "baseline": {
+        "preprocess": 0.01988,
+        "gate_or_prefilter": 1.5780898001394235,
+        "detect": 1.68875,
+        "fuse": 0.0,
+        "semantic": 0.014
+      },
+      "proposed": {
+        "preprocess": 0.01988,
+        "gate_or_prefilter": 0.02632,
+        "detect": 1.68875,
+        "fuse": 0.0,
+        "semantic": 0.014
+      },
+      "E_base": 3.3007,
+      "E_prop": 1.749,
+      "ES_proc": 0.4701
+    },
+    "E_per_day_kJ": {
+      "tiles_per_day": 40000,
+      "E_proc_proposed": 69.96,
+      "E_proc_baseline": 132.03,
+      "E_comm_proposed_semantic": 8.36,
+      "E_total_proposed": 78.32,
+      "proc_vs_comm_ratio_proposed": 8.37,
+      "ES_total_vs_bent_pipe": 0.9725
+    },
+    "sensitivity_if_the_gate_ran_once_per_window": {
+      "note": "NOT how the gate runs; shown only because the choice moves ES_proc",
+      "gate_calls_per_tile": 1.5625,
+      "E_prop_J_per_tile": 1.7638,
+      "E_proc_proposed_kJ_day": 70.55,
+      "ES_proc": 0.4656
+    }
   }
 }

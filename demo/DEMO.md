@@ -139,7 +139,7 @@ The full set is in **`demo/QA_CARD.md`** — keep it on the podium. The five tha
   557× estimate → `code/results/wp6_real_table_modeledcoast.csv`).
 - End-to-end integrity → `code/results/wp11_integration.json` (decision flips @conf_high = 0).
 - Units, energy, latency, fairness and the document-vs-results ledger →
-  `code/results/wp29_validation.json` (37 checks, none failing; five stated gaps).
+  `code/results/wp29_validation.json` (38 checks, none failing; five stated gaps).
 - Dataset / leakage-free split → `code/results/wp0_stats.json`.
 - Full narrative per work package → `reports/01`–`reports/23`; Phase-3 write-up → `paper/PHASE3_RESULTS.md`.
 

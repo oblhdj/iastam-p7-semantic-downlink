@@ -168,12 +168,20 @@
             0.967,
             0.9891
           ]
+        },
+        {
+          "check": "the SAHI variant block is the default stages with the detector term x its calls per tile",
+          "ok": true,
+          "detector_calls_per_tile": 1.5625,
+          "recomputed_J_per_tile": 1.749,
+          "block_J_per_tile": 1.749,
+          "block_ES_proc": 0.4701
         }
       ],
       "limits": [
         "NO power was measured in this project. P_cpu 28 W, P_gpu 60 W, P_tx 15 W and P_isl 12 W are ASSUMPTIONS; stage times are measured on a laptop; so every joule is an ESTIMATE. Only ES_proc for the all-CPU build is free of them (the power cancels: it is a ratio of measured times).",
         "semantic_cpu = 0.5 ms is an ASSUMPTION in wp17. wp25 has since measured the encoder: 0.14 ms on a ship tile, 9.1 ms on a coastal tile, i.e. about 0.48 ms per tile over the assumed orbit mix -- consistent with the assumption, so wp17 was not regenerated.",
-        "E_processing is for ONE detector call per tile, which is what the day simulation runs. With SAHI's 1.5625 calls per tile it would be 1.749 J/tile, 70.0 kJ/day (8.4 : 1 against the radio).",
+        "The default E_processing is for ONE detector call per tile, which is what the day simulation runs. The labelled variant results/wp17_energy_model.json -> sahi_variant costs SAHI's 1.5625 calls per tile: 69.96 kJ/day instead of 45.64, ES_proc 47.0% instead of 57.6%, 8.4 : 1 against the radio. In it the gate stays at one call per tile (how it is trained and run; no per-window gate exists) and fusion is charged 0 ms, an ASSUMPTION: it has never been timed.",
         "wp18 and the docs label the relay's energy 'TARGET'. It is an estimate from assumed P_isl and R_isl, not a design goal; the label is kept as report 19 wrote it."
       ],
       "status": "PASS",
@@ -390,8 +398,8 @@
         {
           "check": "every headline number in the ten judge-facing documents equals its results file",
           "ok": true,
-          "claims": 44,
-          "claim_document_pairs": 185,
+          "claims": 48,
+          "claim_document_pairs": 189,
           "missing": []
         },
         {
@@ -587,6 +595,50 @@
     }
   },
   "claims_ledger": [
+    {
+      "id": "sahi_variant_E_proc_kJ_per_day",
+      "value": 69.96,
+      "forms": [
+        "70.0 kJ"
+      ],
+      "docs": [
+        "paper/PHASE3_RESULTS.md"
+      ],
+      "source": "wp17_energy_model.json sahi_variant"
+    },
+    {
+      "id": "sahi_variant_ES_proc_percent",
+      "value": 47.010000000000005,
+      "forms": [
+        "47.0 %"
+      ],
+      "docs": [
+        "paper/PHASE3_RESULTS.md"
+      ],
+      "source": "wp17_energy_model.json sahi_variant"
+    },
+    {
+      "id": "sahi_variant_proc_to_comm",
+      "value": 8.37,
+      "forms": [
+        "8.4 : 1"
+      ],
+      "docs": [
+        "paper/PHASE3_RESULTS.md"
+      ],
+      "source": "wp17_energy_model.json sahi_variant"
+    },
+    {
+      "id": "sahi_variant_ES_proc_gate_per_window_percent",
+      "value": 46.56,
+      "forms": [
+        "46.6 %"
+      ],
+      "docs": [
+        "paper/PHASE3_RESULTS.md"
+      ],
+      "source": "wp17_energy_model.json sahi_variant (sensitivity)"
+    },
     {
       "id": "sustained_link_share_MB_per_24h",
       "value": 134.5,

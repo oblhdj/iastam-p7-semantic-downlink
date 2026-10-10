@@ -164,8 +164,12 @@ divided by a rate in bit/s (`sat7/accounting.py`; checked against wp17 and wp19 
   limited to this link's 34.2 min of contact a day spends at most **30.8 kJ/day — less than ours** —
   and delivers 0.2 % of the ships. Read ES_total as energy per unit of imagery accounted for, not as
   a smaller daily energy bill.
-* The model costs **one detector call per tile**, which is what the day simulation runs. With SAHI's
-  1.56 calls per tile, processing is 70 kJ/day and compute : radio is 8.4 : 1.
+* The default costs **one detector call per tile**, which is what the day simulation runs. A labelled
+  SAHI variant (`wp17_energy_model.json` → `sahi_variant`: 1.5625 detector calls per tile; the gate
+  still once per tile, which is how it is trained and run; fusion time 0 ms, an ASSUMPTION — it has
+  never been timed) gives **70.0 kJ/day** of processing instead of 45.6, compute : radio **8.4 : 1**,
+  and **ES_proc 47.0 %** instead of 57.6 % [estimate — assumed powers]. Were the gate run once per
+  window instead, ES_proc would be 46.6 %.
 
 ## 7. Latency & the relay (paper §V-D, §VII, eqs 25–29)
 
@@ -261,7 +265,7 @@ onboard board: this is a **demo of the idea, measured end to end on real data �
 
 ## 12. Validation checklist — `wp29_validation.py`
 
-37 checks on the committed results, none failing (`code/results/wp29_validation.json`; 35 unit
+38 checks on the committed results, none failing (`code/results/wp29_validation.json`; 36 unit
 tests in `code/tests/test_validation.py`). PARTIAL means every check holds but a stated gap remains.
 
 | # | question | status | what was checked · what remains |
@@ -272,7 +276,7 @@ tests in `code/tests/test_validation.py`). PARTIAL means every check holds but a
 | 9 | latency includes the required stages | **PASS** | simulated latency = wait + transmission; the three other stages are measured and add ≤ 71 ms · laptop timings |
 | 10 | relay energy and latency cover both links | **PARTIAL** | ISL and relay-to-ground legs both carry time and energy in wp19 and wp27 · the B4 row's relay latency is a window estimate |
 | 11 | compared things share inputs and assumptions | **PARTIAL** | B1/B2, ours/FIFO/baselines, direct/relay, LoD/P0–P3 each share one input · ES_total's bent pipe is not transmittable; B4 is asymmetric; B1/B2 and B3/B4 are different inputs |
-| 12 | every number traces to evidence | **PARTIAL** | 44 headline numbers × the ten judge-facing documents all match their results files · "100 %" is a single-day claim and rests on truncated products counting as delivered |
+| 12 | every number traces to evidence | **PARTIAL** | 48 headline numbers × the ten judge-facing documents all match their results files · "100 %" is a single-day claim and rests on truncated products counting as delivered |
 
 ---
 _Sources: `demo/PAPER_COVERAGE.md` (paper→evidence map), `reports/01–22`, `code/results/*`,
