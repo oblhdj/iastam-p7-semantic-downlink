@@ -60,14 +60,16 @@ chain prefilter→gate→detector→LoD→scheduler→ground with an integrity c
 - [ ] Slide deck opens: double-click **`paper/slides/index.html`** in a browser; `←/→` navigate,
       `N` toggles speaker notes (the 90-s track), `F` full-screen. Works offline.
 - [ ] **`demo/QA_CARD.md`** is on the podium (0.685+cloud, why 341× not 557×, B1 0.339, onboard
-      TARGET, SAHI cost and its negative result, the sensitivity failures, Airbus-not-DOTA,
-      relay=latency, novelty, INT8).
+      TARGET, SAHI cost and its negative result, the sensitivity failures, six days over capacity,
+      power not measured, Airbus-not-DOTA, relay=latency, novelty, INT8).
 - [ ] If demoing live: `code/.venv312` exists and `bash demo/run_demo.sh` completes (~1 min). If not,
       you present from the slide deck + `summary.py` — nothing is lost.
 - [ ] Numbers to have cold: **341×** (coastal tiles measured, thumbnails/crops modeled; the earlier
       all-modeled estimate was 557×), **0.685 @15% cloud (band 0.40–0.82)**, **+6.3 pts** fair
       baseline at nominal load, **B1 0.339 → B2 0.717** on the same scenes, **35.2 h → 10.9 h**
-      relay (worst case; per-item median 7.9 → 3.4 h). Everything else: "the CSV is authoritative."
+      relay (worst case; per-item median 7.9 → 3.4 h), and the scheduler under pressure: **six
+      days at 130% of the link share — recall 0.677–0.688 every day with our scheduler, while
+      FIFO's latency goes 9.4 h → 42.9 h**. Everything else: "the CSV is authoritative."
 
 ---
 
@@ -105,6 +107,10 @@ chain prefilter→gate→detector→LoD→scheduler→ground with an integrity c
   whole scene, which finds a third of the ships; SAHI on the same scenes, which finds seventy-two
   percent; our full semantic pipeline; and an inter-satellite relay that cuts worst-case latency
   from thirty-five hours to eleven without changing what's delivered."
+- **[+] If you have ten more seconds — the scheduler under pressure.** "A day of data is thirty
+  percent more than our share of the link can carry. We ran six days back to back: our scheduler
+  kept recovering the same sixty-eight percent of the ships every day, in about five hours. A
+  first-in-first-out queue fell a further seven hours behind each day."
 - **[5] It's honest.** "Every stage you just saw ran on *real* data. The one thing we do *not*
   claim is flight hardware — every timing is a laptop, so 'runs onboard' is a target, not a
   prototype."
@@ -113,13 +119,14 @@ chain prefilter→gate→detector→LoD→scheduler→ground with an integrity c
 
 ## The questions judges will ask — and your answers
 
-The full set is in **`demo/QA_CARD.md`** — keep it on the podium. The four that always come:
+The full set is in **`demo/QA_CARD.md`** — keep it on the podium. The five that always come:
 
 | They ask | You say |
 |---|---|
 | "Is 0.685 the real recall?" | "At an assumed **15% cloud**. The band is **0.40–0.82** over 0–50% cloud — cloud fraction moves it more than anything else, so we never quote it bare." |
 | "Does this actually run on a satellite?" | "Not yet — this is a **demo, not a prototype**. Every timing is a laptop RTX 5060. We map that compute+energy onto a flight processor as a **TARGET** (report 22), and we say so." |
 | "You rely on SAHI — isn't it expensive?" | "We measured it: a cut ship is usually still detected (report 13), so blanket SAHI is a poor trade. We argue **selective** slicing. It costs 1.56× compute, not 2.25× (report 16). Against one call on the whole scene it lifts recall **0.339 → 0.717**; against a plain tile-by-tile pass it does **not** win on our stitched scenes (0.717 vs 0.730) — no ship crosses a seam between independent tiles — and we report that." |
+| "What if the satellite produces more than the link can carry?" | "It already does, and that is where the scheduler earns its place. A day offers **130%** of what our 25% link share sustains (134.5 MB per 24 h). Over **six consecutive days** value-greedy recovers **0.677–0.688** of the ships every day, first report in a median 4.7–5.6 h — it sheds bytes, not ships. FIFO on the same days: latency **9.4 h → 42.9 h**, and it ends having delivered 0.424 of day six's ships. One assumption sits under that: a progressively truncated item counts as delivered once it clears `min_fraction` (10% of its bytes)." |
 | "Your earlier material said 557×." | "That was an all-modeled estimate: it charged every coastal tile a flat 32 kB, a size measured on open-sea tiles. We then measured all 1,415 coastal tiles — median 66.5 kB — and the figure is **341×**. Thumbnails and ship crops are still model sizes, and we say so next to the number." |
 
 ---
@@ -131,6 +138,8 @@ The full set is in **`demo/QA_CARD.md`** — keep it on the podium. The four tha
 - Coastal tile sizes behind the 341× → `code/results/wp28_coast_tile_model.json` (and the earlier
   557× estimate → `code/results/wp6_real_table_modeledcoast.csv`).
 - End-to-end integrity → `code/results/wp11_integration.json` (decision flips @conf_high = 0).
+- Units, energy, latency, fairness and the document-vs-results ledger →
+  `code/results/wp29_validation.json` (37 checks, none failing; five stated gaps).
 - Dataset / leakage-free split → `code/results/wp0_stats.json`.
 - Full narrative per work package → `reports/01`–`reports/23`; Phase-3 write-up → `paper/PHASE3_RESULTS.md`.
 

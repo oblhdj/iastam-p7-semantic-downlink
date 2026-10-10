@@ -34,7 +34,7 @@ computed from an SGP4 propagator for a ground station at Sfax.
 |---|---|---|
 | **Data reduction vs a bent pipe** | **341×** — *coastal tiles measured; thumbnails and crops still modeled* | 60,124 MB offered → 176.3 MB sent per day, mean of three days. Each coastal tile is charged its own measured JPEG size ([`wp28`](code/results/wp28_coast_tile_model.json)); the earlier all-modeled estimate was 557× ([report 05](reports/05-scheduler-on-real-detections.md)) |
 | **Ships delivered** | **0.685** ⚠ *at an assumed 15% cloud* | band **0.40–0.82** across 0–50% cloud — never quote it bare |
-| Fraction of what the satellite still knew | **100%** | at nominal load the downlink is *not* the bottleneck — the detector is. The day fills 84% of the link, so the margin is thin |
+| Fraction of what the satellite still knew | **100%** — *for a single day* | at nominal load the downlink is *not* the bottleneck — the detector is. That is one day's traffic given 36 h of passes. The link share sustains 134.5 MB per 24 h and a day offers 130% of that; over six consecutive days recall still holds (0.677–0.688) because the scheduler truncates low-value products, and FIFO does not hold ([`wp29`](code/results/wp29_validation.json)). Recall counts a progressively truncated item as delivered once it clears `min_fraction` (10% of its bytes) |
 | vs FIFO under congestion | **3.59×** | at 160k tiles/day; the link saturates from about 80k (1.88× there) |
 | vs a *fair* Phi-sat-2 style baseline | **+6.3 points** for ~11× the bytes | our own earlier "+16.7" used an unfair baseline — see [report 06](reports/06-byte-budget.md) |
 | Greedy vs the exact optimum | **0.884%** | exact DP, verified against brute force |
@@ -85,7 +85,7 @@ catalogue-driven simulation to four decimal places — see
 | [`demo/quickstart/`](demo/quickstart/) | the chain live on a laptop CPU in ~2 s: no GPU, no torch, no dataset (synthetic stand-in tiles) |
 | `code/sat7/` | the package: perception (YOLO / SAHI), encoder, scheduler, exact optimum, orbit, pre-filter, dedup |
 | `code/scripts/` | one script per work package, each with a docstring saying *why* it exists |
-| `code/tests/` | 218 tests (5 skip in `.venv`: 2 need torch, 3 need onnxruntime) — 14 fault-injection, exact-solver checks, and the gate's claims pinned |
+| `code/tests/` | 253 tests (5 skip in `.venv`: 2 need torch, 3 need onnxruntime) — 14 fault-injection, exact-solver checks, and the gate's claims pinned |
 | `code/results/` | generated artefacts — CSV, PNG, JSON, logs. Machine-written, not prose |
 
 ## Running it
@@ -106,7 +106,7 @@ are synthetic and how to run it on the real ones.
 
 ```bash
 cd code
-.venv/Scripts/python.exe    -m pytest tests -q        # 213 pass, 5 skip (need torch / onnxruntime)
+.venv/Scripts/python.exe    -m pytest tests -q        # 248 pass, 5 skip (need torch / onnxruntime)
 .venv312/Scripts/python.exe scripts/wp11_integration_demo.py --tiles 400
 ```
 
@@ -164,6 +164,20 @@ baseline" in only **74 of 80**. All six failures are at 160,000 tiles/day, where
 **1.3 points** before anything is changed (it is 6.3 points at 40,000 tiles/day, where nothing
 fails): `thumb_value` 0.05 (−0.5 points) and 0.10 (−1.9), `conf_high` 0.90 (−0.02) and 0.99 (−0.4), `conf_low` 0.05 (−1.6) and 0.10 (−0.8). Each of those settings makes the encoder spend more bytes — on thumbnails, on crops
 for confident ships, or on low-confidence detections — which a saturated link cannot afford.
+
+**What a check of our own numbers found.** `code/scripts/wp29_validation.py` runs 37 checks on units,
+data sizes, energy, latency and fairness against the committed results. None fails; five gaps are
+stated rather than fixed:
+(1) the headline day is simulated alone, with 36 h of passes — it offers 130% of what the 25% link
+share sustains per 24 h (134.5 MB), so consecutive days force the scheduler to truncate;
+(2) a truncated progressive product still counts as delivering its ships, which is an assumption,
+not a measurement, and is what keeps recall flat under load;
+(3) "ES_total ≈ 98%" compares us with a bent pipe that sends every raw byte, which would need 92.6
+days of contact per day — a bent pipe limited to this link spends at most 30.8 kJ/day, less than our
+54 kJ/day, and delivers 0.2% of the ships;
+(4) the B4 row's relay latency is a window estimate (no volume, no capacity);
+(5) thumbnails and ship crops, 24% of the headline's bytes, are still model sizes (next paragraph).
+**No power was measured in this project: every energy figure is an estimate from assumed powers.**
 
 The headline's byte count mixes two kinds of number: coastal tiles are **measured** (each tile's own
 JPEG), thumbnails and ship crops are still **modeled** sizes. B1/B2 (150 scenes) and B3/B4 (a

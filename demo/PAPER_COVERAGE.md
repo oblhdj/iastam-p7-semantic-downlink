@@ -38,8 +38,8 @@ reproduces the authoritative headline and B4 reproduces B3's recall/MB (relay ch
 | **Downlink Reduction** `DR = 1 − D_tx/D_raw` | data-reduction factor | **341×** (DR = 99.71%) — three-day mean; coastal tiles at their measured JPEG size, thumbnails and crops still modeled. Earlier all-modeled estimate: 557× | `wp6_real_table.csv`, `wp28_coast_tile_model.json` (557×: `wp6_real_table_modeledcoast.csv`) |
 | **Detection Quality** (P, R, F1, mAP, small-object recall) | detector eval, by size | mAP50 0.804; small-ship recall the tracked weak point | [report 02](../reports/02-detector-and-quantisation.md) |
 | **Information Preservation** | `downlink_eff = recall / ceiling` + decision-flip integrity | **1.0** at nominal load; **0 decisions changed** on the real chain | [reports 05](../reports/05-scheduler-on-real-detections.md), [12](../reports/12-end-to-end-integration.md) |
-| **Latency** `T_total = T_inf+T_enc+T_comm+T_dec` (relay: `T_ISL+T_GS`) | delivery latency, direct vs relay | per ship: median 4.5 h; per item: median 7.9→3.4 h and worst case 35.2→10.9 h with the relay | [reports 20–21](../reports/20-relay-path-choice.md) |
-| **Energy** `E_total = E_proc + E_comm` | per-stage model + ES ratio | ES_proc 57.6%, ES_total ≈ 98%, proc:comm 5.5:1 | [report 17](../reports/17-energy-model.md) |
+| **Latency** `T_total = T_inf+T_enc+T_comm+T_dec` (relay: `T_ISL+T_GS`) | delivery latency, direct vs relay | per ship: median 4.5 h; per item: median 7.9→3.4 h and worst case 35.2→10.9 h with the relay. All of these are `T_comm` (wait + transmission, both relay legs); the other three stages are measured and add ≤ 71 ms | [reports 20–21](../reports/20-relay-path-choice.md), `wp29_validation.json` |
+| **Energy** `E_total = E_proc + E_comm` | per-stage model + ES ratio | ES_proc 57.6%, ES_total ≈ 98%, proc:comm 5.5:1 — **estimates**: no power was measured, every P_k is an ASSUMPTION | [report 17](../reports/17-energy-model.md), `wp29_validation.json` |
 
 ## 3. The energy model (paper §V, eqs 8–19) — **built**
 `E_proc = Σ P_k·T_k` (pre/tile/det/fusion/semantic), `E_comm,direct = P_tx·D_tx/R_tx`,

@@ -51,8 +51,28 @@ large-scene optical set would strengthen B2 — honest limitation, not a hidden 
 No, and we don't claim it. The relay is a **latency buy, not an energy win**: it costs **~1.8×
 comm energy per relayed item** (+52% across the B4 mix, TARGET), and in return **cuts worst-case
 latency 35.2 h → 10.9 h** and the per-item median 7.9 h → 3.4 h (SIM). The 35 h is the last
-low-value item of a day that fills 84% of the link; a ship's first report still lands in a median
-4.5 h. Recall and bytes are unchanged — B4 is a reroute (reports 19–21).
+low-value item of a day that more than fills the link share; a ship's first report still lands in a
+median 4.5 h. Recall and bytes are unchanged — B4 is a reroute (reports 19–21). Its relay latency is
+a window estimate; the volume-aware two-leg simulation is `wp27`.
+
+**Q. What happens when the satellite produces more than the link can carry?**
+It already does — and that is where the scheduler earns its place. A nominal day offers **130%** of
+what our 25% link share sustains (**134.5 MB per 24 h**). Run for **six consecutive days**,
+value-greedy keeps recovering **0.677–0.688** of the ships every day, with a ship's first report in
+a median **4.7–5.6 h**: it sheds bytes, not ships — low-value products are truncated or deferred.
+FIFO on the same six days falls about seven hours further behind each day (median latency **9.4 h
+→ 42.9 h**) and ends having delivered **0.424** of day six's ships.
+Two things we state with it. One isolated day does fit, given the 36 h of passes the simulation
+allows — that is the "100% of what the satellite still knew" figure. And recall counts a
+progressively truncated item as delivered once it clears `min_fraction` (10% of its bytes): an
+assumption, not a measurement. `source: wp29_validation.json`.
+
+**Q. Did you measure power?**
+No. **Every energy figure is an estimate**: assumed powers (CPU 28 W, GPU 60 W, TX 15 W, ISL 12 W,
+all swept) times measured laptop stage times or simulated transmit times. Only ES_proc (57.6%) needs
+no power — it is a ratio of measured times. And "ES_total ≈ 98%" is against a bent pipe sending every
+raw byte, which this link could never carry; a link-limited bent pipe would spend 30.8 kJ/day, less
+than our 54 kJ/day, for 0.2% of the ships.
 
 **Q. Does your lead over the baseline survive your own sensitivity sweep?**
 Not everywhere, and we say so. Over 80 settings, **value-greedy ≥ FIFO holds in all 80**; **"ours ≥

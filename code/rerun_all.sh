@@ -35,6 +35,7 @@ run $PY312 -W ignore scripts/wp18_campaign_runner.py  # reads wp26_b0_b4.json fo
 run $PY scripts/wp24_detection_eval.py --live-b1   # needs onnxruntime (not in .venv)
 run $PY scripts/wp25_semantic_packets.py
 run $PY scripts/wp27_comms_direct_vs_relay.py
+run $PY scripts/wp29_validation.py                    # checks all of the above; regenerates none of it
 
 echo ""
 echo "=============== DONE: $fail failure(s) ==============="

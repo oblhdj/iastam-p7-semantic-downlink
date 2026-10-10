@@ -110,9 +110,15 @@ Raw transmission over the same link delivers **0.0024** — raw tiles do not fit
 ## 5. Information preservation (paper §VIII-E.3)
 
 At nominal load **downlink efficiency = 1.0**: we deliver **100 % of what the onboard software still
-knew** — the gap from 1.0 to 0.685 is the detector + cloud, not the downlink. The margin is thin:
-the day's 176 MB is 84 % of the ~210 MB the link carries, so low-value items queue for later passes
-(§7). The real chain
+knew** — the gap from 1.0 to 0.685 is the detector + cloud, not the downlink. **This is a
+single-day statement:** one day's 176 MB is given the ~210 MB of passes that fall in a 36 h window.
+The 25 % link share sustains only **134.5 MB per 24 h**, so a day offers **130 %** of it. Simulated
+over six consecutive days, value-greedy still recovers 0.677–0.688 of the ships every day — by
+truncating low-value products — while FIFO's median latency climbs from 9 h to 43 h and its recall
+then collapses (§12). Recall counts a progressively truncated item as delivered once it clears
+`min_fraction` (10 % of its bytes); that is a modelling assumption, not a measurement. A 35 % share
+carries the day outright.
+The real chain
 (real JPEGs → prefilter → gate → detector → LoD → scheduler → ground) reproduces the stored
 catalogue to 4 decimals with **0 decisions changed** at every threshold, so the semantic records
 preserve the detector's decisions exactly. [reports 05, 12]
@@ -142,23 +148,42 @@ under the paper's §IV-B *adaptive downlink policy*, and are among the strongest
 
 `E_proc = Σ P_k·T_k`, `E_comm = P_tx·D_tx/R_tx`, `ES = 1 − E_proposed/E_baseline`, built in
 `wp17_energy_model.py` reading each stage time live with a sanity gate. [report 17]
+**Every energy figure here is an estimate.** No power was measured in this project: P_cpu 28 W,
+P_gpu 60 W, P_tx 15 W and P_isl 12 W are ASSUMPTIONS (swept); the stage times T_k are measured, on
+a laptop; transmit times come from the simulated link. Bytes are multiplied by 8 before they are
+divided by a rate in bit/s (`sat7/accounting.py`; checked against wp17 and wp19 in `wp29`).
 * **ES_proc = 57.6 %** for the default all-CPU onboard build — a **power-free time ratio** (P_cpu
   cancels), so it holds on any processor; a lower bound, since the gate also drops empties the
   per-tile accounting doesn't credit.
 * **Once pixels stop being sent, compute dominates the radio 5.5 : 1** (45.6 kJ of processing
   against 8.4 kJ of transmission per day) — so energy optimisation belongs on the detector/gate,
   not the transmitter.
-* Versus a bent pipe, **ES_total ≈ 98.1 %** — spend ~54 kJ/day of compute+radio to avoid ~2,851
-  kJ/day of raw transmission. Powers P_k are ASSUMPTION and swept; ES_total stays 97–99 % across all.
+* Versus a bent pipe **that sent every raw byte**, **ES_total ≈ 98.1 %** — ~54 kJ/day of
+  compute+radio against ~2,851 kJ/day of raw transmission; ES_total stays 97–99 % across the power
+  sweep. That bent pipe is hypothetical: it would need 92.6 days of contact per day of imaging. One
+  limited to this link's 34.2 min of contact a day spends at most **30.8 kJ/day — less than ours** —
+  and delivers 0.2 % of the ships. Read ES_total as energy per unit of imagery accounted for, not as
+  a smaller daily energy bill.
+* The model costs **one detector call per tile**, which is what the day simulation runs. With SAHI's
+  1.56 calls per tile, processing is 70 kJ/day and compute : radio is 8.4 : 1.
 
 ## 7. Latency & the relay (paper §V-D, §VII, eqs 25–29)
 
-`T_total = T_inf + T_enc + T_comm + T_dec`; median delivery **4.5 h** [SIM]. The optional relay uses
+`T_total = T_inf + T_enc + T_comm + T_dec`; median delivery **4.5 h** [SIM].
+**Convention.** The four stages are sequential for one item and are added. Every latency quoted in
+this document is `T_comm`: from capture to the last byte at the ground station — the wait for a
+contact plus the transmission, and on the relay path both legs (wait for an inter-satellite window,
+ISL transmission, storage on the relay, relay-to-ground transmission). The other three are measured
+[REAL, laptop]: `T_inf` 40 ms per tile on the CPU build (62 ms with SAHI's 1.56 calls), `T_enc`
+0.14 ms for a ship tile to 9.1 ms for a coastal one, `T_dec` 0.04 ms. Together they are at most
+**71 ms**, 4×10⁻⁶ of the median, so the hours do not change; a tile is finished long before the next
+one is captured (one every 2.16 s). [`sat7/accounting.py`, `wp29`]
+The optional relay uses
 the paper's exact `J = λ_E·E + λ_T·T` path choice over real ISL windows: a complementary-coverage
 relay (RAAN +90°) carries 66 % of items and **cuts worst-case latency 35.2 h → 10.9 h** and the
 per-item median 7.9 h → 3.4 h [SIM], for **+52 % communication energy** [TARGET — joules await a real
 P_isl/R_isl]. The 4.5 h is per *ship* (its first report); the per-item figures include thumbnails
-and coastal tiles, which wait behind higher-value items on a link that is 84 % full — the 35 h is
+and coastal tiles, which wait behind higher-value items on a link the day more than fills (§5) — the 35 h is
 the last of them, sent in the final pass of the 36 h horizon. B4 is a **reroute**,
 not extra capacity: recall and bytes are B3's verbatim. **Relay always costs more energy than direct
 (~1.8×) — it is a latency buy, not a power saving.** [reports 19–21]
@@ -212,8 +237,9 @@ not extra capacity: recall and bytes are B3's verbatim. **Relay always costs mor
 6. **Byte sizes are partly modeled.** Coastal tiles are measured; thumbnails (flat 1,000 B) and ship
    crops (a fitted size model) are not, and they are 24 % of the bytes. Measuring the coastal tile
    alone moved the headline from 557× to 341×; the same exercise on the rest would move it again,
-   by less. The day now fills 84 % of the link, so the "downlink is not the bottleneck" statement
-   holds for recall at 40k tiles/day and no longer holds for latency of low-value items.
+   by less. One day now offers 130 % of what the link share sustains per 24 h (§5), so "the
+   downlink is not the bottleneck" holds for recall — and only because truncated products still
+   count as delivered — not for bytes, and not for the latency of low-value items.
 7. **Our lead over the fair baseline is not robust under congestion — a second negative result.**
    Of the 80 swept settings (`wp10_sensitivity.csv`), "value-greedy ≥ FIFO" holds in all 80 and
    "ours ≥ the fair Phi-sat-2-style baseline" in **74**. All six failures are at 160k tiles/day,
@@ -232,6 +258,21 @@ energy saved by not sending pixels dwarfs the extra compute (ES_total ≈ 98 %).
 **the detector on small ships**, not the downlink — which is where Phase-4 effort belongs. What is
 not yet proven, and we say so, is the flight-hardware wall-clock and the quantised accuracy on a real
 onboard board: this is a **demo of the idea, measured end to end on real data — not a flown prototype.**
+
+## 12. Validation checklist — `wp29_validation.py`
+
+37 checks on the committed results, none failing (`code/results/wp29_validation.json`; 35 unit
+tests in `code/tests/test_validation.py`). PARTIAL means every check holds but a stated gap remains.
+
+| # | question | status | what was checked · what remains |
+|---|---|---|---|
+| 6 | data reduction uses actual, consistently defined sizes | **PARTIAL** | formula, raw baseline (H×W×3 per non-cloud tile) and the coastal size table all reproduce · 24 % of the bytes are still model sizes; the day is simulated alone |
+| 7 | detection metrics rest on valid ground truth | **PASS** | all 8,173 labelled test ships, leak-free split, P / R / F1 / AP, one ground truth for B1–B4 · delivered recall uses the catalogue's older matching rule (0.725 vs 0.766 before cloud) |
+| 8 | energy assumptions are documented | **PASS** | wp17 and wp19 reproduce from `P × bytes × 8 / rate` and `Σ P_k·T_k`; every power is labelled ASSUMPTION and swept · no power was measured |
+| 9 | latency includes the required stages | **PASS** | simulated latency = wait + transmission; the three other stages are measured and add ≤ 71 ms · laptop timings |
+| 10 | relay energy and latency cover both links | **PARTIAL** | ISL and relay-to-ground legs both carry time and energy in wp19 and wp27 · the B4 row's relay latency is a window estimate |
+| 11 | compared things share inputs and assumptions | **PARTIAL** | B1/B2, ours/FIFO/baselines, direct/relay, LoD/P0–P3 each share one input · ES_total's bent pipe is not transmittable; B4 is asymmetric; B1/B2 and B3/B4 are different inputs |
+| 12 | every number traces to evidence | **PARTIAL** | 44 headline numbers × the ten judge-facing documents all match their results files · "100 %" is a single-day claim and rests on truncated products counting as delivered |
 
 ---
 _Sources: `demo/PAPER_COVERAGE.md` (paper→evidence map), `reports/01–22`, `code/results/*`,

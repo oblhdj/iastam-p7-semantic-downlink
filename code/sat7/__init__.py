@@ -24,4 +24,5 @@ evaluation     Precision / recall / F1 / AP50 / AP50-95 with ground truth; count
 semantic       Real downlink bytes: binary semantic records, JPEG ROI/context, CCSDS packets, ground decoder
 campaign       B0-B4 as three switches (perception / payload / relay) on one chain, over shared scenes
 comms          Two-path link simulator [SIM]: direct + relay, with capacity, transmit time and energy per stage
+accounting     Units and the three bookkeeping definitions: data reduction, E = P x T, the latency convention
 """

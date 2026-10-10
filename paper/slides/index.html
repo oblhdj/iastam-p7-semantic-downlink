@@ -136,12 +136,12 @@ const S = [
 
 {html:`<div class="kicker">Energy & the relay</div><h2>Compute, not the radio, is the cost</h2>
   <div class="grid">
-    <div class="card"><div class="n">57.6%</div><div class="l">processing energy saved by the gate (ES_proc) — a power-free time ratio <span class="tag SIM">SIM</span></div></div>
-    <div class="card"><div class="n">5.5 : 1</div><div class="l">once you stop sending pixels, <b>compute dominates the radio</b></div></div>
-    <div class="card"><div class="n">≈ 98%</div><div class="l">ES_total vs a bent pipe (~54 kJ/day vs ~2,851 kJ/day) <span class="tag SIM">SIM</span></div></div>
+    <div class="card"><div class="n">57.6%</div><div class="l">processing energy saved by the gate (ES_proc) — a ratio of measured stage times, no power needed <span class="tag REAL">REAL</span></div></div>
+    <div class="card"><div class="n">5.5 : 1</div><div class="l">once you stop sending pixels, <b>compute dominates the radio</b> <span class="warn">estimate — assumed powers</span></div></div>
+    <div class="card"><div class="n">≈ 98%</div><div class="l">ES_total vs a bent pipe sending <i>every</i> raw byte (~54 vs ~2,851 kJ/day) — a hypothetical baseline <span class="warn">estimate — assumed powers</span></div></div>
     <div class="card"><div class="n">35.2 → 10.9 h</div><div class="l">relay cuts worst-case latency (per-item median 7.9 → 3.4 h) <span class="tag SIM">SIM</span>; costs ~+52% comm energy <span class="tag TARGET">TARGET</span></div></div>
   </div>
-  <p style="margin-top:12px">The relay is a <b>latency buy, not an energy win</b> (~1.8× comm energy per relayed item).</p>
+  <p style="margin-top:12px">The relay is a <b>latency buy, not an energy win</b> (~1.8× comm energy per relayed item). <b>No power was measured:</b> every joule here is an estimate from assumed powers and measured or simulated times.</p>
   <p class="src">source: code/results/wp17_energy_model.json · wp18_campaign.json (B4)</p>`,
  notes:`Energy optimisation belongs on the detector and gate, not the transmitter — once pixels stop flowing, compute outweighs the radio more than five to one. The relay is a latency buy: it cuts worst-case latency from thirty-five hours to eleven but costs more energy, so we call it that.`},
 
