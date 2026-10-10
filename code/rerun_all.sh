@@ -20,6 +20,7 @@ run $PY scripts/wp6_simulate_real.py
 run $PY scripts/wp6_simulate_real.py --mix dataset --repeats 1 --tag datasetmix
 run $PY scripts/wp6_simulate_real.py --no-size-model --repeats 1 --tag nosizemodel
 run $PY scripts/wp6_simulate_real.py --coast-model wp7 --tag modeledcoast   # the earlier 557x estimate
+run $PY scripts/wp6_simulate_real.py --semantic priority --tag paper     # the paper's Table I P0-P3 (PHASE3 2b)
 run $PY scripts/wp7_budget_sweep.py
 run $PY scripts/wp8_queue_aware.py
 run $PY scripts/wp5_optimality_gap.py --frac-steps 16
@@ -32,7 +33,8 @@ run $PY312 -W ignore scripts/wp11_integration_demo.py --tiles 5320
 run $PY scripts/wp17_energy_model.py
 run $PY scripts/wp19_relay_energy.py
 run $PY312 -W ignore scripts/wp18_campaign_runner.py  # reads wp26_b0_b4.json for B1 / B2
-run $PY scripts/wp24_detection_eval.py --live-b1   # needs onnxruntime (not in .venv)
+run $PY312 -W ignore scripts/wp18_campaign_runner.py --semantic priority --tag paper   # B3 / B4 under P0-P3
+run $PY scripts/wp24_detection_eval.py --live-b1  # needs onnxruntime (not in .venv)
 run $PY scripts/wp25_semantic_packets.py
 run $PY scripts/wp27_comms_direct_vs_relay.py
 run $PY scripts/wp29_validation.py                    # checks all of the above; regenerates none of it

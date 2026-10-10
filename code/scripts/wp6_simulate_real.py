@@ -11,6 +11,7 @@ dark (no AIS in the data), and capture times (the tiles carry no timestamps).
     python scripts/wp6_simulate_real.py
     python scripts/wp6_simulate_real.py --mix dataset --tiles 80000
     python scripts/wp6_simulate_real.py --no-size-model     # ablation: WP4 medians only
+    python scripts/wp6_simulate_real.py --semantic priority --tag paper   # the paper's Table I P0-P3
 
 Outputs in results/: wp6_real_table.csv, wp6_real_recall.png, wp6_real_sweep.csv/.png,
 wp6_thr_sweep.csv/.png, wp6_real_vs_sim.csv
@@ -34,6 +35,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
+from sat7.priority import PriorityConfig, encode_priority
 from sat7.orbit import LINK_PRESETS, GroundStation, OrbitConfig, find_passes, make_satellite
 from sat7.real_workload import (RealWorkloadConfig, load_catalogue, load_size_model,
                                 workload_from_catalogue)
@@ -44,18 +46,37 @@ from sat7.scheduler import (COAST_TILE_BYTES_WP7, FIFO, LoDConfig, NoBuffer, Val
 COLORS = {"Bent pipe (raw, FIFO)": "#C0392B",
           "Phi-sat-2 style, ocean only": "#B0B5BD", "Phi-sat-2 style, fair (+coastal)": "#6B7280",
           "Ours: LoD + no buffer": "#8DB8E0", "Ours: LoD + FIFO": "#1B6CA8",
-          "Ours: LoD + value-greedy": "#E07A1F"}
+          "Ours: LoD + value-greedy": "#E07A1F",
+          "Paper P0-P3 + no buffer": "#8DB8E0", "Paper P0-P3 + FIFO": "#1B6CA8",
+          "Paper P0-P3 + value-greedy": "#E07A1F"}
 
 # (label, encoder, policy, coverage kind). "kind" says which ships the encoder can even
 # describe, which is what the onboard ceiling below is computed from.
-STRATEGIES = [
+BASELINES = [
     ("Bent pipe (raw, FIFO)", encode_raw, FIFO, "raw"),
     ("Phi-sat-2 style, ocean only", partial(encode_fixed_patch, coastal=False), FIFO, "ocean"),
     ("Phi-sat-2 style, fair (+coastal)", encode_fixed_patch, FIFO, "detected"),
-    ("Ours: LoD + no buffer", encode_lod, NoBuffer, "lod"),
-    ("Ours: LoD + FIFO", encode_lod, FIFO, "lod"),
-    ("Ours: LoD + value-greedy", encode_lod, ValueGreedy, "lod"),
 ]
+
+
+def encode_p0p3(wl, lod):
+    """The paper's Table I scheme, at the LoD ladder's own P1 / P2 boundary (as wp18 and wp23 run it)."""
+    return encode_priority(wl, lod, PriorityConfig(p1_conf=lod.conf_high))
+
+
+# --semantic: which encoder the three "ours" rows use. The baselines are the same in both.
+SEMANTIC = {"lod": ("Ours: LoD", encode_lod, "lod"),
+            "priority": ("Paper P0-P3", encode_p0p3, "priority")}
+
+
+def strategies(semantic: str = "lod") -> list:
+    name, enc, kind = SEMANTIC[semantic]
+    return BASELINES + [(f"{name} + no buffer", enc, NoBuffer, kind),
+                        (f"{name} + FIFO", enc, FIFO, kind),
+                        (f"{name} + value-greedy", enc, ValueGreedy, kind)]
+
+
+STRATEGIES = strategies("lod")
 
 
 def onboard_ceiling(wl, lod: LoDConfig, kind: str) -> dict:
@@ -68,6 +89,8 @@ def onboard_ceiling(wl, lod: LoDConfig, kind: str) -> dict:
       detected  detected ships anywhere, coast included (the fair fixed-patch baseline);
       lod       ours: detected ships anywhere, plus *undetected* ships on coastal tiles,
                 because we send those tiles whole.
+      priority  the paper's P0-P3: detected ships anywhere. Its coastal context tile is sent
+                for the ships that fired and is credited with those only (sat7.priority).
     Ships below this line are lost before any scheduling happens, so they are a detector
     problem, not a downlink problem. Keeping the two apart is the point: it says which
     work-package to spend the next week on.
@@ -84,6 +107,7 @@ def onboard_ceiling(wl, lod: LoDConfig, kind: str) -> dict:
             ok = {"raw": True,
                   "ocean": ctx == "ships" and fired,
                   "detected": fired,
+                  "priority": fired,
                   "lod": ctx == "coast" or fired}[kind]
             known += ok
             dark_known += ok and s.dark
@@ -91,9 +115,9 @@ def onboard_ceiling(wl, lod: LoDConfig, kind: str) -> dict:
             "ceiling_dark_recall": dark_known / nd if nd else float("nan")}
 
 
-def run_all(wl, passes, start, storage, lod) -> pd.DataFrame:
+def run_all(wl, passes, start, storage, lod, semantic: str = "lod") -> pd.DataFrame:
     rows = []
-    for label, enc, pol, kind in STRATEGIES:
+    for label, enc, pol, kind in strategies(semantic):
         m = metrics(simulate(enc(wl, lod), passes, start, pol(), storage, encoder=label), wl, lod)
         m["strategy"] = label
         m |= onboard_ceiling(wl, lod, kind)
@@ -134,10 +158,18 @@ def main() -> None:
                     help="size of a coastal context tile: 'measured' = each tile's own JPEG q40 "
                          "(results/wp28_coast_tile_bytes.csv, canonical); 'wp7' = the earlier flat "
                          "32,420 B estimate (reproduces the 557x figure; run it with --tag modeledcoast)")
+    ap.add_argument("--semantic", choices=sorted(SEMANTIC), default="lod",
+                    help="encoder of the three 'ours' rows: 'lod' = the repo ladder (the canonical "
+                         "headline); 'priority' = the paper's Table I P0-P3 (sat7.priority), which "
+                         "must be run with --tag so the canonical files are not overwritten")
     ap.add_argument("--results", type=Path, default=ROOT / "results")
     ap.add_argument("--tag", default="", help="suffix for the output files, so a variant run "
                     "(--mix dataset, --no-size-model, ...) does not overwrite the main results")
     args = ap.parse_args()
+    if args.semantic != "lod" and not args.tag:
+        ap.error("--semantic priority needs --tag (e.g. --tag paper): the untagged files are the "
+                 "canonical LoD results")
+    ours, enc_ours, _ = SEMANTIC[args.semantic]
     out = args.results
     tag = f"_{args.tag}" if args.tag else ""
 
@@ -169,7 +201,7 @@ def main() -> None:
     frames = []
     for r in range(args.repeats):
         w, _ = build_day(tiles, ships, args, args.seed + r, args.tiles)
-        d = run_all(w, passes, start, storage, lod)
+        d = run_all(w, passes, start, storage, lod, args.semantic)
         d["rep"] = r
         frames.append(d)
     reps = pd.concat(frames)
@@ -195,7 +227,8 @@ def main() -> None:
 
     # ---------------------------------------------------------------- real vs synthetic
     wsyn = generate_workload(WorkloadConfig(tiles_per_day=args.tiles, seed=args.seed))
-    dsyn = run_all(wsyn, passes, start, storage, LoDConfig(conf_low=args.det_thr, **coast_kw))
+    dsyn = run_all(wsyn, passes, start, storage, LoDConfig(conf_low=args.det_thr, **coast_kw),
+                   args.semantic)
     cmp = pd.concat([df.assign(workload="REAL detections (WP6)"),
                      dsyn.assign(workload="SYNTHETIC (WP5)")])
     keep = ["workload", "strategy", "ship_recall", "dark_recall", "latency_med_h", "MB_sent"]
@@ -211,7 +244,7 @@ def main() -> None:
     sweep = []
     for tpd in loads:
         w, _ = build_day(tiles, ships, args, args.seed, tpd)
-        d = run_all(w, passes, start, storage, lod)
+        d = run_all(w, passes, start, storage, lod, args.semantic)
         d["tiles"] = tpd
         sweep.append(d)
     sw = pd.concat(sweep)
@@ -225,15 +258,15 @@ def main() -> None:
         a2.det_thr = thr
         w, s2 = build_day(tiles, ships, a2, args.seed, args.tiles)
         l2 = LoDConfig(conf_low=thr, size_model=sm, **coast_kw)
-        m = metrics(simulate(encode_lod(w, l2), passes, start, ValueGreedy(), storage,
-                             encoder="Ours: LoD + value-greedy"), w, l2)
+        m = metrics(simulate(enc_ours(w, l2), passes, start, ValueGreedy(), storage,
+                             encoder=f"{ours} + value-greedy"), w, l2)
         m["det_thr"] = thr
         m["detected_frac"] = s2.detected / s2.ships
         m["false_alarms"] = s2.false_alarms
         thr_rows.append(m)
     thr = pd.DataFrame(thr_rows)
     thr.to_csv(out / f"wp6_thr_sweep{tag}.csv", index=False)
-    print("\nOnboard confidence threshold sweep (ours, value-greedy) -- REAL confidences:")
+    print(f"\nOnboard confidence threshold sweep ({ours}, value-greedy) -- REAL confidences:")
     with pd.option_context("display.width", 200, "display.precision", 3):
         print(thr[["det_thr", "detected_frac", "false_alarms", "ship_recall", "dark_recall",
                    "MB_sent", "latency_med_h"]].to_string(index=False))

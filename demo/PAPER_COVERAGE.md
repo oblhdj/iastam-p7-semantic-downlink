@@ -110,6 +110,13 @@ information preservation → downlink-efficiency curves, [report 05](../reports/
    (`sat7.priority`, [report 23](../reports/23-paper-faithful-modules.md)) and selectable alongside
    LoD; head-to-head it is leaner (90.5 vs 178.5 MB, same day, coastal tiles measured) at −6.3 pts
    recall — a trade, stated as one. (On the earlier flat coastal size the pair read 49.1 vs 108.5 MB.)
+   **Three-day mean, now a co-headline** (`wp6_real_table_paper.csv`, `PHASE3_RESULTS.md` §2b):
+   pure P0–P3 delivers recall **0.622** in **88.4 MB/day (680×)**, against 0.685 / 176.3 MB / 341×
+   for the ladder; B4 under P0–P3 cuts the worst-case item latency 11.6 h → 6.2 h
+   (`wp18_campaign_paper.json`). **Say this too:** on recall alone pure P0–P3 equals the fair
+   Phi-sat-2-style baseline (0.622, at 16.3 MB) — its extra bytes are ROI and context evidence,
+   which recall does not score — so the +6.3 points over that baseline is a result of the LoD
+   ladder, not of the paper's four levels.
 6. **Built, but NOT in the paper** (fold into the Phase-3 write-up under §IV-B *adaptive downlink
    policy*): the value-aware **multi-pass scheduler**, **dark-vessel/AIS** prioritisation, the
    **optimality bounds** ([reports 08–09](../reports/08-optimality-gap.md)), and the **leakage-free
