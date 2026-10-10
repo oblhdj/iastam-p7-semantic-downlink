@@ -1,0 +1,389 @@
+{
+  "label": "detection metrics REAL; bytes REAL (measured serializations); delivered recall and latency SIM-over-REAL; B4 links SIM (rates and powers ASSUMPTION)",
+  "inputs": {
+    "scenes": 150,
+    "per_side": 4,
+    "scene_px": 3072,
+    "ships": 1164,
+    "unique_tiles": 1211,
+    "context_tiles": {
+      "cloud": 383,
+      "ships": 443,
+      "coast": 125,
+      "empty": 1449
+    },
+    "static_stage_s": 199.4
+  },
+  "detection_quality_same_scenes": {
+    "B0": {
+      "onboard_detection": "none (no detector onboard)",
+      "ground_side_if_delivered": "the ground runs the same SAHI + YOLO (B2's metrics); a perfect analyst would see every ship (upper bound)"
+    },
+    "B1": {
+      "images": 150,
+      "n_gt": 1164,
+      "n_detections_supplied": 579,
+      "conf_thr": 0.25,
+      "iou_thr": 0.5,
+      "TP": 394,
+      "FP": 185,
+      "FN": 770,
+      "precision": 0.6805,
+      "recall": 0.3385,
+      "F1": 0.4521,
+      "recall_by_size": {
+        "small_<32": {
+          "n_gt": 606,
+          "recall": 0.0462
+        },
+        "medium_32-96": {
+          "n_gt": 356,
+          "recall": 0.5421
+        },
+        "large_>96": {
+          "n_gt": 202,
+          "recall": 0.8564
+        }
+      },
+      "AP50": 0.5394,
+      "AP50-95": 0.3639,
+      "detections_transmitted": 579
+    },
+    "B2": {
+      "images": 150,
+      "n_gt": 1164,
+      "n_detections_supplied": 1199,
+      "conf_thr": 0.25,
+      "iou_thr": 0.5,
+      "TP": 835,
+      "FP": 364,
+      "FN": 329,
+      "precision": 0.6964,
+      "recall": 0.7174,
+      "F1": 0.7067,
+      "recall_by_size": {
+        "small_<32": {
+          "n_gt": 606,
+          "recall": 0.505
+        },
+        "medium_32-96": {
+          "n_gt": 356,
+          "recall": 0.9242
+        },
+        "large_>96": {
+          "n_gt": 202,
+          "recall": 0.9901
+        }
+      },
+      "AP50": 0.7595,
+      "AP50-95": 0.559,
+      "detections_transmitted": 1199
+    },
+    "B3": {
+      "images": 150,
+      "n_gt": 1164,
+      "n_detections_supplied": 1051,
+      "conf_thr": 0.25,
+      "iou_thr": 0.5,
+      "TP": 731,
+      "FP": 320,
+      "FN": 433,
+      "precision": 0.6955,
+      "recall": 0.628,
+      "F1": 0.66,
+      "recall_by_size": {
+        "small_<32": {
+          "n_gt": 606,
+          "recall": 0.3977
+        },
+        "medium_32-96": {
+          "n_gt": 356,
+          "recall": 0.8146
+        },
+        "large_>96": {
+          "n_gt": 202,
+          "recall": 0.9901
+        }
+      },
+      "AP50": 0.7158,
+      "AP50-95": 0.5312,
+      "detections_transmitted": 1051
+    },
+    "B4": {
+      "images": 150,
+      "n_gt": 1164,
+      "n_detections_supplied": 1051,
+      "conf_thr": 0.25,
+      "iou_thr": 0.5,
+      "TP": 731,
+      "FP": 320,
+      "FN": 433,
+      "precision": 0.6955,
+      "recall": 0.628,
+      "F1": 0.66,
+      "recall_by_size": {
+        "small_<32": {
+          "n_gt": 606,
+          "recall": 0.3977
+        },
+        "medium_32-96": {
+          "n_gt": 356,
+          "recall": 0.8146
+        },
+        "large_>96": {
+          "n_gt": 202,
+          "recall": 0.9901
+        }
+      },
+      "AP50": 0.7158,
+      "AP50-95": 0.5312,
+      "detections_transmitted": 1051
+    },
+    "B1_per_tile_reference": {
+      "images": 150,
+      "n_gt": 1164,
+      "n_detections_supplied": 1182,
+      "conf_thr": 0.25,
+      "iou_thr": 0.5,
+      "TP": 850,
+      "FP": 332,
+      "FN": 314,
+      "precision": 0.7191,
+      "recall": 0.7302,
+      "F1": 0.7246,
+      "recall_by_size": {
+        "small_<32": {
+          "n_gt": 606,
+          "recall": 0.5231
+        },
+        "medium_32-96": {
+          "n_gt": 356,
+          "recall": 0.9354
+        },
+        "large_>96": {
+          "n_gt": 202,
+          "recall": 0.9901
+        }
+      },
+      "AP50": 0.7861,
+      "AP50-95": 0.5816,
+      "note": "one detector call per 768 px source tile = what wp18 called B1; on a scene it is a 16-window tiling (a slicing stage), so it is NOT the paper's B1"
+    }
+  },
+  "mean_bytes_per_scene": {
+    "B0": 28366898,
+    "B1": 131.24,
+    "B2": 271.7733333333333,
+    "B3": 37985.06,
+    "B4": 37985.06
+  },
+  "day": {
+    "tiles": 40000,
+    "scene_instances": 2500,
+    "ships": 19267,
+    "passes": 6,
+    "link_share": 0.25,
+    "results": {
+      "B0": {
+        "ship_recall": 0.0024,
+        "dark_recall": 0.0015,
+        "latency_med_h": 2.8424,
+        "latency_p90_h": 14.0484,
+        "MB_sent": 141.8345,
+        "MB_offered": 70917.245,
+        "MB_capacity": 209.9013,
+        "dropped_storage": 2214,
+        "ship_recall_ground_runs_B2": 0.0019,
+        "note": "ship_recall credits every ship in a delivered image (perfect analyst); ship_recall_ground_runs_B2 credits what the same SAHI + YOLO finds in it on the ground"
+      },
+      "B1": {
+        "ship_recall": 0.3373,
+        "dark_recall": 0.3429,
+        "latency_med_h": 4.3326,
+        "latency_p90_h": 9.33,
+        "MB_sent": 0.3256,
+        "MB_offered": 0.3256,
+        "MB_capacity": 209.9013,
+        "dropped_storage": 0
+      },
+      "B2": {
+        "ship_recall": 0.7145,
+        "dark_recall": 0.7235,
+        "latency_med_h": 4.3256,
+        "latency_p90_h": 9.4236,
+        "MB_sent": 0.672,
+        "MB_offered": 0.672,
+        "MB_capacity": 209.9013,
+        "dropped_storage": 0
+      },
+      "B3": {
+        "ship_recall": 0.624,
+        "dark_recall": 0.6321,
+        "latency_med_h": 4.3484,
+        "latency_p90_h": 9.4491,
+        "MB_sent": 97.9384,
+        "MB_offered": 97.9551,
+        "MB_capacity": 209.9013,
+        "dropped_storage": 0
+      },
+      "B4": {
+        "ship_recall": 0.624,
+        "dark_recall": 0.6321,
+        "latency_med_h": 1.8816,
+        "latency_p90_h": 4.2847,
+        "MB_sent": 97.9551,
+        "MB_offered": 97.9551,
+        "MB_capacity": 209.9013,
+        "dropped_storage": 0,
+        "label": "SIM: simulated links; rates and powers ASSUMPTION (reports 17, 19)",
+        "gate_relay_disabled_equals_B3": true,
+        "totals": {
+          "label": "SIM",
+          "items": 29755,
+          "MB_delivered": 97.955,
+          "relay_fraction_items": 0.4326,
+          "tx_s": 468.4,
+          "energy_J": 6539.3,
+          "deadline_met_fraction": null,
+          "relay_left_MB": 0.0
+        },
+        "by_path": {
+          "direct": {
+            "items": 16882,
+            "MB": 56.916,
+            "latency_h": {
+              "median": 1.58,
+              "p90": 4.47,
+              "max": 5.82
+            },
+            "tx_s": {
+              "ground": 179.5,
+              "isl": 0.0,
+              "relay_ground": 0.0
+            },
+            "energy_J": {
+              "ground": 2691.8,
+              "isl": 0.0,
+              "relay_ground": 0.0
+            }
+          },
+          "relay": {
+            "items": 12873,
+            "MB": 41.039,
+            "latency_h": {
+              "median": 2.1,
+              "p90": 3.95,
+              "max": 4.73
+            },
+            "tx_s": {
+              "ground": 0.0,
+              "isl": 162.2,
+              "relay_ground": 126.7
+            },
+            "energy_J": {
+              "ground": 0.0,
+              "isl": 1946.5,
+              "relay_ground": 1901.0
+            }
+          }
+        },
+        "link_use": {
+          "ground": {
+            "MB": 56.916,
+            "capacity_MB": 209.901,
+            "used": 0.2712
+          },
+          "isl": {
+            "MB": 41.039,
+            "capacity_MB": 9963.14,
+            "used": 0.0041
+          },
+          "relay_ground": {
+            "MB": 41.039,
+            "capacity_MB": 200.698,
+            "used": 0.2045
+          }
+        },
+        "direct_only_energy_kJ": 4.413,
+        "status": "implemented as a SIMULATION: orbits, windows, rates and powers are modeled; no relay hardware, no real link"
+      }
+    }
+  },
+  "checks": {
+    "1_B0_original_image": {
+      "passed": true,
+      "decoded_equals_scene": true,
+      "packet_bytes": 28366898,
+      "formula_bytes": 28366898,
+      "pixels_bytes": 28311552,
+      "packets": 6916,
+      "detector_calls": 0
+    },
+    "2_B1_no_slicing": {
+      "passed": true,
+      "detector_calls_per_scene": 1.0,
+      "frame_px": 3072,
+      "letterbox_gain": 0.25
+    },
+    "3_B2_sahi_fusion": {
+      "passed": true,
+      "windows_per_scene": 25.0,
+      "fused_pairs_overlapping_iou_ge_0.5": 0,
+      "boxes_before_fusion": 4710,
+      "boxes_after_fusion": 2390,
+      "global_coords_exact_vs_per_tile": true,
+      "boxes_compared": 2714,
+      "detector_batched_vs_single_call": {
+        "tiles": 2400,
+        "tiles_with_different_box_count": 3,
+        "boxes": 2714,
+        "boxes_not_bit_identical": 2714,
+        "max_box_diff_px": 3.21252,
+        "max_conf_diff": 0.11824,
+        "note": "a property of the inference backend, not of the pipeline: bit-identical on ONNX CPU; a GPU returns slightly different floats for a 16-crop batch than for single calls, and occasionally one box more or fewer (report 12). The coordinate gate above is computed on identical per-crop detections, so it is exact on any backend"
+      }
+    },
+    "4_B3_semantic_policy": {
+      "passed": true,
+      "levels_disagreeing_with_priority.classify": 0,
+      "below_cut_transmitted": 0,
+      "level_histogram": {
+        "P0": 1339,
+        "P1": 414,
+        "P2": 470,
+        "P3": 167
+      },
+      "ground_round_trip": {
+        "scene": 1,
+        "records_sent": 6,
+        "records_decoded": 6,
+        "rois_decoded": 2,
+        "contexts_decoded": 1
+      }
+    },
+    "5_same_inputs": {
+      "passed": true,
+      "fingerprint": {
+        "scenes": "bcaf9ec9630d69e3",
+        "pixels": "88d724d227caa2b8",
+        "ground_truth": "d7102218d339d9c8",
+        "model": "4680d0092ffbfccb",
+        "det_thr": 0.25,
+        "matching": "threshold-then-match IoU 0.5",
+        "encoder": "a2034cee529b3c6e",
+        "day": "0073f34dc5d9da9f",
+        "passes": "2536625b546981a2",
+        "scheduler": "ValueGreedy",
+        "storage_gb": 8.0
+      },
+      "modes": [
+        "B0",
+        "B1",
+        "B2",
+        "B3",
+        "B4"
+      ]
+    }
+  },
+  "elapsed_s": 208.1
+}

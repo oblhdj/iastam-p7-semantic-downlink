@@ -77,18 +77,31 @@ catalogue-driven simulation to four decimal places — see
 | [`docs/STATUS.md`](docs/STATUS.md) | pre-Phase-3 state — **superseded for status** by `PHASE3_RESULTS.md` |
 | [`docs/GLOSSARY.md`](docs/GLOSSARY.md) | every term and symbol used in the reports |
 | [`paper/`](paper/) | Phase-3 measured results, slide deck (`slides/`) and the 2-min video script |
+| [`demo/quickstart/`](demo/quickstart/) | the chain live on a laptop CPU in ~2 s: no GPU, no torch, no dataset (synthetic stand-in tiles) |
 | `code/sat7/` | the package: perception (YOLO / SAHI), encoder, scheduler, exact optimum, orbit, pre-filter, dedup |
 | `code/scripts/` | one script per work package, each with a docstring saying *why* it exists |
-| `code/tests/` | 137 tests (2 skip, need torch) — 14 fault-injection, exact-solver checks, and the gate's claims pinned |
+| `code/tests/` | 146 tests (3 skip: 2 need torch, 1 needs onnxruntime) — 14 fault-injection, exact-solver checks, and the gate's claims pinned |
 | `code/results/` | generated artefacts — CSV, PNG, JSON, logs. Machine-written, not prose |
 
 ## Running it
 
-Two environments, because torch and the rest disagree about Python versions:
+**Quickest — no GPU, no torch, no dataset (~2 s on a laptop CPU):**
+
+```bash
+python -m pip install -r demo/quickstart/requirements.txt
+python demo/quickstart/run_demo.py
+```
+
+This runs the real `sat7` chain (pre-filter → YOLO ONNX → SAHI + fusion → P0–P3 packet →
+scheduler) on 9 synthetic stand-in tiles and ends on the measured headline read from
+`code/results/`. See [`demo/quickstart/README.md`](demo/quickstart/README.md) for why the tiles
+are synthetic and how to run it on the real ones.
+
+**The full pipeline** needs two environments, because torch and the rest disagree about Python versions:
 
 ```bash
 cd code
-.venv/Scripts/python.exe    -m pytest tests -q        # 137 pass, 2 skip (need torch)
+.venv/Scripts/python.exe    -m pytest tests -q        # 146 pass, 3 skip (need torch / onnxruntime)
 .venv312/Scripts/python.exe scripts/wp11_integration_demo.py --tiles 400
 ```
 

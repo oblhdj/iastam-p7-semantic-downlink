@@ -40,6 +40,10 @@ class Item:
     kind: str                          # "L0", "L1", "L2", "tile", "thumb", "raw", "patch", "fp"
     ships: tuple[int, ...] = ()        # ids of true ships this item reveals
     progressive: bool = False
+    min_fraction: float = 0.1          # smallest share of a progressive item worth sending: below
+                                       # it the ground cannot reconstruct an image (audit D2). 0.1
+                                       # is the modeled default; sat7.semantic sets the measured end
+                                       # of a progressive JPEG's first scan for real items.
 
     @property
     def density(self) -> float:
@@ -87,6 +91,8 @@ class Workload:
                                             # stage found that the network did NOT confirm.
                                             # High = the network probably missed something.
     source: str = "synthetic"               # "synthetic" | "real detections (WP6)"
+    sources: list[str] | None = None        # per tile: the real image it was drawn from (WP6
+                                            # catalogue), so its pixels can be re-encoded
 
 
 def generate_workload(cfg: WorkloadConfig | None = None) -> Workload:
@@ -149,15 +155,19 @@ class LoDConfig:
     When ``size_model`` is set and the ship's real length is known (WP6), the chip and
     ROI sizes come from the fitted power law instead of these medians.
     """
-    l0_bytes: float = 40.0             # lat, lon, length, heading, confidence
+    l0_bytes: float = 40.0             # ASSUMPTION: lat, lon, length, heading, confidence. The
+                                       # serialized record (sat7.semantic) is 26 B + 6 B packet
+                                       # header + 2 B CRC = 34 B, measured
     l1_bytes: float = 900.0            # small image chip      (measured: tight crop, q40)
     l2_bytes: float = 2_500.0          # ROI incl. wake        (measured: wake crop, q80)
     coast_tile_bytes: float = 32_420.0 # compressed coastal / port tile. WP7 moved this from
                                        # q60 (42.4 kB, PSNR 40.3 dB) to q40 (32.4 kB, 38.1 dB):
-                                       # -24% of the single largest item in the budget, no
-                                       # recall cost, +1.2 points under congestion. q30 is
-                                       # 25.9 kB / 36.8 dB and tested, but adopting it needs
-                                       # a detector-on-recompressed-tiles check first.
+                                       # -24% of the single largest item in the budget, +1.2
+                                       # points under congestion. NOT free: report 14 re-ran the
+                                       # detector on recompressed coastal tiles and q40 costs
+                                       # 4.0 points of recall, all on small ships (the earlier
+                                       # "no recall cost" was a simulator artefact). q30 is
+                                       # 25.9 kB / 36.8 dB and was rejected (-5.4 points).
     coast_mode: str = "tile"           # "tile"    = whole coastal tile, catches ships the
                                        #             detector missed (62% of the budget)
                                        # "mosaic"  = ROI crops around detected ships only
@@ -418,7 +428,7 @@ class Policy(ABC):
             if it.size <= left:
                 out.append((it, 1.0))
                 left -= it.size
-            elif self.truncate and it.progressive and left >= 0.1 * it.size:
+            elif self.truncate and it.progressive and left >= it.min_fraction * it.size:
                 out.append((it, left / it.size))
                 left = 0.0
             elif self.stop_when_full:

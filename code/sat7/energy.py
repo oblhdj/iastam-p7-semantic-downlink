@@ -134,8 +134,11 @@ class EnergyModel:
                 "E_base": sum(base.values()), "E_prop": sum(prop.values())}
 
     def e_comm_direct_J(self, d_bytes: float) -> float:
-        """E_comm,direct = P_tx * D_tx / R_tx."""
-        return self.powers_W["tx"] * d_bytes / self.r_tx_bps
+        """E_comm,direct = P_tx * D_tx / R_tx, with D_tx in BITS (d_bytes * 8) and R_tx in bit/s.
+
+        Until 10 Oct 2026 this divided bytes by bit/s, so every joule here was 8x too small against
+        wp17 / wp19, which always converted (5.12 kJ/day for 107.95 MB at 15 W, 2.53 Mbps)."""
+        return self.powers_W["tx"] * d_bytes * 8.0 / self.r_tx_bps
 
     def e_comm_relay_J(self, d_bytes: float, p_isl_W: float = 12.0,
                        r_isl_bps: float | None = None) -> dict:
@@ -143,7 +146,7 @@ class EnergyModel:
         over r_isl_bps; the ground leg is the ordinary direct cost from the relay. p_isl_W is
         ASSUMPTION (report 19)."""
         r_isl = r_isl_bps or self.r_tx_bps
-        e_isl = p_isl_W * d_bytes / r_isl
+        e_isl = p_isl_W * d_bytes * 8.0 / r_isl
         e_gs = self.e_comm_direct_J(d_bytes)
         return {"E_ISL_J": e_isl, "E_GS_J": e_gs, "E_relay_J": e_isl + e_gs}
 
@@ -156,17 +159,17 @@ class EnergyModel:
     def direct_energy_fn(self):
         """Returns a `direct_energy(d_bytes, p_tx, r_gs_bps)` matching sat7.relay's signature."""
         def f(d_bytes, p_tx, r_gs_bps):
-            return {"E_comm_J": p_tx * d_bytes / r_gs_bps, "tx_time_s": d_bytes / r_gs_bps,
+            return {"E_comm_J": p_tx * d_bytes * 8.0 / r_gs_bps, "tx_time_s": d_bytes * 8.0 / r_gs_bps,
                     "label": "REAL" if "REAL" in self.provenance.get("powers_W", "") else "ASSUMPTION"}
         return f
 
     def relay_energy_fn(self):
         """Returns a `relay_energy(d_bytes, p_tx, p_isl, r_gs_bps, r_isl_bps)` for sat7.relay."""
         def f(d_bytes, p_tx, p_isl, r_gs_bps, r_isl_bps):
-            e_isl = p_isl * d_bytes / r_isl_bps
-            e_gs = p_tx * d_bytes / r_gs_bps
+            e_isl = p_isl * d_bytes * 8.0 / r_isl_bps
+            e_gs = p_tx * d_bytes * 8.0 / r_gs_bps
             return {"E_ISL_J": e_isl, "E_GS_J": e_gs, "E_relay_J": e_isl + e_gs,
-                    "isl_time_s": d_bytes / r_isl_bps, "gs_time_s": d_bytes / r_gs_bps,
+                    "isl_time_s": d_bytes * 8.0 / r_isl_bps, "gs_time_s": d_bytes * 8.0 / r_gs_bps,
                     "label": "REAL" if "REAL" in self.provenance.get("powers_W", "") else "ASSUMPTION"}
         return f
 

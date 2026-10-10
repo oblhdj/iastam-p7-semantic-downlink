@@ -1,0 +1,137 @@
+{
+  "label": "SYNTHETIC -- procedurally rendered stand-ins; no Airbus pixels. Layout only (ship boxes, scene type) is taken from committed REAL results for the named tile.",
+  "why": "Airbus Ship Detection Challenge rules s.7B forbid redistributing Competition Data.",
+  "generator": "demo/quickstart/make_synthetic_tiles.py",
+  "seed": 7,
+  "tile_px": 768,
+  "swath": {
+    "rows": 3,
+    "cols": 3,
+    "px": 2304,
+    "stitch": "abutting, overlap 0 (wp15)"
+  },
+  "layout_sources": [
+    "code/results/wp1_predictions.csv",
+    "code/results/wp6_pred_flags.csv",
+    "code/results/wp6_tiles.csv"
+  ],
+  "tiles": [
+    {
+      "slot": 0,
+      "row": 0,
+      "col": 0,
+      "file": "01_synthetic_00113a75c.jpg",
+      "synthetic": true,
+      "stands_in_for": "00113a75c.jpg",
+      "reference_context": "candidates",
+      "scene": "seven ships, mostly confident",
+      "rendered_ships": 5,
+      "rendered_specks": 0,
+      "sha256": "7a9dbe19067349f551a7484daf3aeeccf63719bc3e605bc5b2e4554fa6366d72"
+    },
+    {
+      "slot": 1,
+      "row": 0,
+      "col": 1,
+      "file": "02_synthetic_0002756f7.jpg",
+      "synthetic": true,
+      "stands_in_for": "0002756f7.jpg",
+      "reference_context": "candidates",
+      "scene": "two uncertain ships + a sub-threshold box",
+      "rendered_ships": 2,
+      "rendered_specks": 0,
+      "sha256": "8dfb03b3873e103a9b585f0ea39404c7ff0b1782f57f6e47ed3f62c7247a8b09"
+    },
+    {
+      "slot": 2,
+      "row": 0,
+      "col": 2,
+      "file": "03_synthetic_00f34434e.jpg",
+      "synthetic": true,
+      "stands_in_for": "00f34434e.jpg",
+      "reference_context": "candidates",
+      "scene": "a 170 px ship beside small craft",
+      "rendered_ships": 2,
+      "rendered_specks": 0,
+      "sha256": "ec270d6d130988ff623468cb2d94b5d99b928a10cad6a4a9e5fe0a2729c023dd"
+    },
+    {
+      "slot": 3,
+      "row": 1,
+      "col": 0,
+      "file": "04_synthetic_03204a586.jpg",
+      "synthetic": true,
+      "stands_in_for": "03204a586.jpg",
+      "reference_context": "land_coast",
+      "scene": "coast: three ships near shore",
+      "rendered_ships": 1,
+      "rendered_specks": 0,
+      "sha256": "80b49576f9188ff2f69c292a032787153f7c2d31024f5447ea2c6eca40b43a1b"
+    },
+    {
+      "slot": 4,
+      "row": 1,
+      "col": 1,
+      "file": "05_synthetic_00293fb9e.jpg",
+      "synthetic": true,
+      "stands_in_for": "00293fb9e.jpg",
+      "reference_context": "empty_sea",
+      "scene": "empty sea",
+      "rendered_ships": 0,
+      "rendered_specks": 0,
+      "sha256": "3384e62e928f5750640b6530867c56cb89a457bb122a6be0a18b7c0a509d0419"
+    },
+    {
+      "slot": 5,
+      "row": 1,
+      "col": 2,
+      "file": "06_synthetic_01933be65.jpg",
+      "synthetic": true,
+      "stands_in_for": "01933be65.jpg",
+      "reference_context": "candidates",
+      "scene": "one small ship",
+      "rendered_ships": 1,
+      "rendered_specks": 0,
+      "sha256": "37a5331e0decaf74d2ff8b3dcfc99b1b13dd470243d9818b90a0b4216eae26b7"
+    },
+    {
+      "slot": 6,
+      "row": 2,
+      "col": 0,
+      "file": "07_synthetic_05d407505.jpg",
+      "synthetic": true,
+      "stands_in_for": "05d407505.jpg",
+      "reference_context": "land_coast",
+      "scene": "coast: a large ship",
+      "rendered_ships": 1,
+      "rendered_specks": 0,
+      "sha256": "ff0d7b6f06c9d5955397dffb9fc8d50417c884ba4c1a6828e8542c10e04ae9f6"
+    },
+    {
+      "slot": 7,
+      "row": 2,
+      "col": 1,
+      "file": "08_synthetic_0c5bf1395.jpg",
+      "synthetic": true,
+      "stands_in_for": "0c5bf1395.jpg",
+      "reference_context": "candidates",
+      "scene": "no ship; one measured false alarm",
+      "rendered_ships": 0,
+      "rendered_specks": 1,
+      "sha256": "1781b131c7940ffe74b53ce8f6499ec4929a9a2c3ee581efcc98e8f65adf7783"
+    },
+    {
+      "slot": 8,
+      "row": 2,
+      "col": 2,
+      "file": "09_synthetic_024e6ba29.jpg",
+      "synthetic": true,
+      "stands_in_for": "024e6ba29.jpg",
+      "reference_context": "cloud",
+      "scene": "cloud: dropped before detection",
+      "rendered_ships": 0,
+      "rendered_specks": 0,
+      "sha256": "bd974b89680227e7af0dc34d04f799b00aea6cfe0a43340bf878c832849616b6"
+    }
+  ]
+}

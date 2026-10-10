@@ -152,7 +152,7 @@ def workload_from_catalogue(tiles: pd.DataFrame, ships: pd.DataFrame,
     wl = Workload(ship_list, tile_list,
                   WorkloadConfig(hours=cfg.hours, tiles_per_day=cfg.tiles_per_day, seed=cfg.seed),
                   false_alarms=fa_list, gate_empty=gate_list, unconfirmed=unconf_list,
-                  source="real detections (WP6)")
+                  source="real detections (WP6)", sources=[str(names[r]) for r in picks])
     stats = RealWorkloadStats(
         tiles=n, ships=len(ship_list), dark=sum(s.dark for s in ship_list),
         detected=sum(s.confidence >= cfg.det_thr for s in ship_list),

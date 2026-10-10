@@ -34,7 +34,8 @@ from .orbit import OrbitConfig, R_EARTH, make_satellite
 @dataclass
 class RelayConfig:
     """Second satellite + ISL geometry. Same construction as the primary (SGP4, reproducible)."""
-    orbit: OrbitConfig = field(default_factory=lambda: OrbitConfig(raan_deg=30.0))
+    orbit: OrbitConfig = field(default_factory=lambda: OrbitConfig(raan_deg=90.0))  # the plane every
+                                       # result uses (wp18-wp20, wp26, wp27); was 30.0, used nowhere
     grazing_km: float = 100.0          # line of sight must clear Earth + this atmospheric margin
     max_range_km: float | None = None  # optional ISL link-range cap (None = pure line-of-sight)
 
@@ -148,6 +149,11 @@ def route_item(item_bytes: float, t_now: datetime, direct_passes, isl_wins, rela
                isl_enabled: bool = True, direct_latency_s: float | None = None,
                deadline_s: float | None = None) -> dict:
     """Per-item path choice: J = lam_E*E + lam_T*T, choose min(J_direct, J_relay).
+
+    A WINDOW-LEVEL ESTIMATE [SIM]: latencies are read from window START times alone -- no data
+    volume, no link rate, no capacity on the ISL or on the relay's ground pass (audit E3). It is kept
+    because report 20 and wp18's B4 were computed with it; sat7.comms.simulate_comms is the
+    capacity- and duration-aware simulator and should carry anything quoted from here on.
 
     T (latency to the item reaching the ground, seconds) is SIM -- read from the propagated windows
     (this track's half of J). E is TARGET -- whatever the injected energy callables return; the

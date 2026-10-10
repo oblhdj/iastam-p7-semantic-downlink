@@ -7,7 +7,20 @@ runs end-to-end on a laptop; "runs onboard" is presented as a TARGET, not a flow
 
 ---
 
-## Two ways to run it
+## Three ways to run it
+
+### Q. Live on CPU — no GPU, no dataset, ~2 seconds (the recommended live demo)
+```bash
+python -m pip install -r demo/quickstart/requirements.txt   # once: numpy, opencv, onnxruntime, sgp4, skyfield
+python demo/quickstart/run_demo.py
+```
+The real `sat7` chain runs **live**: pre-filter → trained YOLOv8n (ONNX, CPU) → SAHI + fusion on a
+3×3 swath → P0–P3 decision per detection → semantic packet vs raw bytes → value-greedy downlink
+order. It ends on the measured canon read from `code/results/`. The tiles are **synthetic
+stand-ins**, because the Airbus rules forbid redistributing the real ones. Everything computed on
+them is labelled **SYNTH** (it shows the chain runs; it is not a measurement). Open
+`demo/quickstart/_out/swath_annotated.jpg` to show the boxes coloured by P-level. Details and the
+licence reasoning: [`quickstart/README.md`](quickstart/README.md).
 
 ### A. Instant — no GPU, no data, 1 second (use this if unsure, or on the projector laptop)
 ```bash
@@ -37,6 +50,9 @@ chain prefilter→gate→detector→LoD→scheduler→ground with an integrity c
 
 ## Pre-flight checklist (do this before you walk in)
 
+- [ ] `python demo/quickstart/run_demo.py` finishes in a few seconds on the projector laptop and
+      writes `demo/quickstart/_out/swath_annotated.jpg` (install `demo/quickstart/requirements.txt`
+      first; it needs no GPU and no dataset).
 - [ ] `python demo/summary.py` prints the full screen **with no dataset and no GPU** — this is the
       guaranteed backup. (It reads only `code/results/*.csv|json`; the 7.7 GB Airbus set is **not**
       needed.) Confirm the B0→B4 table and the honesty block appear.

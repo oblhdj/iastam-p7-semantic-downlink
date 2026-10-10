@@ -1,0 +1,796 @@
+{
+  "label": "SIM -- simulated links (SGP4 orbits, geometric windows, link-budget rates, assumed powers); packet sizes REAL (wp25); no real satellite connection",
+  "config": {
+    "ground_link": "cubesat_sband",
+    "link_efficiency": 0.8,
+    "link_share": 0.25,
+    "relay_link_share": 0.25,
+    "p_tx_W": 15.0,
+    "isl_rate_bps": 2530000.0,
+    "isl_efficiency": 0.8,
+    "isl_effective_bps": 2024000.0,
+    "p_isl_W": 12.0,
+    "relay_raan_deg": 90.0,
+    "lam_T_per_s": 0.0002777777777777778,
+    "lam_E_per_J": 0.0
+  },
+  "contact_plan": {
+    "label": "SIM",
+    "hours": 36,
+    "primary_passes": [
+      {
+        "rise": "2026-09-18T00:05+00:00",
+        "duration_s": 399,
+        "capacity_MB": 24.87,
+        "payload_rate_Mbps": 0.499,
+        "physical_rate_Mbps": 1.994
+      },
+      {
+        "rise": "2026-09-18T11:36+00:00",
+        "duration_s": 548,
+        "capacity_MB": 60.08,
+        "payload_rate_Mbps": 0.877,
+        "physical_rate_Mbps": 3.509
+      },
+      {
+        "rise": "2026-09-18T13:12+00:00",
+        "duration_s": 176,
+        "capacity_MB": 8.58,
+        "payload_rate_Mbps": 0.39,
+        "physical_rate_Mbps": 1.56
+      },
+      {
+        "rise": "2026-09-18T22:11+00:00",
+        "duration_s": 437,
+        "capacity_MB": 29.98,
+        "payload_rate_Mbps": 0.548,
+        "physical_rate_Mbps": 2.193
+      },
+      {
+        "rise": "2026-09-18T23:44+00:00",
+        "duration_s": 490,
+        "capacity_MB": 38.8,
+        "payload_rate_Mbps": 0.633,
+        "physical_rate_Mbps": 2.533
+      },
+      {
+        "rise": "2026-09-19T11:16+00:00",
+        "duration_s": 522,
+        "capacity_MB": 47.59,
+        "payload_rate_Mbps": 0.73,
+        "physical_rate_Mbps": 2.919
+      }
+    ],
+    "relay_passes": [
+      {
+        "rise": "2026-09-18T04:48+00:00",
+        "duration_s": 541,
+        "capacity_MB": 56.61,
+        "payload_rate_Mbps": 0.837,
+        "physical_rate_Mbps": 3.35
+      },
+      {
+        "rise": "2026-09-18T06:25+00:00",
+        "duration_s": 224,
+        "capacity_MB": 11.24,
+        "payload_rate_Mbps": 0.402,
+        "physical_rate_Mbps": 1.609
+      },
+      {
+        "rise": "2026-09-18T16:24+00:00",
+        "duration_s": 101,
+        "capacity_MB": 4.77,
+        "payload_rate_Mbps": 0.378,
+        "physical_rate_Mbps": 1.512
+      },
+      {
+        "rise": "2026-09-18T17:54+00:00",
+        "duration_s": 546,
+        "capacity_MB": 59.59,
+        "payload_rate_Mbps": 0.873,
+        "physical_rate_Mbps": 3.492
+      },
+      {
+        "rise": "2026-09-19T04:29+00:00",
+        "duration_s": 503,
+        "capacity_MB": 42.85,
+        "payload_rate_Mbps": 0.681,
+        "physical_rate_Mbps": 2.723
+      },
+      {
+        "rise": "2026-09-19T06:04+00:00",
+        "duration_s": 406,
+        "capacity_MB": 25.64,
+        "payload_rate_Mbps": 0.505,
+        "physical_rate_Mbps": 2.021
+      }
+    ],
+    "isl_windows": 46,
+    "isl_minutes": 656.3,
+    "isl_capacity_MB_per_window_median": 215.1
+  },
+  "gate_direct_only_equals_scheduler": {
+    "passed": true,
+    "deliveries": 32871,
+    "MB": 98.712
+  },
+  "nominal": {
+    "tiles": 40000,
+    "items": 32871,
+    "MB_offered": 98.75,
+    "direct_only": {
+      "label": "SIM",
+      "ships": {
+        "ship_recall": 0.6521,
+        "dark_recall": 0.6625,
+        "latency_med_h": 4.5006,
+        "latency_p90_h": 9.4611,
+        "MB_sent": 98.7122,
+        "MB_offered": 98.7509
+      },
+      "totals": {
+        "label": "SIM",
+        "items": 32871,
+        "MB_delivered": 98.712,
+        "relay_fraction_items": 0.0,
+        "tx_s": 300.5,
+        "energy_J": 4507.6,
+        "deadline_met_fraction": null,
+        "relay_left_MB": 0.0
+      },
+      "by_path": {
+        "direct": {
+          "items": 32871,
+          "MB": 98.712,
+          "latency_h": {
+            "median": 4.45,
+            "p90": 9.47,
+            "max": 11.56
+          },
+          "tx_s": {
+            "ground": 300.5,
+            "isl": 0.0,
+            "relay_ground": 0.0
+          },
+          "energy_J": {
+            "ground": 4507.6,
+            "isl": 0.0,
+            "relay_ground": 0.0
+          }
+        },
+        "relay": {
+          "items": 0,
+          "MB": 0.0,
+          "latency_h": null,
+          "tx_s": {
+            "ground": 0,
+            "isl": 0,
+            "relay_ground": 0
+          },
+          "energy_J": {
+            "ground": 0,
+            "isl": 0,
+            "relay_ground": 0
+          }
+        }
+      },
+      "link_use": {
+        "ground": {
+          "MB": 98.712,
+          "capacity_MB": 209.901,
+          "used": 0.4703
+        },
+        "isl": {
+          "MB": 0.0,
+          "capacity_MB": 0.0,
+          "used": 0.0
+        },
+        "relay_ground": {
+          "MB": 0.0,
+          "capacity_MB": 200.698,
+          "used": 0.0
+        }
+      }
+    },
+    "with_relay": {
+      "label": "SIM",
+      "ships": {
+        "ship_recall": 0.6521,
+        "dark_recall": 0.6625,
+        "latency_med_h": 1.9454,
+        "latency_p90_h": 4.3371,
+        "MB_sent": 98.7509,
+        "MB_offered": 98.7509
+      },
+      "totals": {
+        "label": "SIM",
+        "items": 32871,
+        "MB_delivered": 98.751,
+        "relay_fraction_items": 0.4357,
+        "tx_s": 477.9,
+        "energy_J": 6665.2,
+        "deadline_met_fraction": null,
+        "relay_left_MB": 0.0
+      },
+      "by_path": {
+        "direct": {
+          "items": 18548,
+          "MB": 56.325,
+          "latency_h": {
+            "median": 1.83,
+            "p90": 4.55,
+            "max": 5.82
+          },
+          "tx_s": {
+            "ground": 181.5,
+            "isl": 0.0,
+            "relay_ground": 0.0
+          },
+          "energy_J": {
+            "ground": 2722.5,
+            "isl": 0.0,
+            "relay_ground": 0.0
+          }
+        },
+        "relay": {
+          "items": 14323,
+          "MB": 42.426,
+          "latency_h": {
+            "median": 2.09,
+            "p90": 3.84,
+            "max": 4.74
+          },
+          "tx_s": {
+            "ground": 0.0,
+            "isl": 167.7,
+            "relay_ground": 128.7
+          },
+          "energy_J": {
+            "ground": 0.0,
+            "isl": 2012.3,
+            "relay_ground": 1930.4
+          }
+        }
+      },
+      "link_use": {
+        "ground": {
+          "MB": 56.325,
+          "capacity_MB": 209.901,
+          "used": 0.2683
+        },
+        "isl": {
+          "MB": 42.426,
+          "capacity_MB": 9963.14,
+          "used": 0.0043
+        },
+        "relay_ground": {
+          "MB": 42.426,
+          "capacity_MB": 200.698,
+          "used": 0.2114
+        }
+      }
+    },
+    "checks": {
+      "non_semantic_items_on_relay": 0,
+      "any_link_over_capacity": false
+    }
+  },
+  "congested": {
+    "tiles": 160000,
+    "items": 132365,
+    "MB_offered": 378.43,
+    "direct_only": {
+      "label": "SIM",
+      "ships": {
+        "ship_recall": 0.6553,
+        "dark_recall": 0.6461,
+        "latency_med_h": 4.3459,
+        "latency_p90_h": 9.3417,
+        "MB_sent": 186.784,
+        "MB_offered": 378.4323
+      },
+      "totals": {
+        "label": "SIM",
+        "items": 129733,
+        "MB_delivered": 186.784,
+        "relay_fraction_items": 0.0,
+        "tx_s": 550.3,
+        "energy_J": 8254.1,
+        "deadline_met_fraction": null,
+        "relay_left_MB": 0.0
+      },
+      "by_path": {
+        "direct": {
+          "items": 129733,
+          "MB": 186.784,
+          "latency_h": {
+            "median": 4.5,
+            "p90": 9.64,
+            "max": 35.28
+          },
+          "tx_s": {
+            "ground": 550.3,
+            "isl": 0.0,
+            "relay_ground": 0.0
+          },
+          "energy_J": {
+            "ground": 8254.1,
+            "isl": 0.0,
+            "relay_ground": 0.0
+          }
+        },
+        "relay": {
+          "items": 0,
+          "MB": 0.0,
+          "latency_h": null,
+          "tx_s": {
+            "ground": 0,
+            "isl": 0,
+            "relay_ground": 0
+          },
+          "energy_J": {
+            "ground": 0,
+            "isl": 0,
+            "relay_ground": 0
+          }
+        }
+      },
+      "link_use": {
+        "ground": {
+          "MB": 186.784,
+          "capacity_MB": 209.901,
+          "used": 0.8899
+        },
+        "isl": {
+          "MB": 0.0,
+          "capacity_MB": 0.0,
+          "used": 0.0
+        },
+        "relay_ground": {
+          "MB": 0.0,
+          "capacity_MB": 200.698,
+          "used": 0.0
+        }
+      }
+    },
+    "with_relay": {
+      "label": "SIM",
+      "ships": {
+        "ship_recall": 0.6553,
+        "dark_recall": 0.6461,
+        "latency_med_h": 2.8537,
+        "latency_p90_h": 6.4649,
+        "MB_sent": 378.2988,
+        "MB_offered": 378.4323
+      },
+      "totals": {
+        "label": "SIM",
+        "items": 132365,
+        "MB_delivered": 378.299,
+        "relay_fraction_items": 0.2261,
+        "tx_s": 1898.6,
+        "energy_J": 26099.1,
+        "deadline_met_fraction": null,
+        "relay_left_MB": 0.0
+      },
+      "by_path": {
+        "direct": {
+          "items": 102443,
+          "MB": 177.601,
+          "latency_h": {
+            "median": 3.16,
+            "p90": 7.21,
+            "max": 22.93
+          },
+          "tx_s": {
+            "ground": 525.1,
+            "isl": 0.0,
+            "relay_ground": 0.0
+          },
+          "energy_J": {
+            "ground": 7876.6,
+            "isl": 0.0,
+            "relay_ground": 0.0
+          }
+        },
+        "relay": {
+          "items": 29922,
+          "MB": 200.698,
+          "latency_h": {
+            "median": 2.65,
+            "p90": 4.63,
+            "max": 17.93
+          },
+          "tx_s": {
+            "ground": 0.0,
+            "isl": 793.3,
+            "relay_ground": 580.2
+          },
+          "energy_J": {
+            "ground": 0.0,
+            "isl": 9519.3,
+            "relay_ground": 8703.3
+          }
+        }
+      },
+      "link_use": {
+        "ground": {
+          "MB": 177.601,
+          "capacity_MB": 209.901,
+          "used": 0.8461
+        },
+        "isl": {
+          "MB": 200.698,
+          "capacity_MB": 9963.14,
+          "used": 0.0201
+        },
+        "relay_ground": {
+          "MB": 200.698,
+          "capacity_MB": 200.698,
+          "used": 1.0
+        }
+      }
+    },
+    "checks": {
+      "non_semantic_items_on_relay": 0,
+      "any_link_over_capacity": false
+    }
+  },
+  "sweeps": {
+    "label": "SIM",
+    "isl_rate_Mbps_nominal": {
+      "0.01": {
+        "ship_recall": 0.6521,
+        "latency_med_h": 1.7954,
+        "latency_p90_h": 4.3371,
+        "MB_delivered": 98.686,
+        "relay_fraction_items": 0.4224,
+        "energy_kJ": 158.0,
+        "deadline_met_fraction": null
+      },
+      "0.1": {
+        "ship_recall": 0.6521,
+        "latency_med_h": 1.9454,
+        "latency_p90_h": 4.3371,
+        "MB_delivered": 98.751,
+        "relay_fraction_items": 0.4357,
+        "energy_kJ": 55.56,
+        "deadline_met_fraction": null
+      },
+      "0.5": {
+        "ship_recall": 0.6521,
+        "latency_med_h": 1.9454,
+        "latency_p90_h": 4.3371,
+        "MB_delivered": 98.751,
+        "relay_fraction_items": 0.4357,
+        "energy_kJ": 14.84,
+        "deadline_met_fraction": null
+      },
+      "2.53": {
+        "ship_recall": 0.6521,
+        "latency_med_h": 1.9454,
+        "latency_p90_h": 4.3371,
+        "MB_delivered": 98.751,
+        "relay_fraction_items": 0.4357,
+        "energy_kJ": 6.67,
+        "deadline_met_fraction": null
+      },
+      "10.0": {
+        "ship_recall": 0.6521,
+        "latency_med_h": 1.9454,
+        "latency_p90_h": 4.3371,
+        "MB_delivered": 98.751,
+        "relay_fraction_items": 0.4357,
+        "energy_kJ": 5.16,
+        "deadline_met_fraction": null
+      }
+    },
+    "relay_ground_share_congested": {
+      "0.0": {
+        "ship_recall": 0.6553,
+        "latency_med_h": 4.3459,
+        "latency_p90_h": 9.3417,
+        "MB_delivered": 186.784,
+        "relay_fraction_items": 0.0,
+        "energy_kJ": 8.25,
+        "deadline_met_fraction": null
+      },
+      "0.05": {
+        "ship_recall": 0.6553,
+        "latency_med_h": 3.9608,
+        "latency_p90_h": 8.2269,
+        "MB_delivered": 226.924,
+        "relay_fraction_items": 0.0637,
+        "energy_kJ": 11.9,
+        "deadline_met_fraction": null
+      },
+      "0.1": {
+        "ship_recall": 0.6553,
+        "latency_med_h": 3.7996,
+        "latency_p90_h": 7.9853,
+        "MB_delivered": 267.063,
+        "relay_fraction_items": 0.0907,
+        "energy_kJ": 15.54,
+        "deadline_met_fraction": null
+      },
+      "0.25": {
+        "ship_recall": 0.6553,
+        "latency_med_h": 2.8537,
+        "latency_p90_h": 6.4649,
+        "MB_delivered": 378.299,
+        "relay_fraction_items": 0.2261,
+        "energy_kJ": 26.1,
+        "deadline_met_fraction": null
+      },
+      "0.5": {
+        "ship_recall": 0.6553,
+        "latency_med_h": 2.0658,
+        "latency_p90_h": 4.404,
+        "MB_delivered": 378.258,
+        "relay_fraction_items": 0.4409,
+        "energy_kJ": 27.56,
+        "deadline_met_fraction": null
+      }
+    },
+    "lam_E_per_J_nominal": {
+      "0.0": {
+        "ship_recall": 0.6521,
+        "latency_med_h": 1.9454,
+        "latency_p90_h": 4.3371,
+        "MB_delivered": 98.751,
+        "relay_fraction_items": 0.4357,
+        "energy_kJ": 6.67,
+        "deadline_met_fraction": null
+      },
+      "0.1": {
+        "ship_recall": 0.6521,
+        "latency_med_h": 1.9454,
+        "latency_p90_h": 4.3371,
+        "MB_delivered": 98.751,
+        "relay_fraction_items": 0.4357,
+        "energy_kJ": 6.67,
+        "deadline_met_fraction": null
+      },
+      "1.0": {
+        "ship_recall": 0.6521,
+        "latency_med_h": 1.9225,
+        "latency_p90_h": 4.3371,
+        "MB_delivered": 98.751,
+        "relay_fraction_items": 0.4343,
+        "energy_kJ": 6.36,
+        "deadline_met_fraction": null
+      },
+      "10.0": {
+        "ship_recall": 0.6521,
+        "latency_med_h": 1.7924,
+        "latency_p90_h": 4.3369,
+        "MB_delivered": 98.713,
+        "relay_fraction_items": 0.417,
+        "energy_kJ": 4.86,
+        "deadline_met_fraction": null
+      },
+      "100.0": {
+        "ship_recall": 0.6521,
+        "latency_med_h": 1.7921,
+        "latency_p90_h": 4.3369,
+        "MB_delivered": 98.721,
+        "relay_fraction_items": 0.3808,
+        "energy_kJ": 4.69,
+        "deadline_met_fraction": null
+      }
+    },
+    "deadline_h_nominal": {
+      "1.0": {
+        "direct_only": {
+          "ship_recall": 0.6521,
+          "latency_med_h": 4.5006,
+          "latency_p90_h": 9.4611,
+          "MB_delivered": 98.712,
+          "relay_fraction_items": 0.0,
+          "energy_kJ": 4.51,
+          "deadline_met_fraction": 0.1663
+        },
+        "with_relay": {
+          "ship_recall": 0.6521,
+          "latency_med_h": 1.9454,
+          "latency_p90_h": 4.3371,
+          "MB_delivered": 98.751,
+          "relay_fraction_items": 0.4357,
+          "energy_kJ": 6.67,
+          "deadline_met_fraction": 0.2257
+        }
+      },
+      "2.0": {
+        "direct_only": {
+          "ship_recall": 0.6521,
+          "latency_med_h": 4.5006,
+          "latency_p90_h": 9.4611,
+          "MB_delivered": 98.712,
+          "relay_fraction_items": 0.0,
+          "energy_kJ": 4.51,
+          "deadline_met_fraction": 0.2963
+        },
+        "with_relay": {
+          "ship_recall": 0.6521,
+          "latency_med_h": 1.9454,
+          "latency_p90_h": 4.3371,
+          "MB_delivered": 98.751,
+          "relay_fraction_items": 0.4357,
+          "energy_kJ": 6.67,
+          "deadline_met_fraction": 0.5023
+        }
+      },
+      "4.0": {
+        "direct_only": {
+          "ship_recall": 0.6521,
+          "latency_med_h": 4.5006,
+          "latency_p90_h": 9.4611,
+          "MB_delivered": 98.712,
+          "relay_fraction_items": 0.0,
+          "energy_kJ": 4.51,
+          "deadline_met_fraction": 0.4575
+        },
+        "with_relay": {
+          "ship_recall": 0.6521,
+          "latency_med_h": 1.9454,
+          "latency_p90_h": 4.3371,
+          "MB_delivered": 98.751,
+          "relay_fraction_items": 0.4357,
+          "energy_kJ": 6.67,
+          "deadline_met_fraction": 0.8549
+        }
+      },
+      "6.0": {
+        "direct_only": {
+          "ship_recall": 0.6521,
+          "latency_med_h": 4.5006,
+          "latency_p90_h": 9.4611,
+          "MB_delivered": 98.712,
+          "relay_fraction_items": 0.0,
+          "energy_kJ": 4.51,
+          "deadline_met_fraction": 0.633
+        },
+        "with_relay": {
+          "ship_recall": 0.6521,
+          "latency_med_h": 1.9454,
+          "latency_p90_h": 4.3371,
+          "MB_delivered": 98.751,
+          "relay_fraction_items": 0.4357,
+          "energy_kJ": 6.67,
+          "deadline_met_fraction": 1.0
+        }
+      }
+    },
+    "availability_nominal": {
+      "ground 1.0 / isl 1.0": {
+        "ship_recall": 0.6521,
+        "latency_med_h": 1.9454,
+        "latency_p90_h": 4.3371,
+        "MB_delivered": 98.751,
+        "relay_fraction_items": 0.4357,
+        "energy_kJ": 6.67,
+        "deadline_met_fraction": null
+      },
+      "ground 1.0 / isl 0.5": {
+        "ship_recall": 0.6521,
+        "latency_med_h": 1.9454,
+        "latency_p90_h": 4.3369,
+        "MB_delivered": 98.751,
+        "relay_fraction_items": 0.4357,
+        "energy_kJ": 6.67,
+        "deadline_met_fraction": null
+      },
+      "ground 0.8 / isl 1.0": {
+        "ship_recall": 0.6521,
+        "latency_med_h": 3.8077,
+        "latency_p90_h": 7.2411,
+        "MB_delivered": 98.742,
+        "relay_fraction_items": 0.3552,
+        "energy_kJ": 7.84,
+        "deadline_met_fraction": null
+      },
+      "ground 0.8 / isl 0.5": {
+        "ship_recall": 0.6521,
+        "latency_med_h": 4.3978,
+        "latency_p90_h": 7.822,
+        "MB_delivered": 98.742,
+        "relay_fraction_items": 0.2609,
+        "energy_kJ": 7.51,
+        "deadline_met_fraction": null
+      }
+    }
+  },
+  "example_items_both_paths": {
+    "P3": {
+      "label": "SIM",
+      "bytes": 118349,
+      "created_h": 17.141,
+      "direct": {
+        "delivered_h": 22.285,
+        "latency_h": 5.143,
+        "tx_s": {
+          "ground": 0.4317
+        },
+        "energy_J": {
+          "ground": 6.475
+        },
+        "rate_Mbps": 2.193
+      },
+      "relay": {
+        "delivered_h": 17.947,
+        "latency_h": 0.805,
+        "tx_s": {
+          "isl": 0.4678,
+          "relay_ground": 0.2712
+        },
+        "energy_J": {
+          "isl": 5.6134,
+          "relay_ground": 4.0674
+        },
+        "isl_rate_Mbps": 2.024,
+        "relay_ground_rate_Mbps": 3.492
+      }
+    },
+    "P2": {
+      "label": "SIM",
+      "bytes": 52969,
+      "created_h": 23.988,
+      "direct": {
+        "delivered_h": 35.284,
+        "latency_h": 11.296,
+        "tx_s": {
+          "ground": 0.1452
+        },
+        "energy_J": {
+          "ground": 2.1773
+        },
+        "rate_Mbps": 2.919
+      },
+      "relay": {
+        "delivered_h": 28.497,
+        "latency_h": 4.509,
+        "tx_s": {
+          "isl": 0.2094,
+          "relay_ground": 0.1556
+        },
+        "energy_J": {
+          "isl": 2.5124,
+          "relay_ground": 2.3341
+        },
+        "isl_rate_Mbps": 2.024,
+        "relay_ground_rate_Mbps": 2.723
+      }
+    },
+    "P1": {
+      "label": "SIM",
+      "bytes": 42,
+      "created_h": 0.106,
+      "direct": {
+        "delivered_h": 11.606,
+        "latency_h": 11.501,
+        "tx_s": {
+          "ground": 0.0001
+        },
+        "energy_J": {
+          "ground": 0.0014
+        },
+        "rate_Mbps": 3.509
+      },
+      "relay": {
+        "delivered_h": 4.816,
+        "latency_h": 4.71,
+        "tx_s": {
+          "isl": 0.0002,
+          "relay_ground": 0.0001
+        },
+        "energy_J": {
+          "isl": 0.002,
+          "relay_ground": 0.0015
+        },
+        "isl_rate_Mbps": 2.024,
+        "relay_ground_rate_Mbps": 3.35
+      }
+    }
+  },
+  "elapsed_s": 124.7
+}

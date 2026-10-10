@@ -34,3 +34,6 @@ code/results/*.log
 code/results/*stdout*.txt
 code/results/*SMOKETEST*
 code/results/*1epoch*
+
+# --- quickstart demo outputs (regenerated every run) ---
+demo/quickstart/_out/

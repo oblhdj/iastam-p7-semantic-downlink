@@ -15,9 +15,16 @@ mode="priority"|"lod")`; both are first-class and directly comparable on one wor
 
 How a detection's level is chosen (paper section IV "adaptive semantic priority"): by the project's
 own confidence-aware principle, not inverted. A *confident* ship needs only its report (P1); an
-*uncertain* one earns a visual crop so the ground can verify (P2); an uncertain ship *on a coast*,
-where the detector is weakest and a miss is most likely, earns the surrounding context too (P3); and
-anything below the detector's own operating threshold is not a detection at all -> P0, discarded.
+*uncertain* one earns a visual crop so the ground can verify (P2); a ship *on a coast*, where the
+detector is weakest and a miss is most likely, earns the surrounding context too (P3); and anything
+below the detector's own operating threshold is not a detection at all -> P0, discarded.
+
+The coastal rule is `PriorityConfig.coast_escalation`. The default "all" escalates EVERY coastal
+detection that cleared the cut -- confident ones included -- because the context tile exists to
+recover the ships the detector MISSED next to them, not to verify the one it saw (this is what the
+code always did and what wp23 measured; an earlier version of this docstring said "uncertain"
+only, which was wrong -- audit C3). "uncertain" escalates only the coastal detections below
+p1_conf, sending fewer context tiles. A dark (no-AIS) vessel is bumped one level (capped at P3).
 This reuses the WP2-calibrated `conf_high=0.670` as the P1/P2 boundary so the two schemes share the
 same operating point and the comparison is fair.
 
@@ -55,7 +62,9 @@ class PriorityConfig:
     # --- level boundaries (on calibrated confidence; share the LoD operating point) --------------
     p1_conf: float = 0.670     # >= this: confident -> P1 metadata only (== LoDConfig.conf_high)
     # between det_thr and p1_conf: uncertain -> at least P2 (metadata + ROI)
-    coast_to_p3: bool = True   # an uncertain detection on a coastal tile escalates P2 -> P3
+    coast_to_p3: bool = True   # coastal detections escalate to P3 (which ones: coast_escalation)
+    coast_escalation: str = "all"   # "all": every coastal detection (the measured default) |
+                                    # "uncertain": only coastal detections below p1_conf
     dark_bump: bool = True     # a dark (no-AIS) vessel escalates one level (capped at P3)
     # --- incremental values (value ALREADY credited to the P1 report is the ship's weight) -------
     #     kept small and in step with the LoD extras (thumb_value, dark_wake_value) so value_frac
@@ -81,7 +90,7 @@ def classify(ship: Ship, ctx: str, cfg: PriorityConfig, lod: LoDConfig) -> int:
     if ship.confidence < lod.conf_low:
         return P0
     level = P1 if ship.confidence >= cfg.p1_conf else P2
-    if cfg.coast_to_p3 and ctx == "coast" and level < P3:
+    if cfg.coast_to_p3 and ctx == "coast" and (cfg.coast_escalation == "all" or level == P2):
         level = P3
     if cfg.dark_bump and ship.dark:
         level = min(P3, level + 1)
@@ -127,12 +136,17 @@ def encode_tile_priority(wl: Workload, idx: int, lod: LoDConfig, cfg: PriorityCo
             w = _w(s, lod)
             # P1: the structured metadata report (reveals the ship; carries its full weight)
             items.append(Item(nid(), t, lod.l0_bytes, w, "P1", (i,)))
+            # off a coast, a dark vessel escalated to P3 gets the L2 (ROI + wake) crop as its ROI --
+            # and the P3 context is that same L2 footprint. Sending both shipped identical pixels
+            # twice (0.77 MB of the 49.9 MB day, measured 9 Oct 2026): one item carries both now.
+            wake_is_context = s.dark and level >= P3 and not (ctx == "coast" and cfg.coast_context_tile)
             if level >= P2:
                 # P2: a compressed ROI crop. L1 (tight chip) for a plain ship, L2 (ROI + wake) when
                 # we are escalating for a dark vessel -- the extra evidence the dark flag warrants.
                 roi_bytes = _l2(s, lod) if (s.dark and level >= P3) else _l1(s, lod)
-                items.append(Item(nid(), t, roi_bytes, cfg.roi_value, "P2", (i,), progressive=True))
-            if level >= P3:
+                value = cfg.roi_value + (cfg.context_value if wake_is_context else 0.0)
+                items.append(Item(nid(), t, roi_bytes, value, "P2", (i,), progressive=True))
+            if level >= P3 and not wake_is_context:
                 if ctx == "coast" and cfg.coast_context_tile:
                     coastal_context_ids.append(i)       # fold into one tile-wide context below
                 else:
