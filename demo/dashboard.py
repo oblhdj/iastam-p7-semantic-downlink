@@ -71,7 +71,12 @@ def fmt_bytes(n) -> str:
 def fmt_time(s) -> str:
     if s is None:
         return "—"
-    return f"{s / 3600:,.2f} h" if s >= 3600 else f"{s:,.1f} s" if s >= 1 else f"{1e3 * s:,.2f} ms"
+    if s >= 3600:
+        return f"{s / 3600:,.2f} h"
+    if s >= 1:
+        return f"{s:,.1f} s"
+    ms = 1e3 * s                        # three significant figures: a tile has room for about seven characters
+    return f"{ms:,.0f} ms" if ms >= 100 else f"{ms:,.1f} ms" if ms >= 10 else f"{ms:,.2f} ms"
 
 
 def fmt_energy(j) -> str:
@@ -119,7 +124,9 @@ def get_detector():
 
 @st.cache_data(show_spinner="Running the onboard chain on this image…", max_entries=24)
 def compute(kind: str, key: str, data: bytes | None, labels: str | None, settings: tuple):
-    """(bundle, artifacts) for one input and one group of settings. Raises with a screen message."""
+    """(bundle, artifacts, label problem or None) for one input and one group of settings. Raises
+    with a screen message when the IMAGE cannot be used; an unusable label file is reported, and
+    the image is then processed without ground truth."""
     det, model_path = get_detector()
     s = P.Settings(*settings)
     if kind == "swath":
@@ -135,8 +142,8 @@ def compute(kind: str, key: str, data: bytes | None, labels: str | None, setting
     else:
         img, info = P.read_image(data, key)
         source = None
-    gts = P.parse_labels(labels, info) if labels is not None else None
-    return P.run_all(img, info, det, s, gts=gts, source=source, model_path=model_path)
+    gts, label_error = P.try_labels(labels, info) if labels is not None else (None, None)
+    return (*P.run_all(img, info, det, s, gts=gts, source=source, model_path=model_path), label_error)
 
 
 # ====================================================================================== sidebar
@@ -204,7 +211,7 @@ def section_input():
     else:
         src = "Bundled sample"
         st.info("Static fallback: only the pre-generated samples are available. Uploads need the live pipeline.")
-    data = name = labels = None
+    data = name = labels = label_name = None
     kind, key = "swath", SWATH_KEY
     if src == "Bundled sample":
         if LIVE:
@@ -241,11 +248,19 @@ def section_input():
             try:
                 labels = gt.getvalue().decode("utf-8")
             except UnicodeDecodeError:
-                st.error("The label file is not text (expected a YOLO .txt). It was ignored.")
+                st.error("Label file ignored: it is not text (expected a YOLO .txt). The image is "
+                         "shown without accuracy figures.")
+            label_name = gt.name if labels is not None else None
 
     if LIVE:
         try:
-            bundle, artifacts = compute(kind, key, data, labels, SETTINGS)
+            bundle, artifacts, label_error = compute(kind, key, data, labels, SETTINGS)
+            if label_error:
+                st.error(f"Label file ignored: {label_error}. The image is shown without accuracy figures.")
+            elif label_name and D.label_name_mismatch(key, label_name):     # only when the labels are used
+                st.warning(f"Check the pairing: the label file is `{label_name}` but the image is `{key}`. "
+                           f"A YOLO label file normally carries its image's name (`{Path(key).stem}.txt`). "
+                           f"If these labels belong to another image, every accuracy figure below is wrong.")
         except (ValueError, FileNotFoundError) as e:
             input_error = f"Image rejected: {e}" if kind == "upload" else str(e)
             st.error(input_error)
@@ -272,12 +287,12 @@ def section_input():
         return
 
     i = bundle["input"]
-    c1, c2 = st.columns([3, 2])
+    c1, c2 = st.columns(2)
     with c1:
         st.image(artifacts["original.jpg"], caption=i["name"], width="stretch")
     with c2:
         m1, m2 = st.columns(2)
-        m1.metric("Dimensions", f"{i['width']} × {i['height']} px")
+        m1.metric("Dimensions (px)", f"{i['width']} × {i['height']}")
         m2.metric("File size", fmt_bytes(i["file_bytes"]), help="As stored (compressed).")
         m1.metric("Raw size", fmt_bytes(i["raw_bytes"]),
                   help="H × W × 3 bytes, uncompressed 8-bit RGB: the B0 baseline every reduction is measured against.")
@@ -286,8 +301,11 @@ def section_input():
             st.caption(f"note: {n}")
         st.markdown(f"**Source:** {bundle['source']['label']} — {bundle['source']['note']}")
         gt_n = i["ground_truth"]
-        st.markdown("**Ground truth:** " + (f"{gt_n['n']} labelled ships supplied" if gt_n else
-                                            "none supplied, so no accuracy figure is computed for this image"))
+        st.markdown("**Ground truth:** " + (
+            "none supplied, so no accuracy figure is computed for this image" if not gt_n else
+            f"{gt_n['n']} labelled ships supplied" if gt_n["n"] else
+            "an empty label file: no ship is labelled in this image, so recall is undefined and "
+            "any detection is a false alarm"))
         g = bundle["grid"]
         st.markdown(f"**Tile grid:** {g['rows']} × {g['cols']} tiles of 768 px; context from: {g['context_source']}")
         table([{"tile": f"r{t['row'] + 1} c{t['col'] + 1}", "pre-filter verdict": t["prefilter"],
@@ -352,7 +370,7 @@ def section_overview():
     if CANON["missing"]:
         st.error("Result files are missing, so some canonical numbers cannot be shown: "
                  + ", ".join(CANON["missing"]) + ". Restore them with `git checkout -- code/results`.")
-    c = st.columns(4)
+    c = st.columns([1, 1, 1.3, 1.3])        # the two range values need the room at 1280 px
     det = {r["key"]: r for r in (CANON.get("detection") or {}).get("rows", [])}
     ss = CANON.get("steady_state")
     if h:
@@ -407,8 +425,9 @@ def section_detection():
                 m[0].metric(f"Detections ≥ {s['conf']:g}", b["n_at_or_above_cut"])
                 m[1].metric("Detector calls", b["calls"])
                 m[2].metric("Time", fmt_time(b["seconds"]), help="Wall clock on this machine, CPU.")
-                st.caption(f"{b['n_raw'] - b['n_at_or_above_cut']} more boxes below the cut (grey) are "
-                           f"never transmitted. Counts are {image_label()}.")
+                below = b["n_raw"] - b["n_at_or_above_cut"]
+                st.caption(f"{below} more box{'' if below == 1 else 'es'} below the cut (grey) "
+                           f"{'is' if below == 1 else 'are'} never transmitted. Counts are {image_label()}.")
                 kept = [d for d in b["detections"] if d["at_or_above_cut"]]
                 if kept:
                     table([{k: d[k] for k in ("class", "confidence", "cx", "cy", "w", "h")} for d in kept], height=210)
@@ -416,6 +435,9 @@ def section_detection():
             st.markdown("**Scored against the supplied ground truth** (IoU 0.5, at the onboard cut):")
             table([{"configuration": n, **{k: q[k] for k in ("n_gt", "TP", "FP", "FN", "precision", "recall", "F1", "AP50")}}
                    for n, q in (("plain YOLO", p["whole"]["quality"]), ("SAHI + fusion", p["sahi"]["quality"]))])
+            if not p["whole"]["quality"]["n_gt"]:
+                st.caption("The label file lists no ships: recall, F1 and AP are undefined (empty), and "
+                           "FP counts the false alarms.")
             st.caption("One image is a spot check, not a benchmark. The measured figures are below.")
         else:
             st.info("No ground truth for this image: the counts and confidences above are NOT accuracy. "
@@ -461,15 +483,15 @@ def section_packet():
     with c2:
         st.markdown("**Level of every SAHI detection**")
         table([{"level": k, "detections": v} for k, v in m["level_histogram"].items()])
-        st.markdown("**Serialized size** — the bytes of the real packet stream")
-        k = st.columns(3)
-        k[0].metric("Total", fmt_bytes(b["total"]))
-        k[1].metric("Payload", fmt_bytes(b["payload"]), help="Semantic records + JPEG image data.")
-        k[2].metric("Overhead", fmt_bytes(b["overhead"]),
-                    help="Packet headers and CRC, image headers, JPEG headers.")
-        if b["total"]:
-            st.caption(f"Overhead is {100 * b['overhead'] / b['total']:.1f}% of the packet. Bytes are MEASURED "
-                       f"(the length of the stream), on {image_label()}.")
+    st.markdown("**Serialized size** — the bytes of the real packet stream")
+    k = st.columns(3)
+    k[0].metric("Total", fmt_bytes(b["total"]))
+    k[1].metric("Payload", fmt_bytes(b["payload"]), help="Semantic records + JPEG image data.")
+    k[2].metric("Overhead", fmt_bytes(b["overhead"]),
+                help="Packet headers and CRC, image headers, JPEG headers.")
+    if b["total"]:
+        st.caption(f"Overhead is {100 * b['overhead'] / b['total']:.1f}% of the packet. Bytes are MEASURED "
+                   f"(the length of the stream), on {image_label()}.")
     if not b["total"]:
         st.info("The packet is empty: no detection reached the onboard cut on a non-cloud tile, so "
                 "nothing is transmitted for this image. That is the semantic policy working: a cloud "
@@ -565,8 +587,9 @@ def section_comms():
             c[0].metric("Route", {"direct": "Direct", "policy": "Policy-chosen", "relay": "Relay"}[r])
             c[0].caption(f"Chosen by: {run['chosen_by']}." + ("" if D.MODE_INFO[mode]["relay"] else
                                                                f" {mode} has no relay."))
-            c[1].metric("Path taken", f"{run['direct_items']} direct · {run['relay_items']} relay",
-                        help="Items of this image that went down each path.")
+            c[1].metric("Items: direct + relay", f"{run['direct_items']} + {run['relay_items']}",
+                        help="Items of this image that went down each path: direct to the ground station, "
+                             "and through the relay.")
             c[2].metric("Transmission duration", fmt_time(run["tx_s_total"]),
                         help="Time the transmitters are keyed for this image's bytes, at the physical link rate.")
             done = run["delivered_items"] == run["items"] and run["items"]
@@ -673,13 +696,8 @@ def section_results():
         c[2].metric("Total energy", fmt_energy(s["E_total_J"]))
         share = bundle["modes"][mode]["transmitted_share_of_onboard"]
         q = bundle["modes"][mode]["quality"]
-        if q:
-            c[3].metric("Ships reported / ground truth", f"{q['recall']:.3f}",
-                        help="Recall of the transmitted records against the supplied labels (IoU 0.5).")
-        else:
-            c[3].metric("Onboard detections transmitted", "—" if share is None else f"{100 * share:.0f}%",
-                        help="Share of what the detector found at or above the cut that is sent. NOT accuracy: "
-                             "without ground truth, information preservation against reality cannot be stated.")
+        tile_label, tile_value, tile_help = D.ground_truth_tile(q, share)
+        c[3].metric(tile_label, tile_value, help=tile_help)
         st.caption(f"Bytes: {lab['bytes']}. Times: {lab['times']}. Link: {lab['link']}. Energy: {lab['energy']} "
                    f"({bundle['assumptions']['label']}). Accuracy: {lab['accuracy']}.")
         if s["T_decoding_s"] is None:

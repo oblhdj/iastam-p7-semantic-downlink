@@ -400,6 +400,33 @@ def data_reduction_percent(d_tx: float, d_raw: float) -> float:
     return 100.0 * (1.0 - d_tx / d_raw)
 
 
+def ground_truth_tile(quality: dict | None, share: float | None) -> tuple[str, str, str]:
+    """(label, value, help text) of the information-preservation tile for one mode.
+
+    quality   sat7.evaluation's result for the transmitted detections, or None without labels
+    share     transmitted / onboard detections at or above the cut (None when there are none)
+    An EMPTY label file is valid ground truth -- a tile with no ships, which is one test tile in
+    five -- and leaves recall undefined (None): the tile then counts false alarms instead.
+    """
+    if quality is None:
+        return ("Onboard detections transmitted", "—" if share is None else f"{100 * share:.0f}%",
+                "Share of what the detector found at or above the cut that is sent. NOT accuracy: "
+                "without ground truth, information preservation against reality cannot be stated.")
+    if not quality["n_gt"] or quality["recall"] is None:
+        return ("False alarms transmitted", str(quality["FP"]),
+                "The label file lists no ships for this image, so recall is undefined. Every "
+                "detection transmitted here is a false alarm.")
+    return ("Ships reported / ground truth", f"{quality['recall']:.3f}",
+            "Recall of the transmitted records against the supplied labels (IoU 0.5).")
+
+
+def label_name_mismatch(image_name: str, label_name: str) -> bool:
+    """A YOLO label file carries its image's name (00113a75c.jpg <-> 00113a75c.txt). True when the
+    two uploaded names do not pair up: the usual sign that the previous image's labels were left in
+    place, which would score this image against another image's ships."""
+    return Path(image_name).stem.lower() != Path(label_name).stem.lower()
+
+
 def route_for(mode: str, b4_route: str) -> str:
     """B0-B3 have no relay: always direct. B4 takes the chosen route."""
     return b4_route if MODE_INFO[mode]["relay"] else "direct"

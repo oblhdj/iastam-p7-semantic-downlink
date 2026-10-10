@@ -143,6 +143,15 @@ def parse_labels(text: str, info: ImageInfo) -> list[tuple]:
     return gts
 
 
+def try_labels(text: str, info: ImageInfo) -> tuple[list[tuple] | None, str | None]:
+    """(boxes, None), or (None, why) for a label file that cannot be used. A bad label file is not a
+    reason to reject a good image: the image is then shown without accuracy figures."""
+    try:
+        return parse_labels(text, info), None
+    except ValueError as e:
+        return None, str(e)
+
+
 # ====================================================================================== grid
 @dataclass
 class GridTile:

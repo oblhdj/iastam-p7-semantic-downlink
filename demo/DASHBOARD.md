@@ -42,7 +42,10 @@ Live, on the image in front of you (bundled sample or upload):
 - B0–B4: the real packet stream of each mode, its ground decode, payload and overhead bytes
 - the simulated links: direct, policy-chosen and relay-only routes; latency against capture time
 - per-image energy and latency budgets
-- accuracy, only if you upload a YOLO label file with the image
+- accuracy, only if you upload a YOLO label file with the image. The label file carries the
+  image's name (`00113a75c.jpg` with `00113a75c.txt`); an empty file means the tile has no ships;
+  the page warns when the two names differ, because labels left over from the previous image
+  would score the new one against the wrong ships
 
 Read from `code/results/`, never recomputed by the page: the data-reduction headline with its
 measured and modeled shares, B1/B2/B3 recall on the same scenes and the two reference rows, the
@@ -77,6 +80,9 @@ both fail on a stale set. Uploads and the settings sliders need the live pipelin
 
 ## Before a presentation
 
+- [ ] The laptop is on mains power. On battery, in Windows' power-saving mode, the detector ran
+      about 20 times slower on the development laptop: about 700 ms per call instead of 35 ms, so
+      the first load and the terminal quickstart took about 22 s instead of 2 s.
 - [ ] `python demo/make_fallback_assets.py --check` prints `fallback assets OK`.
 - [ ] `streamlit run demo/dashboard.py` opens; in the sidebar's *Environment check* nothing is ❌.
       (Two ➖ rows, the Airbus split and the GPU environment, are normal on a clone: only the
@@ -95,4 +101,4 @@ both fail on a stale set. Uploads and the settings sliders need the live pipelin
 | `demo/make_fallback_assets.py` | writes and checks `demo/fallback_assets/` |
 | `demo/requirements-dashboard.txt` | quickstart requirements + streamlit |
 | `demo/.streamlit/config.toml` | first-run settings: no email prompt, localhost only, no usage statistics |
-| `code/tests/test_dashboard.py` | 18 tests: canon, pipeline, routes, bad inputs, fallback, the page itself |
+| `code/tests/test_dashboard.py` | 23 tests: canon, pipeline, routes, bad inputs, uploads and label files, fallback, the page itself |

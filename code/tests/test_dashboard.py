@@ -100,6 +100,23 @@ def test_first_run_config_needs_nobody_at_the_keyboard():
         "full demo: Airbus split", "full demo: torch + GPU env"}
 
 
+def test_ground_truth_tile_survives_an_empty_label_file():
+    """Found by hand: a real tile with no ships, uploaded with its (empty) label file, made the
+    Results section fail on `None` recall. One test tile in five has an empty label file."""
+    assert D.ground_truth_tile(None, 1.0)[:2] == ("Onboard detections transmitted", "100%")
+    assert D.ground_truth_tile(None, None)[1] == "—"
+    label, value, help_text = D.ground_truth_tile({"n_gt": 0, "recall": None, "FP": 2}, None)
+    assert (label, value) == ("False alarms transmitted", "2") and "undefined" in help_text
+    scored = D.ground_truth_tile({"n_gt": 7, "recall": 1.0, "FP": 0}, 1.0)
+    assert scored[:2] == ("Ships reported / ground truth", "1.000")
+
+
+def test_label_file_pairs_with_its_image_by_name():
+    assert not D.label_name_mismatch("00113a75c.jpg", "00113a75c.txt")
+    assert not D.label_name_mismatch("Tile.JPG", "tile.txt")
+    assert D.label_name_mismatch("03204a586.jpg", "00113a75c.txt")       # the previous image's labels
+
+
 # ------------------------------------------------------------------------------ fallback assets
 def test_fallback_assets_load_and_match_todays_canon():
     index = D.fallback_index()
@@ -230,6 +247,33 @@ def test_bad_inputs_raise_readable_errors():
         P.simulate_route([], "teleport")
 
 
+@live
+def test_an_empty_label_file_is_ground_truth_with_no_ships(swath_run):
+    P, det, _b, _art = swath_run
+    name = "05_synthetic_00293fb9e.jpg"                    # stands in for an open-sea tile with no ships
+    img, info = P.read_image((DEMO / "quickstart" / "tiles" / name).read_bytes(), name)
+    assert P.try_labels("", info) == ([], None)
+    b, _ = P.run_all(img, info, det, P.Settings(sweep=False), gts=[])
+    q = b["modes"]["B3"]["quality"]
+    assert q["n_gt"] == 0 and q["recall"] is None and b["input"]["ground_truth"] == {"n": 0}
+    tile = D.ground_truth_tile(q, b["modes"]["B3"]["transmitted_share_of_onboard"])
+    assert tile[0] == "False alarms transmitted" and tile[1] == str(q["FP"])
+    assert D.metrics_csv(b) and D.records_csv(b) and D.slim(b)        # the exports still build
+
+
+@live
+def test_a_bad_label_file_is_reported_and_the_image_is_kept():
+    import cv2
+    import numpy as np
+    import demo_pipeline as P
+    _img, info = P.read_image(cv2.imencode(".png", np.zeros((64, 64, 3), np.uint8))[1].tobytes(), "s.png")
+    for text in ("ship 10 20 30 40\n", "1 0.5 0.5 0.1 0.1\n"):
+        gts, why = P.try_labels(text, info)
+        assert gts is None and "YOLO format" in why
+    gts, why = P.try_labels("0 0.5 0.5 0.25 0.25\n", info)
+    assert why is None and gts == [(32.0, 32.0, 16.0, 16.0)]
+
+
 # ------------------------------------------------------------------------------ the page
 def _run_page(monkeypatch, fallback: bool):
     from streamlit.testing.v1 import AppTest
@@ -269,3 +313,41 @@ def test_page_renders_from_static_fallback_when_the_pipeline_is_off(monkeypatch)
     for key in [s["key"] for s in D.fallback_index()["samples"]]:
         sample.set_value(key).run()
         assert not at.exception and len(at.error) == 1, key
+
+
+@page
+def test_page_upload_widgets_with_label_files(monkeypatch):
+    """The upload path as a presenter uses it: image, then label files good, empty, malformed and
+    belonging to another image; then a file that is not an image. Synthetic tile: no Airbus pixels."""
+    name = "05_synthetic_00293fb9e"
+    tile = (DEMO / "quickstart" / "tiles" / f"{name}.jpg").read_bytes()
+    at = _run_page(monkeypatch, fallback=False)
+    next(r for r in at.radio if r.label == "Image").set_value("Upload").run()
+    image = lambda: next(u for u in at.file_uploader if u.label.startswith("Satellite image"))
+    labels = lambda: next(u for u in at.file_uploader if u.label.startswith("Optional ground truth"))
+    metric = lambda: {m.label: m.value for m in at.metric}
+    assert any("No image yet" in i.value for i in at.info) and not at.exception
+
+    image().set_value((f"{name}.jpg", tile, "image/jpeg")).run()
+    assert not at.exception and not at.error and metric()["Dimensions (px)"] == "768 × 768"
+
+    labels().set_value((f"{name}.txt", b"", "text/plain")).run()            # no ships: valid, empty
+    assert not at.exception and not at.error, [e.value for e in at.error]
+    assert "False alarms transmitted" in metric() and not any("Check the pairing" in w.value for w in at.warning)
+
+    labels().set_value((f"{name}.txt", b"0 0.5 0.5 0.1 0.1\n", "text/plain")).run()
+    assert not at.exception and not at.error and "Ships reported / ground truth" in metric()
+
+    labels().set_value((f"{name}.txt", b"ship 10 20 30 40\n", "text/plain")).run()    # malformed
+    assert [e.value for e in at.error] and all("Label file ignored" in e.value for e in at.error)
+    assert "Dimensions (px)" in metric() and "Onboard detections transmitted" in metric()
+
+    labels().set_value(("another_tile.txt", b"not yolo", "text/plain")).run()         # ignored: one message,
+    assert len(at.error) == 1 and not any("Check the pairing" in w.value for w in at.warning)   # not two
+
+    labels().set_value(("another_tile.txt", b"0 0.5 0.5 0.1 0.1\n", "text/plain")).run()
+    assert not at.error and any("Check the pairing" in w.value for w in at.warning)
+
+    image().set_value(("broken.jpg", b"this is not an image", "image/jpeg")).run()
+    assert not at.exception and any("Image rejected" in e.value for e in at.error)
+    assert "Dimensions (px)" not in metric()
