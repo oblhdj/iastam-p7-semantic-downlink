@@ -28,7 +28,11 @@ ASSUMPTION.
 
     python scripts/wp26_b0_b4.py                      # all modes, 150 scenes (~5 min CPU, ONNX)
     python scripts/wp26_b0_b4.py --modes B2,B3 --scenes 20
-Output: results/wp26_b0_b4.json   (numbers and hashes only -- no pixels)
+    python scripts/wp26_b0_b4.py --modes B1,B2 --window 512 --overlap 0.20 --tag paper
+                                                      # the paper's representative SAHI setting
+Output: results/wp26_b0_b4.json   (numbers and hashes only -- no pixels); with --tag,
+results/wp26_b0_b4_<tag>.json. A window or overlap other than 768 / 0.20 needs --tag, so the
+canonical file cannot be overwritten.
 """
 from __future__ import annotations
 
@@ -130,8 +134,18 @@ def main() -> int:
     ap.add_argument("--b4-raan", type=float, default=90.0)
     ap.add_argument("--b4-lam-e", type=float, default=0.0)
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--window", type=int, default=TILE,
+                    help="SAHI window in px: 768 = the canonical B2; 512 = the paper's representative "
+                         "setting. The detector input stays 768 px, so a smaller window is enlarged to it")
+    ap.add_argument("--overlap", type=float, default=0.20, help="SAHI overlap between neighbouring windows")
+    ap.add_argument("--tag", default="", help="suffix for the output file (e.g. paper -> "
+                    "wp26_b0_b4_paper.json)")
     ap.add_argument("--out", type=Path, default=ROOT / "results")
     args = ap.parse_args()
+    if (args.window, args.overlap) != (TILE, 0.20) and not args.tag:
+        ap.error("--window / --overlap other than 768 / 0.20 need --tag (e.g. --tag paper): "
+                 "wp26_b0_b4.json is the canonical 768 px run")
+    sahi_cfg = PerceptionConfig(mode="sahi", window=args.window, overlap=args.overlap)
     modes = [MODES[m.strip()] for m in args.modes.split(",")]
     res_dir, t_all = ROOT / "results", time.perf_counter()
     img_dir, lbl_dir = args.data / "images" / "test", args.data / "labels" / "test"
@@ -162,7 +176,7 @@ def main() -> int:
 
     # ================================================================ static stage, per scene
     dets = {p: [] for p in perceptions}
-    grid_dets, calls = [], {p: 0 for p in perceptions}
+    grid_dets, plain_dets, calls = [], [], {p: 0 for p in perceptions}
     pixel_sha, memo = [], []
     gate_a_boxes, gate_a_ok, fusion_violations = 0, True, 0
     jitter = {"tiles": 0, "tiles_with_different_box_count": 0, "boxes": 0, "boxes_not_bit_identical": 0,
@@ -176,12 +190,16 @@ def main() -> int:
         pixel_sha.append(sha(img.tobytes()))
         for p in perceptions:
             c0 = det.calls
-            dets[p].append(perceive(img, replace(MODES["B2"], perception=p), det) if p != "none" else [])
+            dets[p].append(perceive(img, replace(MODES["B2"], perception=p), det, args.window, args.overlap)
+                           if p != "none" else [])
             calls[p] += det.calls - c0
         # the per-source-tile grid (what wp18 called B1) -- a labelled reference, + gate (a)
         memo_det = Memo(det)                             # one batched call; reused by the gate below
         grid = detect_image(img, memo_det, PerceptionConfig(mode="sahi", window=TILE, overlap=0.0, fuse=False))
         grid_dets.append(grid)
+        # plain tiling at the SAHI window size, no overlap, no fusion (at 768 that is the grid above)
+        plain_dets.append(grid if args.window == TILE else
+                          detect_image(img, det, replace(sahi_cfg, overlap=0.0, fuse=False)))
         direct = []
         for t in s.tiles:
             x0, y0 = t.col * TILE, t.row * TILE
@@ -193,7 +211,7 @@ def main() -> int:
         gate_a_ok &= sorted(direct) == sorted(grid)      # x_global = x0 + x_local, exactly
         # fusion invariant (check 3): no two fused SAHI boxes overlap at >= nms_iou
         fused = dets["sahi"][-1]
-        unfused = detect_image(img, det, PerceptionConfig(mode="sahi", fuse=False))
+        unfused = detect_image(img, det, replace(sahi_cfg, fuse=False))
         unfused_total, fused_total = unfused_total + len(unfused), fused_total + len(fused)
         fusion_violations += sum(1 for i in range(len(fused)) for j in range(i + 1, len(fused))
                                  if _iou(fused[i][:4], fused[j][:4]) >= 0.5)
@@ -244,6 +262,7 @@ def main() -> int:
                          "ships": n_gt, "unique_tiles": len({t.image for s in scenes for t in s.tiles}),
                          "context_tiles": {c: sum(t.drawn_as == c for s in scenes for t in s.tiles)
                                            for c in ("cloud", "ships", "coast", "empty")},
+                         "sahi_window_px": args.window, "sahi_overlap": args.overlap,
                          "static_stage_s": static_s}}
     quality, bytes_per_scene, levels_all = {}, {}, {}
     for m in modes:
@@ -275,6 +294,14 @@ def main() -> int:
     quality["B1_per_tile_reference"]["note"] = ("one detector call per 768 px source tile = what wp18 "
                                                 "called B1; on a scene it is a 16-window tiling (a slicing "
                                                 "stage), so it is NOT the paper's B1")
+    quality["plain_tiling_no_overlap"] = evaluate_detections(
+        list(zip([[d for d in x if d[4] >= args.det_thr] for x in plain_dets], [s.gts for s in scenes])),
+        conf_thr=args.det_thr)
+    quality["plain_tiling_no_overlap"] |= {
+        "window_px": args.window,
+        "windows_per_scene": slice_count(scenes[0].size, scenes[0].size, replace(sahi_cfg, overlap=0.0)),
+        "note": "abutting windows of the SAHI window size, no overlap, no fusion"
+                + (" (= B1_per_tile_reference at 768 px)" if args.window == TILE else "")}
     report["detection_quality_same_scenes"] = quality
     report["mean_bytes_per_scene"] = bytes_per_scene
 
@@ -369,7 +396,7 @@ def main() -> int:
         checks["2_B1_no_slicing"] = {"passed": calls["whole"] == n, "detector_calls_per_scene": calls["whole"] / n,
                                      "frame_px": frame, "letterbox_gain": gain}
     checks["3_B2_sahi_fusion"] = {
-        "passed": calls["sahi"] == n * slice_count(scenes[0].size, scenes[0].size, PerceptionConfig(mode="sahi"))
+        "passed": calls["sahi"] == n * slice_count(scenes[0].size, scenes[0].size, sahi_cfg)
                   and fusion_violations == 0 and gate_a_ok,
         "windows_per_scene": calls["sahi"] / n, "fused_pairs_overlapping_iou_ge_0.5": fusion_violations,
         "boxes_before_fusion": unfused_total, "boxes_after_fusion": fused_total,
@@ -403,7 +430,7 @@ def main() -> int:
     # ================================================================ print
     print(f"\n[static] same {n} scenes ({static_s} s): detection quality of what each mode transmits "
           f"(P/R/F1 @ {args.det_thr}, IoU 0.5)")
-    for name in [m.name for m in modes] + ["B1_per_tile_reference"]:
+    for name in [m.name for m in modes] + ["B1_per_tile_reference", "plain_tiling_no_overlap"]:
         q = quality[name]
         if "precision" in q:
             print(f"   {name:<22} P {q['precision']:.4f}  R {q['recall']:.4f}  F1 {q['F1']:.4f}  "
@@ -425,8 +452,9 @@ def main() -> int:
         print(f"   {k:<26} {'PASS' if v['passed'] else 'FAIL'}")
     report["elapsed_s"] = round(time.perf_counter() - t_all, 1)
     args.out.mkdir(parents=True, exist_ok=True)
-    (args.out / "wp26_b0_b4.json").write_text(json.dumps(report, indent=2, default=str) + "\n")
-    print(f"\nSaved {args.out / 'wp26_b0_b4.json'} ({report['elapsed_s']} s)")
+    out_file = args.out / f"wp26_b0_b4{'_' + args.tag if args.tag else ''}.json"
+    out_file.write_text(json.dumps(report, indent=2, default=str) + "\n")
+    print(f"\nSaved {out_file} ({report['elapsed_s']} s)")
     return 0 if all(v["passed"] for v in checks.values()) else 1
 
 
