@@ -70,6 +70,58 @@ authoritative headline row within 2 % bytes / 0.01 recall (its own day: 178.5 MB
 above is the three-day mean); B4's direct-only path reproduces B3 and its reroute leaves recall/MB
 unchanged (relay changes only latency + energy). [report 21]
 
+## 2b. B3 and B4 under the paper's Table I levels (pure P0–P3)
+
+The B3 row above uses our level-of-detail ladder. The paper's Table I names four levels — **P0**
+discard, **P1** metadata, **P2** metadata + compressed ROI, **P3** metadata + ROI + contextual
+image — and `sat7.priority` implements exactly those. This is the same campaign with that encoder:
+same days, same passes, same scheduler, same metrics (`--semantic priority`). Everything here is
+**SIM-over-REAL** at an assumed 15 % cloud; the level thresholds (0.25 and 0.670) and the values of
+a ROI and of a context image are **ASSUMPTIONS**.
+
+**B3, mean of three simulated days** (`wp6_real_table.csv` · `wp6_real_table_paper.csv`):
+
+| | LoD ladder (headline, §2) | pure P0–P3 (paper Table I) |
+|---|---|---|
+| ship recall delivered | **0.685** (days 0.680–0.690) | **0.622** (days 0.617–0.625) |
+| what the encoder can describe (ceiling) | 0.685 | 0.622 |
+| share of the ceiling delivered | 1.00 | 1.00 |
+| dark-vessel recall [dark flag ASSUMPTION] | 0.679 | 0.624 |
+| sent per day | **176.3 MB** | **88.4 MB** |
+| data reduction vs raw | **341×** | **680×** |
+| latency per ship, median / p90 | 4.5 h / 9.6 h | 4.4 h / 9.4 h |
+
+**B4, one simulated day (seed 0), relay as a reroute** (`wp18_campaign.json` ·
+`wp18_campaign_paper.json`; latency SIM, a window estimate on the relay side; energy **TARGET**):
+
+| | LoD ladder | pure P0–P3 |
+|---|---|---|
+| that day's B3: recall, bytes | 0.680, 178.5 MB | 0.617, 90.5 MB |
+| items routed, share taking the relay | 45,264, 66 % | 23,732, 44 % |
+| per-item latency, median | 7.9 h → 3.4 h | 4.6 h → 1.8 h |
+| per-item latency, worst case | 35.2 h → 10.9 h | 11.6 h → 6.2 h |
+| communication energy [TARGET] | 8.5 → 12.9 kJ | 4.3 → 5.8 kJ |
+
+How to read it:
+
+* **P0–P3 is half the bytes for 6.3 points less recall.** The points are ships the detector never
+  fired on, on coastal tiles: the ladder sends every coastal tile whole and so recovers them; P0–P3
+  sends a context tile only where a detection already exists, and is credited with that detection.
+* **On recall alone, pure P0–P3 equals the fair Phi-sat-2-style baseline** — 0.622 for both, the
+  detected ships — at 88.4 MB against 16.3 MB. What its extra bytes carry is the ROI and the
+  context image of Table I, evidence for the ground to verify a detection; ship recall does not
+  score that. The **+6.3 points over the fair baseline is a result of the LoD ladder, not of P0–P3.**
+* **P0–P3 fits the link.** 88.4 MB is under the 134.5 MB the link share sustains per 24 h; the
+  ladder's 176 MB is 130 % of it (§5). That is why the worst-case item waits 11.6 h, not 35.2 h,
+  before any relay.
+* The scheduler matters for P0–P3 in the same place it does for the ladder: at 160k tiles/day
+  value-greedy delivers 0.621 of the ships and FIFO 0.325 (`wp6_real_sweep_paper.csv`).
+
+The LoD row remains the headline; the P0–P3 column is the paper's own policy, measured the same way.
+Reproduce: `python scripts/wp6_simulate_real.py --semantic priority --tag paper` and
+`python scripts/wp18_campaign_runner.py --semantic priority --tag paper`. Both refuse to run P0–P3
+without a tag, so the canonical files cannot be overwritten.
+
 ## 3. Detection quality (paper §VIII-E.2)
 
 mAP50 **0.804**, precision 0.817, recall 0.729 [REAL]. By object size, recall is **small 0.739 /

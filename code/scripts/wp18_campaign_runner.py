@@ -164,7 +164,7 @@ def run_b3(cat_tiles, cat_ships, size_model, day_tiles, det_thr, link, link_shar
     items = encode_semantic(wl, mode=semantic, lod=lod, cfg=PriorityConfig(p1_conf=lod.conf_high))
     res = simulate(items, passes, start, ValueGreedy(), storage_gb * 1e9, encoder=semantic.upper())
     mt = metrics(res, wl, lod)
-    mt.update(onboard_ceiling(wl, lod, "lod"))
+    mt.update(onboard_ceiling(wl, lod, semantic))
     b0_matched_mb = stats.tiles * B0_RAW_PER_TILE_MB        # B0 raw at THIS run's tile count
     summary = {"semantic_scheme": semantic,
                "day_tiles": stats.tiles, "day_ships": stats.ships, "passes": len(passes),
@@ -294,7 +294,10 @@ def main() -> None:
     ap.add_argument("--det-thr", type=float, default=0.25)
     ap.add_argument("--semantic", choices=("lod", "priority"), default="lod",
                     help="B3 semantic encoder: 'lod' (repo ladder, the pinned headline) or 'priority' "
-                         "(paper P0-P3, sat7.priority). The traceability gate applies only to 'lod'.")
+                         "(paper P0-P3, sat7.priority). The traceability gate applies only to 'lod'. "
+                         "'priority' needs --tag: wp18_campaign.json is the canonical LoD campaign.")
+    ap.add_argument("--tag", default="", help="suffix for the output file (e.g. paper -> "
+                    "wp18_campaign_paper.json)")
     ap.add_argument("--link", default="cubesat_sband")
     ap.add_argument("--link-share", type=float, default=0.25,
                     help="canonical link share (wp6_real_table.csv headline run)")
@@ -312,6 +315,9 @@ def main() -> None:
                     help="the same-input B0-B4 run (wp26_b0_b4.py): the canonical B1 and B2")
     ap.add_argument("--out", type=Path, default=ROOT / "results")
     args = ap.parse_args()
+    if args.semantic != "lod" and not args.tag:
+        ap.error("--semantic priority needs --tag (e.g. --tag paper): wp18_campaign.json is the "
+                 "canonical LoD campaign")
 
     dev = 0 if torch.cuda.is_available() else "cpu"
     from ultralytics import YOLO
@@ -466,7 +472,8 @@ def main() -> None:
         "legacy_small_samples": legacy,
         "elapsed_s": round(time.perf_counter() - t0, 1),
     }
-    (args.out / "wp18_campaign.json").write_text(json.dumps(report, indent=2))
+    out_name = f"wp18_campaign{'_' + args.tag if args.tag else ''}.json"
+    (args.out / out_name).write_text(json.dumps(report, indent=2))
 
     print(f"\n{'config':5s} {'onboard':40s} {'key result':38s} label")
     def line(c, res):
@@ -477,7 +484,7 @@ def main() -> None:
     line("B3", f"recall {b3['ship_recall']}, {b3['reduction_vs_B0_x']}x vs B0")
     line("B4", f"=B3 recall/MB; max lat {b4['latency_h_B3_direct']['max']}->{b4['latency_h_B4_relay']['max']}h")
     print(f"\nB0-B4 end-to-end: RUNS (B4 = reroute, latency SIM + energy TARGET). "
-          f"Saved wp18_campaign.json in {args.out}")
+          f"Saved {out_name} in {args.out}")
 
 
 if __name__ == "__main__":
