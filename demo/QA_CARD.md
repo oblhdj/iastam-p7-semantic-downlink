@@ -20,7 +20,7 @@ wp6_real_table_modeledcoast.csv`.
 
 **Q. Does this actually run on a satellite?**
 Not yet — it's a **demo, not a prototype**. Every timing is a laptop RTX 5060, so "runs onboard" is
-a **TARGET** (report 22). But it's the *class* of model Φ-sat-2 already flies on a ~1 W Myriad 2 VPU
+a **TARGET** only (report 22; the laptop-to-edge mapping is in `paper/PHASE3_RESULTS.md` §6c). But it's the *class* of model Φ-sat-2 already flies on a ~1 W Myriad 2 VPU
 [LIT]: a 3.15 M-param detector + 47 k-param gate, a few-% duty cycle at 40k tiles/day even on a VPU
 6× slower. What a prototype still owes: wall-clock + quantised accuracy on a real board, thermal,
 rad-tolerance.
@@ -80,6 +80,8 @@ the fair baseline" holds in 74**. All six failures are at **160k tiles/day**, wh
 **1.3 points** to begin with (6.3 at 40k, where nothing fails): `thumb_value` 0.05 and 0.10,
 `conf_high` 0.90 and 0.99, `conf_low` 0.05 and 0.10. Each spends more bytes on a saturated link.
 The +6.3 is a nominal-load claim. `source: wp10_sensitivity.csv`.
+It is also a result of the **LoD ladder**: under the paper's pure Table I P0–P3 levels, recall
+equals the fair baseline (**0.622** for both). `source: wp6_real_table_paper.csv; PHASE3_RESULTS §2b`.
 
 **Q. What's the weakest number?**
 Small-ship recall (**0.50–0.61** at the 0.25 operating cut) — the detector, not the downlink, is
