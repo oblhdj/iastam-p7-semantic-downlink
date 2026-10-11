@@ -55,7 +55,7 @@
       "window_px": 768,
       "windows_per_scene": 25.0,
       "compute_vs_regular_tiling_x": 1.5625,
-      "onboard": "detector+SAHI+fusion",
+      "onboard": "SAHI+detector+fusion",
       "label": "REAL",
       "status": "read from results/wp26_b0_b4.json (same-input run)"
     },

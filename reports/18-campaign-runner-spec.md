@@ -1,5 +1,9 @@
 # 18 — B0–B4 campaign runner: a composition spec (decision doc, not code)
 
+> **Superseded B1/B2 figures (10 Oct 2026).** The B1 0.782 / B2 0.745 below are small samples on
+> different inputs. The current same-scene figures are B1 **0.339** / B2 **0.717** (150 scenes, 1,164
+> ships, `../code/results/wp26_b0_b4.json`); see [`README.md`](README.md).
+
 > ### ✅ EXERCISED 3 Oct — spec validated against real entry points (B0–B3), B4 confirmed blocked
 > `../code/scripts/wp18_campaign_runner.py` now builds the B0–B3 runner against this spec and ran it
 > small-scale: B0 60,124 MB/day [SIM], B1 recall 0.782 [REAL], B2 recall 0.745 @ 1.56× [REAL], B3

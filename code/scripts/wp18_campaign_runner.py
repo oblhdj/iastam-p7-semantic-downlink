@@ -358,7 +358,7 @@ def main() -> None:
     wins = chk26["3_B2_sahi_fusion"]["windows_per_scene"]
     b1 = same_input(q26["B1"], "detector, one call on the whole scene",
                     detector_calls_per_scene=chk26["2_B1_no_slicing"]["detector_calls_per_scene"])
-    b2 = same_input(q26["B2"], "detector+SAHI+fusion", window_px=args.b2_window, windows_per_scene=wins,
+    b2 = same_input(q26["B2"], "SAHI+detector+fusion", window_px=args.b2_window, windows_per_scene=wins,
                     compute_vs_regular_tiling_x=round(wins / in26["per_side"] ** 2, 4))
     configs["B1"], configs["B2"] = b1, b2
     print(f"B1 one call per {in26['scene_px']} px scene: recall {b1['recall']['overall']}, precision "

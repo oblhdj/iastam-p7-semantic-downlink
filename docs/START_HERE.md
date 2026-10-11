@@ -64,7 +64,7 @@ and priority levels **P0** discard · **P1** metadata · **P2** metadata+ROI · 
 
 | promised | status |
 |---|---|
-| **SAHI sliced inference** (window + 20% overlap) | **implemented & measured** — `sat7/b2_sahi_fusion.py`, `sat7/perception.py`; B2 ran (recall 0.745 @ 1.56× compute). Window **768**, not 512 — the result reverses at 512 (report 16); see the trade in §7 |
+| **SAHI sliced inference** (window + 20% overlap) | **implemented & measured** — `sat7/b2_sahi_fusion.py`, `sat7/perception.py`; B2 ran (recall 0.717 @ 1.56× compute on the same 150 scenes, `wp26_b0_b4.json`; 0.745 was an earlier 47-ship sample). Window **768**, not 512 — the result reverses at 512 (report 16); see the trade in §7 |
 | **Global-coordinate transform + detection fusion** | **implemented & measured** — `sat7/b2_sahi_fusion.fuse`; validated to 0.0000 recall error vs per-tile (report 16) |
 | **Per-stage energy model** `E_proc = Σ P_k·T_k` | **implemented & measured** — `wp17_energy_model.py` / `sat7/energy.py`; ES_proc 57.6%, ES_total ≈ 98%, proc:comm 8.9:1 (report 17) |
 | **Optional inter-satellite relay**, `J_direct` vs `J_relay` | **implemented & measured** — `sat7/relay.py`; worst-case latency 11.6→6.2 h (reports 19–21) |
@@ -115,7 +115,7 @@ The 15 work packages, one line each:
 Ranked by "the paper promised it":
 
 1. ✅ **SAHI + global-coordinate fusion (B2)** — `sat7/b2_sahi_fusion.py` + `sat7/perception.py`;
-   B2 ran, recall 0.745 @ 1.56× compute (reports 13, 16). Window 768, the measured trade in §7.
+   B2 ran, recall 0.717 @ 1.56× compute on the same 150 scenes (`wp26_b0_b4.json`; reports 13, 16). Window 768, the measured trade in §7.
 2. ✅ **Per-stage energy model** — `wp17_energy_model.py` / `sat7/energy.py`: `E_proc = Σ P_k·T_k`,
    `E_comm = P_tx·D_tx/R_tx`, `ES = 1 − E_prop/E_base`. ES_proc 57.6%, ES_total ≈ 98% (report 17).
 3. ✅ **Optional inter-satellite relay (B4)** — `sat7/relay.py`: `E_relay = E_ISL + E_GS`,
