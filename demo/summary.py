@@ -114,7 +114,7 @@ def main() -> None:
             line("B1", "detector, 1 call per scene", _f(c["B1"]["recall"]["overall"]), c["B1"].get("label", ""),
                  f"no slicing; {_f(c['B1'].get('gt_ships')):,.0f} ships on {_f(c['B1'].get('scenes')):.0f} scenes")
         if "B2" in c:
-            line("B2", "detector + SAHI + fusion", _f(c["B2"]["recall"]["overall"]),
+            line("B2", "SAHI + detector + fusion", _f(c["B2"]["recall"]["overall"]),
                  c["B2"].get("label", ""), f"same scenes; {_f(c['B2']['compute_vs_regular_tiling_x']):.2f}x compute")
         if "B3" in c:
             line("B3", "detector+gate+LoD+scheduler", _f(c["B3"]["ship_recall"]),

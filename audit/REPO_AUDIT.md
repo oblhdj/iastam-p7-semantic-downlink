@@ -280,7 +280,7 @@ wp11 integrity claim is overstated and checked at a stale threshold (G2).
 | `pytest code/tests` | `.venv` | 137 / 2 skip on `main` (R1) |
 | `python demo/summary.py` | any Python | reads committed results; no computation |
 | wp5, wp6_sim, wp7, wp8, wp10, wp10b, wp14, wp17, wp19, wp20, wp23 | `.venv` | regenerates every scheduler / optimum / energy / relay / P0–P3 result **byte-identically** from committed CSVs (R7) |
-| `python demo/quickstart/run_demo.py` (**LOCAL**, not on `main` yet) | numpy, opencv, onnxruntime, sgp4, skyfield | live pre-filter → YOLO (ONNX, CPU) → SAHI + fusion → P0–P3 → scheduler in ~2 s on synthetic tiles; with `--data`, reproduces the committed detections (R10) |
+| `python demo/quickstart/run_demo.py` (**LOCAL**, not on `main` yet) | numpy, opencv, onnxruntime, sgp4, skyfield | live pre-filter → SAHI slicing → YOLO (ONNX, CPU) per slice → fusion → P0–P3 → scheduler in ~2 s on synthetic tiles; with `--data`, reproduces the committed detections (R10) |
 
 **Local environment as found:**
 * `.venv`: Python 3.14, pinned analysis stack, no torch.

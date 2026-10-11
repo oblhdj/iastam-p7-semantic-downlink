@@ -100,8 +100,8 @@ const S = [
   <div class="flow">
     <div class="step"><b>tile</b><span>768×768</span></div><span class="arrow">→</span>
     <div class="step"><b>gate</b><span>47k-CNN · 0.15 ms</span></div><span class="arrow">→</span>
-    <div class="step"><b>detector</b><span>YOLOv8n · 11 ms</span></div><span class="arrow">→</span>
-    <div class="step"><b>SAHI + fusion</b><span>global coords</span></div><span class="arrow">→</span>
+    <div class="step"><b>SAHI slicing</b><span>overlapping windows</span></div><span class="arrow">→</span>
+    <div class="step"><b>detector + fusion</b><span>YOLOv8n · 11 ms</span></div><span class="arrow">→</span>
     <div class="step"><b>semantic</b><span>P0–P3 / LoD</span></div><span class="arrow">→</span>
     <div class="step"><b>scheduler</b><span>value-per-byte</span></div><span class="arrow">→</span>
     <div class="step"><b>ground</b><span>or via relay</span></div>
@@ -109,7 +109,7 @@ const S = [
   <p>Two feedback loops make it more than a pipeline: the cheap classic stage disagreeing with the
   detector spends more bytes on a probable miss; buffer pressure sets how much detail to encode.</p>
   <p class="src">real-chain check: code/results/wp11_integration.json (reproduces the sim to 4 dp)</p>`,
- notes:`Gate, detector, SAHI with global-coordinate fusion, the semantic encoder, then a value-per-byte scheduler. The whole chain has been run on real JPEGs and reproduces our simulation to four decimals.`},
+ notes:`Gate, SAHI slicing, the detector on each slice with global-coordinate fusion, the semantic encoder, then a value-per-byte scheduler. The whole chain has been run on real JPEGs and reproduces our simulation to four decimals.`},
 
 {html:`<div class="kicker">B0 → B4 — the progression the paper promised (Table II)</div><h2>All five configurations ran</h2>
   <table>

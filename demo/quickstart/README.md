@@ -15,7 +15,7 @@ What runs live, on a 3×3 swath of 768 px tiles (2304 × 2304 px):
 | step | code (unchanged repo modules) | what you see |
 |---|---|---|
 | [1] pre-filter each tile | `sat7.prefilter.run_prefilter` | cloud / coast / sea context, beside the context recorded for the real tile |
-| [2] B1 detector per tile, then B2 SAHI + global-coordinate fusion over the swath | `OnnxYolo` (below) + `sat7.perception.detect_image(mode="sahi")` | detector calls, boxes, timing |
+| [2] two configurations, compared: B1 = the detector on each tile; B2 = SAHI slices the swath, the same detector runs on each window, then global-coordinate fusion | `OnnxYolo` (below) + `sat7.perception.detect_image(mode="sahi")` | detector calls, boxes, timing |
 | [3] P0–P3 decision per detection | `sat7.priority.classify` | box, confidence, length, level, bytes, and the reason |
 | [4] semantic packet vs raw | `sat7.semantic.encode_image` (binary records, JPEG crops of the pixels, CCSDS space packets) + `decode_downlink` | **measured** packet bytes by level, headers + CRC, JPEG headers, the ground decode, modeled bytes beside them, raw bytes, reduction `1 − D_tx/D_raw` |
 | [5] downlink order | `sat7.scheduler.ValueGreedy` | metadata first, ROI crops next, coastal context last |

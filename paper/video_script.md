@@ -32,7 +32,7 @@ And the relay, when it helps, forwards the **packet** — never the image.
 
 Here is one real tile.
 The gate decides there is something worth a closer look.
-The detector finds the ships. SAHI stitches the detections into one map.
+SAHI slices the image, the detector finds the ships, and fusion stitches them into one map.
 The encoder turns each ship into a priority packet — P0 to P3.
 The scheduler picks what fits the next pass, by value per byte.
 
