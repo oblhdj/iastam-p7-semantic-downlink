@@ -1,5 +1,9 @@
 # 21 — The B0–B4 campaign, end to end: what relay actually buys
 
+> **Superseded B1/B2 figures (10 Oct 2026).** The B1 0.782 / B2 0.745 below are small samples on
+> different inputs. The current same-scene figures are B1 **0.339** / B2 **0.717** (150 scenes, 1,164
+> ships, `../code/results/wp26_b0_b4.json`); see [`README.md`](README.md).
+
 Closes `../docs/START_HERE.md` §5 item 4 ("run the B0–B4 campaign end to end") and [report
 18](18-campaign-runner-spec.md)'s plan. B0–B3 were already wired; this report wires **B4** into the
 runner via `sat7.relay.route` ([report 20](20-relay-path-choice.md), windows + path choice) with the
