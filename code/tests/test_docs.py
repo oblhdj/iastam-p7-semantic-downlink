@@ -228,7 +228,7 @@ def test_launcher_check_reports_and_never_raises(capsys):
 def test_simulations_script_runs_only_scripts_that_need_no_data():
     lines = (REPO / "code" / "rerun_simulations.sh").read_text(encoding="utf-8").splitlines()
     names = [re.match(r"run scripts/(\w+)\.py", ln).group(1) for ln in lines if ln.startswith("run scripts/")]
-    assert len(names) == 19 and len(set(names)) == 16
+    assert len(names) == 20 and len(set(names)) == 17
     for needs_data in ("wp11_integration_demo", "wp18_campaign_runner", "wp24_detection_eval",
                        "wp25_semantic_packets", "wp26_b0_b4", "wp27_comms_direct_vs_relay"):
         assert needs_data not in names

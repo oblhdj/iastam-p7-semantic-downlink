@@ -1,0 +1,580 @@
+{
+  "label": "detection rows REAL (collated); downlink rows and curves SIM-over-REAL (pure P0-P3, modeled crop sizes, measured coastal tiles); relay latency SIM, energy ASSUMPTION powers. Recall is at the workload's 15 % cloud fraction -- never quote it bare.",
+  "workload": {
+    "tiles": 40000,
+    "ships": 21137,
+    "detected": 14785,
+    "passes": 6,
+    "link_share": 0.25,
+    "det_thr": 0.25,
+    "p1_conf": 0.67,
+    "seed": 0,
+    "E_proc_kJ_per_day": 45.64,
+    "E_proc_note": "cpu_onnx build, ASSUMPTION powers (sat7.energy); equal in every downlink variant"
+  },
+  "policies": {
+    "full": "adaptive P0-P3 (paper Table I)",
+    "no_roi": "adaptive level capped at P1: metadata only, no ROI, no context",
+    "fixed_P1": "no adaptation: every detection at P1",
+    "fixed_P2": "no adaptation: every detection at P2 (metadata + ROI)",
+    "fixed_P3": "no adaptation: every detection at P3 (metadata + ROI + context)"
+  },
+  "info_preservation": {
+    "definition": "sum w*credit(delivered level) / sum w over detected ships",
+    "credit_ASSUMPTION": {
+      "P0": 0.0,
+      "P1": 0.5,
+      "P2": 0.8,
+      "P3": 1.0
+    }
+  },
+  "gates": {
+    "full_reproduces_wp23_P0P3_row": {
+      "wp23": {
+        "ship_recall": 0.6166,
+        "MB_sent": 90.5
+      },
+      "here": {
+        "ship_recall": 0.6166,
+        "MB_sent": 90.51
+      },
+      "passed": true
+    },
+    "cap_at_P1_equals_fixed_P1": {
+      "passed": true
+    },
+    "relay_is_a_reroute": {
+      "passed": true
+    },
+    "no_ROI_sends_only_P1": {
+      "passed": true
+    }
+  },
+  "gates_passed": true,
+  "ablations": {
+    "without_sahi": {
+      "ablation": "without SAHI",
+      "label": "REAL",
+      "mode": "collated",
+      "source": "wp26_b0_b4.json: B2 vs B1",
+      "input": "150 scenes of 4x4 test tiles",
+      "full": {
+        "n_gt": 1164,
+        "precision": 0.6964,
+        "recall": 0.7174,
+        "F1": 0.7067,
+        "n_detections_supplied": 1199,
+        "recall_small": 0.505
+      },
+      "without": {
+        "n_gt": 1164,
+        "precision": 0.6805,
+        "recall": 0.3385,
+        "F1": 0.4521,
+        "n_detections_supplied": 579,
+        "recall_small": 0.0462
+      },
+      "delta": {
+        "precision": -0.0159,
+        "recall": -0.3789,
+        "F1": -0.2546
+      },
+      "note": "B1 = one detector call on the whole scene, shrunk to the detector's input"
+    },
+    "without_tile_overlap": {
+      "ablation": "without tile overlap",
+      "label": "REAL",
+      "mode": "collated",
+      "source": "wp24_detection_eval.json: swaths.sahi_B2 vs no_overlap",
+      "input": "24 swaths, 716 ships",
+      "full": {
+        "n_gt": 716,
+        "precision": 0.7649,
+        "recall": 0.7723,
+        "F1": 0.7686,
+        "n_detections_supplied": 1270,
+        "recall_small": 0.6117
+      },
+      "without": {
+        "n_gt": 716,
+        "precision": 0.7636,
+        "recall": 0.7263,
+        "F1": 0.7445,
+        "n_detections_supplied": 1174,
+        "recall_small": 0.5503
+      },
+      "delta": {
+        "precision": -0.0013,
+        "recall": -0.046,
+        "F1": -0.0241
+      },
+      "note": "same windows and fusion, overlap set to zero"
+    },
+    "without_detection_fusion": {
+      "ablation": "without detection fusion",
+      "label": "REAL",
+      "mode": "collated",
+      "source": "wp24_detection_eval.json: swaths.sahi_B2 vs sahi_no_fusion",
+      "input": "24 swaths, 716 ships",
+      "full": {
+        "n_gt": 716,
+        "precision": 0.7649,
+        "recall": 0.7723,
+        "F1": 0.7686,
+        "n_detections_supplied": 1270,
+        "recall_small": 0.6117
+      },
+      "without": {
+        "n_gt": 716,
+        "precision": 0.4951,
+        "recall": 0.7821,
+        "F1": 0.6064,
+        "n_detections_supplied": 2426,
+        "recall_small": 0.6173
+      },
+      "delta": {
+        "precision": -0.2698,
+        "recall": 0.0098,
+        "F1": -0.1622
+      },
+      "note": "same overlapping windows, duplicates across windows not merged"
+    },
+    "without_adaptive_semantic_downlink": {
+      "ablation": "without adaptive semantic downlink",
+      "label": "SIM-over-REAL",
+      "mode": "run",
+      "definition": "every detection that clears the onboard cut is sent at one fixed level",
+      "full": {
+        "ship_recall": 0.6166,
+        "dark_recall": 0.6265,
+        "info_preservation": 0.7613,
+        "D_tx_MB": 90.51,
+        "MB_offered": 90.53,
+        "E_comm_kJ": 4.155,
+        "E_total_kJ": 49.795,
+        "T_ship_med_h": 4.5,
+        "T_item_med_h": 4.58,
+        "T_item_p90_h": 9.57,
+        "T_item_max_h": 11.57,
+        "relay_fraction_items": 0.0,
+        "levels": {
+          "P0": 4620,
+          "P1": 5927,
+          "P2": 4450,
+          "P3": 2656
+        }
+      },
+      "without": {
+        "fixed_P1": {
+          "ship_recall": 0.6166,
+          "dark_recall": 0.6265,
+          "info_preservation": 0.5,
+          "D_tx_MB": 0.62,
+          "MB_offered": 0.62,
+          "E_comm_kJ": 0.028,
+          "E_total_kJ": 45.668,
+          "T_ship_med_h": 4.5,
+          "T_item_med_h": 4.45,
+          "T_item_p90_h": 9.48,
+          "T_item_max_h": 11.53,
+          "relay_fraction_items": 0.0,
+          "levels": {
+            "P0": 4620,
+            "P1": 13033,
+            "P2": 0,
+            "P3": 0
+          }
+        },
+        "fixed_P2": {
+          "ship_recall": 0.6166,
+          "dark_recall": 0.6265,
+          "info_preservation": 0.8,
+          "D_tx_MB": 19.82,
+          "MB_offered": 19.82,
+          "E_comm_kJ": 0.903,
+          "E_total_kJ": 46.543,
+          "T_ship_med_h": 4.5,
+          "T_item_med_h": 4.49,
+          "T_item_p90_h": 9.48,
+          "T_item_max_h": 11.53,
+          "relay_fraction_items": 0.0,
+          "levels": {
+            "P0": 4620,
+            "P1": 0,
+            "P2": 13033,
+            "P3": 0
+          }
+        },
+        "fixed_P3": {
+          "ship_recall": 0.6166,
+          "dark_recall": 0.6265,
+          "info_preservation": 1.0,
+          "D_tx_MB": 166.42,
+          "MB_offered": 166.59,
+          "E_comm_kJ": 7.392,
+          "E_total_kJ": 53.032,
+          "T_ship_med_h": 4.5,
+          "T_item_med_h": 5.12,
+          "T_item_p90_h": 11.18,
+          "T_item_max_h": 35.23,
+          "relay_fraction_items": 0.0,
+          "levels": {
+            "P0": 4620,
+            "P1": 0,
+            "P2": 0,
+            "P3": 13033
+          }
+        }
+      },
+      "delta": {
+        "fixed_P1": {
+          "ship_recall": 0.0,
+          "info_preservation": -0.2613,
+          "D_tx_MB": -89.89,
+          "E_comm_kJ": -4.127,
+          "T_ship_med_h": 0.0,
+          "T_item_max_h": -0.04
+        },
+        "fixed_P2": {
+          "ship_recall": 0.0,
+          "info_preservation": 0.0387,
+          "D_tx_MB": -70.69,
+          "E_comm_kJ": -3.252,
+          "T_ship_med_h": 0.0,
+          "T_item_max_h": -0.04
+        },
+        "fixed_P3": {
+          "ship_recall": 0.0,
+          "info_preservation": 0.2387,
+          "D_tx_MB": 75.91,
+          "E_comm_kJ": 3.237,
+          "T_ship_med_h": 0.0,
+          "T_item_max_h": 23.66
+        }
+      }
+    },
+    "without_roi_transmission": {
+      "ablation": "without ROI transmission",
+      "label": "SIM-over-REAL",
+      "mode": "run",
+      "definition": "adaptive levels capped at P1: metadata only",
+      "full": {
+        "ship_recall": 0.6166,
+        "dark_recall": 0.6265,
+        "info_preservation": 0.7613,
+        "D_tx_MB": 90.51,
+        "MB_offered": 90.53,
+        "E_comm_kJ": 4.155,
+        "E_total_kJ": 49.795,
+        "T_ship_med_h": 4.5,
+        "T_item_med_h": 4.58,
+        "T_item_p90_h": 9.57,
+        "T_item_max_h": 11.57,
+        "relay_fraction_items": 0.0,
+        "levels": {
+          "P0": 4620,
+          "P1": 5927,
+          "P2": 4450,
+          "P3": 2656
+        }
+      },
+      "without": {
+        "ship_recall": 0.6166,
+        "dark_recall": 0.6265,
+        "info_preservation": 0.5,
+        "D_tx_MB": 0.62,
+        "MB_offered": 0.62,
+        "E_comm_kJ": 0.028,
+        "E_total_kJ": 45.668,
+        "T_ship_med_h": 4.5,
+        "T_item_med_h": 4.45,
+        "T_item_p90_h": 9.48,
+        "T_item_max_h": 11.53,
+        "relay_fraction_items": 0.0,
+        "levels": {
+          "P0": 4620,
+          "P1": 13033,
+          "P2": 0,
+          "P3": 0
+        }
+      },
+      "delta": {
+        "ship_recall": 0.0,
+        "info_preservation": -0.2613,
+        "D_tx_MB": -89.89,
+        "E_comm_kJ": -4.127,
+        "T_ship_med_h": 0.0,
+        "T_item_max_h": -0.04
+      },
+      "note": "equal to fixed_P1 by construction (gate cap_at_P1_equals_fixed_P1)"
+    },
+    "without_optional_relay": {
+      "ablation": "without optional relay",
+      "label": "latency SIM; energy ASSUMPTION powers",
+      "mode": "run",
+      "definition": "the full adaptive policy; relay path disabled in sat7.comms",
+      "full": {
+        "ship_recall": 0.6166,
+        "dark_recall": 0.6265,
+        "info_preservation": 0.7613,
+        "D_tx_MB": 90.53,
+        "MB_offered": 90.53,
+        "E_comm_kJ": 6.18,
+        "E_total_kJ": 51.82,
+        "T_ship_med_h": 1.94,
+        "T_item_med_h": 1.98,
+        "T_item_p90_h": 4.36,
+        "T_item_max_h": 5.86,
+        "relay_fraction_items": 0.438,
+        "levels": {
+          "P0": 4620,
+          "P1": 5927,
+          "P2": 4450,
+          "P3": 2656
+        }
+      },
+      "without": {
+        "ship_recall": 0.6166,
+        "dark_recall": 0.6265,
+        "info_preservation": 0.7613,
+        "D_tx_MB": 90.51,
+        "MB_offered": 90.53,
+        "E_comm_kJ": 4.155,
+        "E_total_kJ": 49.795,
+        "T_ship_med_h": 4.5,
+        "T_item_med_h": 4.58,
+        "T_item_p90_h": 9.57,
+        "T_item_max_h": 11.57,
+        "relay_fraction_items": 0.0,
+        "levels": {
+          "P0": 4620,
+          "P1": 5927,
+          "P2": 4450,
+          "P3": 2656
+        }
+      },
+      "delta": {
+        "ship_recall": 0.0,
+        "info_preservation": 0.0,
+        "D_tx_MB": -0.02,
+        "E_comm_kJ": -2.025,
+        "T_ship_med_h": 2.56,
+        "T_item_max_h": 5.71
+      }
+    }
+  },
+  "all_policies_direct": {
+    "full": {
+      "ship_recall": 0.6166,
+      "dark_recall": 0.6265,
+      "info_preservation": 0.7613,
+      "D_tx_MB": 90.51,
+      "MB_offered": 90.53,
+      "E_comm_kJ": 4.155,
+      "E_total_kJ": 49.795,
+      "T_ship_med_h": 4.5,
+      "T_item_med_h": 4.58,
+      "T_item_p90_h": 9.57,
+      "T_item_max_h": 11.57,
+      "relay_fraction_items": 0.0,
+      "levels": {
+        "P0": 4620,
+        "P1": 5927,
+        "P2": 4450,
+        "P3": 2656
+      }
+    },
+    "no_roi": {
+      "ship_recall": 0.6166,
+      "dark_recall": 0.6265,
+      "info_preservation": 0.5,
+      "D_tx_MB": 0.62,
+      "MB_offered": 0.62,
+      "E_comm_kJ": 0.028,
+      "E_total_kJ": 45.668,
+      "T_ship_med_h": 4.5,
+      "T_item_med_h": 4.45,
+      "T_item_p90_h": 9.48,
+      "T_item_max_h": 11.53,
+      "relay_fraction_items": 0.0,
+      "levels": {
+        "P0": 4620,
+        "P1": 13033,
+        "P2": 0,
+        "P3": 0
+      }
+    },
+    "fixed_P1": {
+      "ship_recall": 0.6166,
+      "dark_recall": 0.6265,
+      "info_preservation": 0.5,
+      "D_tx_MB": 0.62,
+      "MB_offered": 0.62,
+      "E_comm_kJ": 0.028,
+      "E_total_kJ": 45.668,
+      "T_ship_med_h": 4.5,
+      "T_item_med_h": 4.45,
+      "T_item_p90_h": 9.48,
+      "T_item_max_h": 11.53,
+      "relay_fraction_items": 0.0,
+      "levels": {
+        "P0": 4620,
+        "P1": 13033,
+        "P2": 0,
+        "P3": 0
+      }
+    },
+    "fixed_P2": {
+      "ship_recall": 0.6166,
+      "dark_recall": 0.6265,
+      "info_preservation": 0.8,
+      "D_tx_MB": 19.82,
+      "MB_offered": 19.82,
+      "E_comm_kJ": 0.903,
+      "E_total_kJ": 46.543,
+      "T_ship_med_h": 4.5,
+      "T_item_med_h": 4.49,
+      "T_item_p90_h": 9.48,
+      "T_item_max_h": 11.53,
+      "relay_fraction_items": 0.0,
+      "levels": {
+        "P0": 4620,
+        "P1": 0,
+        "P2": 13033,
+        "P3": 0
+      }
+    },
+    "fixed_P3": {
+      "ship_recall": 0.6166,
+      "dark_recall": 0.6265,
+      "info_preservation": 1.0,
+      "D_tx_MB": 166.42,
+      "MB_offered": 166.59,
+      "E_comm_kJ": 7.392,
+      "E_total_kJ": 53.032,
+      "T_ship_med_h": 4.5,
+      "T_item_med_h": 5.12,
+      "T_item_p90_h": 11.18,
+      "T_item_max_h": 35.23,
+      "relay_fraction_items": 0.0,
+      "levels": {
+        "P0": 4620,
+        "P1": 0,
+        "P2": 0,
+        "P3": 13033
+      }
+    }
+  },
+  "all_policies_with_relay": {
+    "full": {
+      "ship_recall": 0.6166,
+      "dark_recall": 0.6265,
+      "info_preservation": 0.7613,
+      "D_tx_MB": 90.53,
+      "MB_offered": 90.53,
+      "E_comm_kJ": 6.18,
+      "E_total_kJ": 51.82,
+      "T_ship_med_h": 1.94,
+      "T_item_med_h": 1.98,
+      "T_item_p90_h": 4.36,
+      "T_item_max_h": 5.86,
+      "relay_fraction_items": 0.438,
+      "levels": {
+        "P0": 4620,
+        "P1": 5927,
+        "P2": 4450,
+        "P3": 2656
+      }
+    },
+    "no_roi": {
+      "ship_recall": 0.6166,
+      "dark_recall": 0.6265,
+      "info_preservation": 0.5,
+      "D_tx_MB": 0.62,
+      "MB_offered": 0.62,
+      "E_comm_kJ": 0.044,
+      "E_total_kJ": 45.684,
+      "T_ship_med_h": 1.8,
+      "T_item_med_h": 1.81,
+      "T_item_p90_h": 4.34,
+      "T_item_max_h": 5.81,
+      "relay_fraction_items": 0.4358,
+      "levels": {
+        "P0": 4620,
+        "P1": 13033,
+        "P2": 0,
+        "P3": 0
+      }
+    },
+    "fixed_P1": {
+      "ship_recall": 0.6166,
+      "dark_recall": 0.6265,
+      "info_preservation": 0.5,
+      "D_tx_MB": 0.62,
+      "MB_offered": 0.62,
+      "E_comm_kJ": 0.044,
+      "E_total_kJ": 45.684,
+      "T_ship_med_h": 1.8,
+      "T_item_med_h": 1.81,
+      "T_item_p90_h": 4.34,
+      "T_item_max_h": 5.81,
+      "relay_fraction_items": 0.4358,
+      "levels": {
+        "P0": 4620,
+        "P1": 13033,
+        "P2": 0,
+        "P3": 0
+      }
+    },
+    "fixed_P2": {
+      "ship_recall": 0.6166,
+      "dark_recall": 0.6265,
+      "info_preservation": 0.8,
+      "D_tx_MB": 19.82,
+      "MB_offered": 19.82,
+      "E_comm_kJ": 1.404,
+      "E_total_kJ": 47.044,
+      "T_ship_med_h": 1.8,
+      "T_item_med_h": 1.81,
+      "T_item_p90_h": 4.34,
+      "T_item_max_h": 5.82,
+      "relay_fraction_items": 0.438,
+      "levels": {
+        "P0": 4620,
+        "P1": 0,
+        "P2": 13033,
+        "P3": 0
+      }
+    },
+    "fixed_P3": {
+      "ship_recall": 0.6166,
+      "dark_recall": 0.6265,
+      "info_preservation": 1.0,
+      "D_tx_MB": 166.53,
+      "MB_offered": 166.59,
+      "E_comm_kJ": 11.176,
+      "E_total_kJ": 56.816,
+      "T_ship_med_h": 2.12,
+      "T_item_med_h": 2.17,
+      "T_item_p90_h": 4.41,
+      "T_item_max_h": 6.15,
+      "relay_fraction_items": 0.444,
+      "levels": {
+        "P0": 4620,
+        "P1": 0,
+        "P2": 0,
+        "P3": 13033
+      }
+    }
+  },
+  "curves": {
+    "file": "wp30_curves.csv",
+    "rows": 146,
+    "points_per_curve": {
+      "D_tx_vs_info_preservation": 63,
+      "D_tx_vs_recall": 71,
+      "E_total_vs_T_total": 12
+    }
+  },
+  "elapsed_s": 52.9
+}

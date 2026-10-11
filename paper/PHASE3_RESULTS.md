@@ -273,6 +273,43 @@ not extra capacity: recall and bytes are B3's verbatim. **Relay always costs mor
 | without relay | direct-only = B3 exactly (sanity gate a) | report 21 |
 | without tile overlap / without fusion | measured on 24 swaths, 716 ships (`wp24`): SAHI recall 0.772 / precision 0.765; **no overlap** 0.726 / 0.764; **no fusion** 0.782 / 0.495 (duplicates). A tile-aligned grid without overlap scores 0.774 / 0.794 — see §10 item 3 | `wp24`; reports 16, 23 |
 
+## 9b. The six ablations and the trade-off curves, from one command (`wp30_paper_ablations.py`)
+
+`python scripts/wp30_paper_ablations.py` writes `wp30_ablations.json`, `wp30_curves.csv` and
+`wp30_curves.png`. The three detection rows are read from the files §9 already cites; the three
+downlink rows use the paper's Table I levels only (pure P0–P3, `sat7.priority`, §2b): one simulated
+40,000-tile day (seed 0), 13,033 detections sent, 25 % link share, 15 % cloud. The script stops
+with an error unless that day reproduces the P0–P3 row of `wp23_semantic_compare.json`.
+
+| ablation (paper §VIII-G) | full → without | label | source |
+|---|---|---|---|
+| without SAHI | recall 0.717 → 0.339, precision 0.696 → 0.681 (small ships 0.505 → 0.046); 150 scenes, 1,164 ships | REAL | `wp26_b0_b4.json` B2 vs B1 |
+| without tile overlap | recall 0.772 → 0.726, precision 0.765 → 0.764; 24 swaths, 716 ships | REAL | `wp24_detection_eval.json` sahi_B2 vs no_overlap |
+| without detection fusion | recall 0.772 → 0.782, precision 0.765 → 0.495 (1,270 → 2,426 boxes: duplicates) | REAL | `wp24_detection_eval.json` sahi_B2 vs sahi_no_fusion |
+| without adaptive semantic downlink (one fixed level) | adaptive: 90.5 MB, information preservation 0.761. Fixed P1: 0.6 MB, 0.500. Fixed P2: 19.8 MB, 0.800. Fixed P3: 166.4 MB, 1.000, worst-case item 35.2 h instead of 11.6 h. Recall 0.617 in all four | SIM-over-REAL | `wp30_ablations.json` |
+| without ROI transmission (cap at P1) | 90.5 → 0.6 MB, information preservation 0.761 → 0.500, recall unchanged at 0.617. The same day as fixed P1 by construction | SIM-over-REAL | `wp30_ablations.json` |
+| without optional relay | per-ship median latency 1.9 → 4.5 h, worst-case item 5.9 → 11.6 h; transmit energy 6.2 → 4.2 kJ. Recall and bytes unchanged; the relay carried 44 % of items | latency SIM, energy ASSUMPTION powers | `wp30_ablations.json` (`sat7.comms`) |
+
+Information preservation here is the joint program's (`sat7.joint`): the weighted credit of the
+level that reached the ground, P1 0.5 / P2 0.8 / P3 1.0, over the ships the detector fired on. The
+credits are an **ASSUMPTION**. The relay row uses the capacity-aware simulator (`sat7.comms`); §2b's
+B4 figures for the same day (11.6 → 6.2 h, 4.3 → 5.8 kJ) come from `wp18`'s window estimate.
+
+**Trade-off curves (paper eqs 32–35)**, `wp30_curves.csv`, column `curve` [SIM-over-REAL]:
+
+* **D_tx vs recall.** Recall is set by the detector, not the link: on a starved link it climbs
+  0.089 → 0.439 between 0.08 and 0.42 MB, reaches 0.617 at 0.84 MB and stays there to 166 MB,
+  because the P1 records are sent first and total 0.6 MB. Moving the detector's cut is what moves
+  recall: 0.262 at 52 MB (cut 0.80), 0.617 at 90.5 MB (0.25), 0.733 at 105.7 MB (0.05).
+* **D_tx vs information preservation.** 0.50 at 0.6 MB (metadata only), 0.80 at 19.8 MB (a ROI for
+  every detection), 1.00 at 166 MB (context for every detection). The adaptive policy sits at 0.761
+  for 90.5 MB: most of its bytes are coastal context tiles, which this credit table rewards little.
+  **On this metric a fixed P2 does better for a fifth of the bytes**; what the adaptive policy buys
+  with the rest is the coastal context, which neither recall nor this credit scores.
+* **E_total vs T_total, direct vs relay.** Adaptive policy: 49.8 kJ at a 4.6 h per-item median
+  direct, 51.8 kJ at 2.0 h with the relay. Fixed P3: 53.0 kJ / 5.1 h direct, 56.8 kJ / 2.2 h relay.
+  45.6 kJ of every total is onboard processing, equal in all variants; powers are ASSUMPTIONS.
+
 ## 10. Limitations (paper §X, extended honestly)
 
 1. **Onboard = TARGET, not a prototype.** All timings are a laptop. But the work (3.15 M-param
