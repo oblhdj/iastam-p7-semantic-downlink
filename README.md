@@ -46,6 +46,37 @@ computed from an SGP4 propagator for a ground station at Sfax.
 Every figure above is reproducible from this repository. The `.csv` files under
 `code/results/` are authoritative; the reports narrate them.
 
+## Paper claim → measured evidence
+
+The accepted paper reports no numbers by design. Each row is one thing it says, and what this
+repository measured for it. § numbers in the fourth column are sections of
+[`paper/PHASE3_RESULTS.md`](paper/PHASE3_RESULTS.md); files are under `code/results/`. Labels:
+**REAL** measured on real data, on a laptop · **SIM** simulated · **SIM-over-REAL** a simulated
+day over real detections · **ESTIMATE** an assumed power × a measured or simulated time ·
+**TARGET** argued for flight hardware, not measured · **ASSUMPTION** a constant we chose.
+
+| Paper says | Location | What we measured | File / section | Label |
+|---|---|---|---|---|
+| 512×512 windows, ~20% overlap as a representative SAHI starting point | §III-B | **Both windows, on 24 stitched swaths (716 ships):** 768 px gives recall 0.772 at 1.56× the detector calls of a plain tiling; 512 px gives 0.771 at 4.00× (seam recall 0.922 vs 0.896). The B1/B2 headline (150 scenes) is **768 px only** — its 512 px rerun is **pending**, no result committed | [report 16](reports/16-swath-policies.md), `wp16_swath_policies.json`, `wp16_swath_policies_sahi512.json`; §2 for the 768 px headline (`wp26_b0_b4.json`) | REAL |
+| Table I priority levels P0–P3 | §IV | Pure P0–P3 run as a **co-headline** on the same days and scheduler: recall 0.622, 88.4 MB/day, 680× (the LoD ladder: 0.685, 176.3 MB, 341×) | §2b, `wp6_real_table_paper.csv`, `wp18_campaign_paper.json` | SIM-over-REAL; level thresholds ASSUMPTION |
+| B0 → B4 progression | Table II | **All five configurations ran.** B1 → B2 recall 0.339 → 0.717 on the same 150 scenes; B3 0.685 delivered at 341×; B4 = B3 with lower latency. B1/B2 and B3/B4 use different inputs | §2, `wp26_b0_b4.json`, `wp18_campaign.json` | mixed: B0 SIM · B1, B2 REAL · B3 SIM-over-REAL · B4 latency SIM, energy TARGET |
+| Energy model E_proc + E_comm | §V | Full per-stage model: 45.6 kJ/day processing + 8.4 kJ/day transmission; ES_proc 57.6% (a ratio of stage times, needs no power). Re-priced over 1–30 W edge-class processors | §6 + §6b, `wp17_energy_model.json`, `wp17_energy_edge.json` | ESTIMATE — stage times REAL (laptop), every power ASSUMPTION |
+| Optional inter-satellite relay | §V-D, §VII | Latency reduction in simulation: worst-case item 35.2 h → 10.9 h, per-item median 7.9 h → 3.4 h, for +52% communication energy. Recall and bytes unchanged | §2 / §7, `wp18_campaign.json`, `wp27_comms.json` | latency SIM, energy TARGET |
+| Six ablations | §VIII-G | **All six done**, from one command: without SAHI, without overlap, without fusion, without adaptive downlink, without ROI, without relay | §9b (earlier versions in §9), `wp30_ablations.json` | per row: three detection rows REAL, three downlink rows SIM-over-REAL (relay energy on ASSUMPTION powers) |
+| Joint objective, eq. 20 | §VI | **An offline solver exists and is tested**; it does not drive the campaign, which schedules by value per byte. Solved once over 13,033 detections: at A_min 0.9, I_min 0.5 all four weightings tried return the same metadata-only assignment — no trade-off curve yet | `code/sat7/joint.py`, `wp23_semantic_compare.json`, [report 23](reports/23-paper-faithful-modules.md) | D and T SIM, E TARGET; weights and floors ASSUMPTION |
+| "No measurements from the target platform" | Limitations | Still true. An explicit mapping instead: measured laptop stage times × assumed slowdown × literature board power → 41–264 ms and 41–528 mJ per tile on a Myriad-class processor | §6c, [report 22](reports/22-onboard-feasibility.md) | TARGET |
+
+**Where this repository still differs from the paper.** *Dataset:* the paper suggests xView,
+VisDrone, DOTA or HRSID; we use optical Airbus tiles, and because a tile is already 768×768, SAHI is
+evaluated on synthetic scenes stitched from tiles — no ship crosses a seam there, so overlap has
+nothing to recover (see [Limitations](#limitations-stated-up-front)). *SAHI window:* the headline
+B2 uses 768 px, not the paper's 512; 512 is measured on the swaths only, where it costs 4.00×
+instead of 1.56× for the same recall. *Priority levels:* the headline (0.685, 341×) comes from our
+level-of-detail ladder, not from Table I; pure P0–P3 is the co-headline row, and the +6.3 points
+over the fair baseline belong to the ladder alone. *Onboard:* nothing ran on flight hardware —
+onboard execution is a TARGET. *Energy:* no power was measured; every joule is an assumed power
+times a measured or simulated time.
+
 > **Phase-3 status & paper→evidence map.** The accepted Phase-2 paper reported no numbers by
 > design; **Phase 3 is the measured counterpart and is complete** — B0→B4, the five metrics,
 > the energy model, the optional relay, and the ablations all ran. Authoritative write-ups:
