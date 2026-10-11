@@ -272,6 +272,60 @@ Processing energy, kJ/day (compute : radio in brackets):
   laptop-class sweep in §6.
 * P_isl (12 W, ASSUMPTION) is not in this grid; it is swept in `wp19` and `wp27`.
 
+## 6c. From laptop measurement to a flown edge processor — the mapping behind "onboard = TARGET"
+
+`T_target = T_laptop × s` and `E_target = P_board × T_target`. T_laptop is measured (on a laptop),
+the slowdown s is an ASSUMPTION, and P_board is a literature power class (LIT) — so every output
+is a **TARGET**, not a measurement. Default all-CPU ONNX build, one detector call per tile,
+40,000 tiles/day [ASSUMPTION]. Source: `wp17_energy_model.json`, `wp17_energy_edge.json`.
+
+**Step 1 — latency: measured stage time × assumed slowdown**
+
+| stage | laptop time | label | s = 1× [ASSUMPTION] | s = 2.59× [ASSUMPTION] | s = 6.48× [ASSUMPTION] |
+|---|---|---|---|---|---|
+| decode / preprocess | 0.71 ms | ASSUMPTION (in no results file) | 0.71 ms | 1.84 ms | 4.60 ms |
+| learned gate (47k params) | 0.94 ms | measured (laptop CPU) | 0.94 ms | 2.44 ms | 6.09 ms |
+| detector (YOLOv8n @768, ONNX FP32) | 38.6 ms | measured (laptop CPU) | 38.6 ms | 100 ms | 250 ms |
+| fusion | 0 ms | ASSUMPTION (never timed) | 0 ms | 0 ms | 0 ms |
+| LoD encode + schedule | 0.5 ms | ASSUMPTION (invented) | 0.5 ms | 1.30 ms | 3.24 ms |
+| **onboard latency per tile** | **40.75 ms** | measured + ASSUMPTION | **40.8 ms [TARGET]** | **105.6 ms [TARGET]** | **263.9 ms [TARGET]** |
+| processor busy, share of the day | | | 1.9 % [TARGET] | 4.9 % [TARGET] | 12.2 % [TARGET] |
+
+The slowdown is applied to every stage alike [ASSUMPTION]; s = 2.59× and 6.48× are the factors that
+put the detector at report 22's 100 ms and 250 ms. Report 22's FLOPs envelope for a Myriad X
+(~12.5 GFLOPs/tile on a >1 TOPS engine [LIT] → 30–150 ms/tile) sits inside this range.
+
+**Step 2 — energy: TARGET latency × literature board power**
+
+| board power class [LIT] | s [ASSUMPTION] | latency / tile [TARGET] | energy / tile [TARGET] | E_proc / day [TARGET] |
+|---|---|---|---|---|
+| 1 W — Myriad-class VPU, low end (Myriad 2 ~1–2 W, Myriad X ~1.5 W) | 1× | 40.8 ms | 41 mJ | 1.6 kJ |
+| | 2.59× | 105.6 ms | 106 mJ | 4.2 kJ |
+| | 6.48× | 263.9 ms | 264 mJ | 10.6 kJ |
+| 2 W — Myriad-class VPU, high end | 1× | 40.8 ms | 82 mJ | 3.3 kJ |
+| | 2.59× | 105.6 ms | 211 mJ | 8.4 kJ |
+| | 6.48× | 263.9 ms | 528 mJ | 21.1 kJ |
+| 10 W — heterogeneous flight computer, low end (Unibap iX5-100, 10–30 W) | 1× | 40.8 ms | 408 mJ | 16.3 kJ |
+| | 2.59× | 105.6 ms | 1,056 mJ | 42.2 kJ |
+| | 6.48× | 263.9 ms | 2,639 mJ | 105.6 kJ |
+| *reference: laptop CPU, 28 W [ASSUMPTION — not measured]* | 1× | 40.75 ms (measured + ASSUMPTION) | 1,141 mJ [ESTIMATE] | 45.6 kJ [ESTIMATE] |
+
+* **TARGET for a Myriad-class processor: 41–264 ms and 41–528 mJ per tile, 1.6–21.1 kJ/day, with the
+  processor busy 2–12 % of the day.** The radio spends 8.4 kJ/day [P_tx 15 W ASSUMPTION, transmit
+  time SIM], so on such a board compute and radio are the same order (0.20 : 1 to 2.53 : 1).
+* **Latency.** Even the slowest case adds 0.26 s per tile, against a median delivery latency of
+  4.5 h [SIM] that is all link wait. Onboard speed limits throughput (the busy share), not delivery
+  time.
+* **What the table does not carry.** The board power is a datasheet class, not the draw under this
+  workload. The slowdown is not derived from any benchmark of our model on a VPU. A VPU typically
+  runs INT8/FP16, whereas the times above are FP32 — and our one INT8 test (dynamic) lost
+  2.2 points on small ships [report 02], so accuracy on the target is open as well as speed.
+* **Conclusion, unchanged.** Onboard execution is **not demonstrated**. The pipeline was never run
+  on a Myriad or any flight processor; no power was measured on any device. The table shows that
+  the measured workload, under stated assumptions, fits the power and duty budget of hardware that
+  already flies CNN inference (Φ-sat-1/2 [LIT]) — an argument for feasibility, to be settled only
+  by a hardware-in-the-loop run [report 22 §5].
+
 ## 7. Latency & the relay (paper §V-D, §VII, eqs 25–29)
 
 `T_total = T_inf + T_enc + T_comm + T_dec`; median delivery **4.5 h** [SIM].

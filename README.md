@@ -142,8 +142,15 @@ This mattered more than any single result, so it is stated plainly:
 
 ## Limitations, stated up front
 
-Timings are a laptop RTX 5060, not flight hardware — "runs onboard" is **not** demonstrated; it is
-a **TARGET** mapped onto flown Myriad-class hardware ([report 22](reports/22-onboard-feasibility.md)).
+**Onboard execution is not demonstrated — it is argued as feasible.** Every stage time was measured
+on a laptop (40.75 ms per tile for the whole onboard chain, 38.6 ms of it the detector). Mapped
+onto a flown Myriad-class processor — literature power 1–2 W [LIT], assumed 1× to 6.5× slower than
+the laptop [ASSUMPTION] — that becomes a **TARGET** of 41–264 ms and 41–528 mJ per tile, or
+1.6–21 kJ/day with the processor busy 2–12 % of the day at 40,000 tiles/day. No power was measured
+and nothing was run on flight hardware; the slowdown and the quantised accuracy on a real board
+are what a prototype still owes ([PHASE3 §6c](paper/PHASE3_RESULTS.md),
+[report 22](reports/22-onboard-feasibility.md)).
+
 The Airbus set is 0.4% cloud, so the cloud assumption cannot be settled from this data. Tiles are
 resampled i.i.d. rather than as orbital strips. The headline campaign models a single ground station.
 SAHI needs a large scene; Airbus tiles are already 768×768, so B1 and B2 are measured on **synthetic
