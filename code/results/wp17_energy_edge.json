@@ -1,0 +1,538 @@
+{
+  "label": "ESTIMATE. Stage times REAL but measured on a laptop, stretched by an ASSUMED uniform slowdown (TARGET latencies of report 22); processor and transmitter powers ASSUMPTION (literature-typical classes, not measurements, not a hardware selection); transmit time SIM. No stage was timed and no power was measured on edge hardware.",
+  "config": "cpu_onnx: every onboard stage on one processor of power P_proc",
+  "tiles_per_day": 40000,
+  "ES_proc_power_free": 0.5763,
+  "ES_proc_note": "the same in every cell: P_proc and the uniform slowdown cancel in the ratio. It is a ratio of laptop stage times; it would change if the stages slowed by different factors on the target processor.",
+  "P_proc_W_ASSUMPTION": {
+    "1": "VPU class, Myriad 2 / Myriad X (~1-2 W, report 22)",
+    "2": "VPU class, Myriad 2 / Myriad X (~1-2 W, report 22)",
+    "5": "Jetson class, low power mode (5-15 W modes)",
+    "10": "Jetson class, mid power mode; low end of a heterogeneous flight computer (10-30 W, report 22)",
+    "15": "Jetson class, high power mode",
+    "30": "heterogeneous flight computer, high end (10-30 W, report 22)"
+  },
+  "detector_ms_per_tile_cases": {
+    "laptop_measured": 38.6,
+    "TARGET": [
+      100.0,
+      250.0
+    ]
+  },
+  "P_tx_W_ASSUMPTION": [
+    8.0,
+    15.0,
+    30.0
+  ],
+  "P_isl_note": "not in this grid: the relay's P_isl (12 W, ASSUMPTION) is swept in wp19 / wp27",
+  "laptop_default_reference": {
+    "P_proc_W": 28.0,
+    "E_proc_kJ_day": 45.64
+  },
+  "cells": [
+    {
+      "P_proc_W": 1.0,
+      "power_class": "VPU class, Myriad 2 / Myriad X (~1-2 W, report 22)",
+      "detector_ms_per_tile": 38.6,
+      "slowdown_vs_laptop": 1.0,
+      "E_proc_kJ_day": 1.63,
+      "processor_busy_fraction_of_day": 0.0189,
+      "by_P_tx_W": {
+        "8": {
+          "E_comm_kJ_day": 4.46,
+          "E_total_kJ_day": 6.09,
+          "proc_vs_comm_ratio": 0.37,
+          "ES_total_vs_bent_pipe": 0.996
+        },
+        "15": {
+          "E_comm_kJ_day": 8.36,
+          "E_total_kJ_day": 9.99,
+          "proc_vs_comm_ratio": 0.2,
+          "ES_total_vs_bent_pipe": 0.9965
+        },
+        "30": {
+          "E_comm_kJ_day": 16.71,
+          "E_total_kJ_day": 18.34,
+          "proc_vs_comm_ratio": 0.1,
+          "ES_total_vs_bent_pipe": 0.9968
+        }
+      }
+    },
+    {
+      "P_proc_W": 2.0,
+      "power_class": "VPU class, Myriad 2 / Myriad X (~1-2 W, report 22)",
+      "detector_ms_per_tile": 38.6,
+      "slowdown_vs_laptop": 1.0,
+      "E_proc_kJ_day": 3.26,
+      "processor_busy_fraction_of_day": 0.0189,
+      "by_P_tx_W": {
+        "8": {
+          "E_comm_kJ_day": 4.46,
+          "E_total_kJ_day": 7.72,
+          "proc_vs_comm_ratio": 0.73,
+          "ES_total_vs_bent_pipe": 0.9949
+        },
+        "15": {
+          "E_comm_kJ_day": 8.36,
+          "E_total_kJ_day": 11.62,
+          "proc_vs_comm_ratio": 0.39,
+          "ES_total_vs_bent_pipe": 0.9959
+        },
+        "30": {
+          "E_comm_kJ_day": 16.71,
+          "E_total_kJ_day": 19.97,
+          "proc_vs_comm_ratio": 0.2,
+          "ES_total_vs_bent_pipe": 0.9965
+        }
+      }
+    },
+    {
+      "P_proc_W": 5.0,
+      "power_class": "Jetson class, low power mode (5-15 W modes)",
+      "detector_ms_per_tile": 38.6,
+      "slowdown_vs_laptop": 1.0,
+      "E_proc_kJ_day": 8.15,
+      "processor_busy_fraction_of_day": 0.0189,
+      "by_P_tx_W": {
+        "8": {
+          "E_comm_kJ_day": 4.46,
+          "E_total_kJ_day": 12.61,
+          "proc_vs_comm_ratio": 1.83,
+          "ES_total_vs_bent_pipe": 0.9917
+        },
+        "15": {
+          "E_comm_kJ_day": 8.36,
+          "E_total_kJ_day": 16.51,
+          "proc_vs_comm_ratio": 0.98,
+          "ES_total_vs_bent_pipe": 0.9942
+        },
+        "30": {
+          "E_comm_kJ_day": 16.71,
+          "E_total_kJ_day": 24.86,
+          "proc_vs_comm_ratio": 0.49,
+          "ES_total_vs_bent_pipe": 0.9956
+        }
+      }
+    },
+    {
+      "P_proc_W": 10.0,
+      "power_class": "Jetson class, mid power mode; low end of a heterogeneous flight computer (10-30 W, report 22)",
+      "detector_ms_per_tile": 38.6,
+      "slowdown_vs_laptop": 1.0,
+      "E_proc_kJ_day": 16.3,
+      "processor_busy_fraction_of_day": 0.0189,
+      "by_P_tx_W": {
+        "8": {
+          "E_comm_kJ_day": 4.46,
+          "E_total_kJ_day": 20.76,
+          "proc_vs_comm_ratio": 3.66,
+          "ES_total_vs_bent_pipe": 0.9863
+        },
+        "15": {
+          "E_comm_kJ_day": 8.36,
+          "E_total_kJ_day": 24.66,
+          "proc_vs_comm_ratio": 1.95,
+          "ES_total_vs_bent_pipe": 0.9914
+        },
+        "30": {
+          "E_comm_kJ_day": 16.71,
+          "E_total_kJ_day": 33.01,
+          "proc_vs_comm_ratio": 0.98,
+          "ES_total_vs_bent_pipe": 0.9942
+        }
+      }
+    },
+    {
+      "P_proc_W": 15.0,
+      "power_class": "Jetson class, high power mode",
+      "detector_ms_per_tile": 38.6,
+      "slowdown_vs_laptop": 1.0,
+      "E_proc_kJ_day": 24.45,
+      "processor_busy_fraction_of_day": 0.0189,
+      "by_P_tx_W": {
+        "8": {
+          "E_comm_kJ_day": 4.46,
+          "E_total_kJ_day": 28.91,
+          "proc_vs_comm_ratio": 5.49,
+          "ES_total_vs_bent_pipe": 0.981
+        },
+        "15": {
+          "E_comm_kJ_day": 8.36,
+          "E_total_kJ_day": 32.81,
+          "proc_vs_comm_ratio": 2.93,
+          "ES_total_vs_bent_pipe": 0.9885
+        },
+        "30": {
+          "E_comm_kJ_day": 16.71,
+          "E_total_kJ_day": 41.16,
+          "proc_vs_comm_ratio": 1.46,
+          "ES_total_vs_bent_pipe": 0.9928
+        }
+      }
+    },
+    {
+      "P_proc_W": 30.0,
+      "power_class": "heterogeneous flight computer, high end (10-30 W, report 22)",
+      "detector_ms_per_tile": 38.6,
+      "slowdown_vs_laptop": 1.0,
+      "E_proc_kJ_day": 48.9,
+      "processor_busy_fraction_of_day": 0.0189,
+      "by_P_tx_W": {
+        "8": {
+          "E_comm_kJ_day": 4.46,
+          "E_total_kJ_day": 53.36,
+          "proc_vs_comm_ratio": 10.97,
+          "ES_total_vs_bent_pipe": 0.9649
+        },
+        "15": {
+          "E_comm_kJ_day": 8.36,
+          "E_total_kJ_day": 57.26,
+          "proc_vs_comm_ratio": 5.85,
+          "ES_total_vs_bent_pipe": 0.9799
+        },
+        "30": {
+          "E_comm_kJ_day": 16.71,
+          "E_total_kJ_day": 65.61,
+          "proc_vs_comm_ratio": 2.93,
+          "ES_total_vs_bent_pipe": 0.9885
+        }
+      }
+    },
+    {
+      "P_proc_W": 1.0,
+      "power_class": "VPU class, Myriad 2 / Myriad X (~1-2 W, report 22)",
+      "detector_ms_per_tile": 100.0,
+      "slowdown_vs_laptop": 2.59,
+      "E_proc_kJ_day": 4.22,
+      "processor_busy_fraction_of_day": 0.0489,
+      "by_P_tx_W": {
+        "8": {
+          "E_comm_kJ_day": 4.46,
+          "E_total_kJ_day": 8.68,
+          "proc_vs_comm_ratio": 0.95,
+          "ES_total_vs_bent_pipe": 0.9943
+        },
+        "15": {
+          "E_comm_kJ_day": 8.36,
+          "E_total_kJ_day": 12.58,
+          "proc_vs_comm_ratio": 0.51,
+          "ES_total_vs_bent_pipe": 0.9956
+        },
+        "30": {
+          "E_comm_kJ_day": 16.71,
+          "E_total_kJ_day": 20.94,
+          "proc_vs_comm_ratio": 0.25,
+          "ES_total_vs_bent_pipe": 0.9963
+        }
+      }
+    },
+    {
+      "P_proc_W": 2.0,
+      "power_class": "VPU class, Myriad 2 / Myriad X (~1-2 W, report 22)",
+      "detector_ms_per_tile": 100.0,
+      "slowdown_vs_laptop": 2.59,
+      "E_proc_kJ_day": 8.45,
+      "processor_busy_fraction_of_day": 0.0489,
+      "by_P_tx_W": {
+        "8": {
+          "E_comm_kJ_day": 4.46,
+          "E_total_kJ_day": 12.9,
+          "proc_vs_comm_ratio": 1.89,
+          "ES_total_vs_bent_pipe": 0.9915
+        },
+        "15": {
+          "E_comm_kJ_day": 8.36,
+          "E_total_kJ_day": 16.8,
+          "proc_vs_comm_ratio": 1.01,
+          "ES_total_vs_bent_pipe": 0.9941
+        },
+        "30": {
+          "E_comm_kJ_day": 16.71,
+          "E_total_kJ_day": 25.16,
+          "proc_vs_comm_ratio": 0.51,
+          "ES_total_vs_bent_pipe": 0.9956
+        }
+      }
+    },
+    {
+      "P_proc_W": 5.0,
+      "power_class": "Jetson class, low power mode (5-15 W modes)",
+      "detector_ms_per_tile": 100.0,
+      "slowdown_vs_laptop": 2.59,
+      "E_proc_kJ_day": 21.11,
+      "processor_busy_fraction_of_day": 0.0489,
+      "by_P_tx_W": {
+        "8": {
+          "E_comm_kJ_day": 4.46,
+          "E_total_kJ_day": 25.57,
+          "proc_vs_comm_ratio": 4.74,
+          "ES_total_vs_bent_pipe": 0.9832
+        },
+        "15": {
+          "E_comm_kJ_day": 8.36,
+          "E_total_kJ_day": 29.47,
+          "proc_vs_comm_ratio": 2.53,
+          "ES_total_vs_bent_pipe": 0.9897
+        },
+        "30": {
+          "E_comm_kJ_day": 16.71,
+          "E_total_kJ_day": 37.83,
+          "proc_vs_comm_ratio": 1.26,
+          "ES_total_vs_bent_pipe": 0.9934
+        }
+      }
+    },
+    {
+      "P_proc_W": 10.0,
+      "power_class": "Jetson class, mid power mode; low end of a heterogeneous flight computer (10-30 W, report 22)",
+      "detector_ms_per_tile": 100.0,
+      "slowdown_vs_laptop": 2.59,
+      "E_proc_kJ_day": 42.23,
+      "processor_busy_fraction_of_day": 0.0489,
+      "by_P_tx_W": {
+        "8": {
+          "E_comm_kJ_day": 4.46,
+          "E_total_kJ_day": 46.69,
+          "proc_vs_comm_ratio": 9.47,
+          "ES_total_vs_bent_pipe": 0.9693
+        },
+        "15": {
+          "E_comm_kJ_day": 8.36,
+          "E_total_kJ_day": 50.59,
+          "proc_vs_comm_ratio": 5.05,
+          "ES_total_vs_bent_pipe": 0.9823
+        },
+        "30": {
+          "E_comm_kJ_day": 16.71,
+          "E_total_kJ_day": 58.94,
+          "proc_vs_comm_ratio": 2.53,
+          "ES_total_vs_bent_pipe": 0.9897
+        }
+      }
+    },
+    {
+      "P_proc_W": 15.0,
+      "power_class": "Jetson class, high power mode",
+      "detector_ms_per_tile": 100.0,
+      "slowdown_vs_laptop": 2.59,
+      "E_proc_kJ_day": 63.34,
+      "processor_busy_fraction_of_day": 0.0489,
+      "by_P_tx_W": {
+        "8": {
+          "E_comm_kJ_day": 4.46,
+          "E_total_kJ_day": 67.8,
+          "proc_vs_comm_ratio": 14.21,
+          "ES_total_vs_bent_pipe": 0.9554
+        },
+        "15": {
+          "E_comm_kJ_day": 8.36,
+          "E_total_kJ_day": 71.7,
+          "proc_vs_comm_ratio": 7.58,
+          "ES_total_vs_bent_pipe": 0.9748
+        },
+        "30": {
+          "E_comm_kJ_day": 16.71,
+          "E_total_kJ_day": 80.06,
+          "proc_vs_comm_ratio": 3.79,
+          "ES_total_vs_bent_pipe": 0.986
+        }
+      }
+    },
+    {
+      "P_proc_W": 30.0,
+      "power_class": "heterogeneous flight computer, high end (10-30 W, report 22)",
+      "detector_ms_per_tile": 100.0,
+      "slowdown_vs_laptop": 2.59,
+      "E_proc_kJ_day": 126.68,
+      "processor_busy_fraction_of_day": 0.0489,
+      "by_P_tx_W": {
+        "8": {
+          "E_comm_kJ_day": 4.46,
+          "E_total_kJ_day": 131.14,
+          "proc_vs_comm_ratio": 28.42,
+          "ES_total_vs_bent_pipe": 0.9137
+        },
+        "15": {
+          "E_comm_kJ_day": 8.36,
+          "E_total_kJ_day": 135.04,
+          "proc_vs_comm_ratio": 15.16,
+          "ES_total_vs_bent_pipe": 0.9526
+        },
+        "30": {
+          "E_comm_kJ_day": 16.71,
+          "E_total_kJ_day": 143.4,
+          "proc_vs_comm_ratio": 7.58,
+          "ES_total_vs_bent_pipe": 0.9748
+        }
+      }
+    },
+    {
+      "P_proc_W": 1.0,
+      "power_class": "VPU class, Myriad 2 / Myriad X (~1-2 W, report 22)",
+      "detector_ms_per_tile": 250.0,
+      "slowdown_vs_laptop": 6.48,
+      "E_proc_kJ_day": 10.56,
+      "processor_busy_fraction_of_day": 0.1222,
+      "by_P_tx_W": {
+        "8": {
+          "E_comm_kJ_day": 4.46,
+          "E_total_kJ_day": 15.01,
+          "proc_vs_comm_ratio": 2.37,
+          "ES_total_vs_bent_pipe": 0.9901
+        },
+        "15": {
+          "E_comm_kJ_day": 8.36,
+          "E_total_kJ_day": 18.91,
+          "proc_vs_comm_ratio": 1.26,
+          "ES_total_vs_bent_pipe": 0.9934
+        },
+        "30": {
+          "E_comm_kJ_day": 16.71,
+          "E_total_kJ_day": 27.27,
+          "proc_vs_comm_ratio": 0.63,
+          "ES_total_vs_bent_pipe": 0.9952
+        }
+      }
+    },
+    {
+      "P_proc_W": 2.0,
+      "power_class": "VPU class, Myriad 2 / Myriad X (~1-2 W, report 22)",
+      "detector_ms_per_tile": 250.0,
+      "slowdown_vs_laptop": 6.48,
+      "E_proc_kJ_day": 21.11,
+      "processor_busy_fraction_of_day": 0.1222,
+      "by_P_tx_W": {
+        "8": {
+          "E_comm_kJ_day": 4.46,
+          "E_total_kJ_day": 25.57,
+          "proc_vs_comm_ratio": 4.74,
+          "ES_total_vs_bent_pipe": 0.9832
+        },
+        "15": {
+          "E_comm_kJ_day": 8.36,
+          "E_total_kJ_day": 29.47,
+          "proc_vs_comm_ratio": 2.53,
+          "ES_total_vs_bent_pipe": 0.9897
+        },
+        "30": {
+          "E_comm_kJ_day": 16.71,
+          "E_total_kJ_day": 37.83,
+          "proc_vs_comm_ratio": 1.26,
+          "ES_total_vs_bent_pipe": 0.9934
+        }
+      }
+    },
+    {
+      "P_proc_W": 5.0,
+      "power_class": "Jetson class, low power mode (5-15 W modes)",
+      "detector_ms_per_tile": 250.0,
+      "slowdown_vs_laptop": 6.48,
+      "E_proc_kJ_day": 52.78,
+      "processor_busy_fraction_of_day": 0.1222,
+      "by_P_tx_W": {
+        "8": {
+          "E_comm_kJ_day": 4.46,
+          "E_total_kJ_day": 57.24,
+          "proc_vs_comm_ratio": 11.84,
+          "ES_total_vs_bent_pipe": 0.9623
+        },
+        "15": {
+          "E_comm_kJ_day": 8.36,
+          "E_total_kJ_day": 61.14,
+          "proc_vs_comm_ratio": 6.32,
+          "ES_total_vs_bent_pipe": 0.9786
+        },
+        "30": {
+          "E_comm_kJ_day": 16.71,
+          "E_total_kJ_day": 69.5,
+          "proc_vs_comm_ratio": 3.16,
+          "ES_total_vs_bent_pipe": 0.9878
+        }
+      }
+    },
+    {
+      "P_proc_W": 10.0,
+      "power_class": "Jetson class, mid power mode; low end of a heterogeneous flight computer (10-30 W, report 22)",
+      "detector_ms_per_tile": 250.0,
+      "slowdown_vs_laptop": 6.48,
+      "E_proc_kJ_day": 105.57,
+      "processor_busy_fraction_of_day": 0.1222,
+      "by_P_tx_W": {
+        "8": {
+          "E_comm_kJ_day": 4.46,
+          "E_total_kJ_day": 110.03,
+          "proc_vs_comm_ratio": 23.69,
+          "ES_total_vs_bent_pipe": 0.9276
+        },
+        "15": {
+          "E_comm_kJ_day": 8.36,
+          "E_total_kJ_day": 113.93,
+          "proc_vs_comm_ratio": 12.63,
+          "ES_total_vs_bent_pipe": 0.96
+        },
+        "30": {
+          "E_comm_kJ_day": 16.71,
+          "E_total_kJ_day": 122.28,
+          "proc_vs_comm_ratio": 6.32,
+          "ES_total_vs_bent_pipe": 0.9786
+        }
+      }
+    },
+    {
+      "P_proc_W": 15.0,
+      "power_class": "Jetson class, high power mode",
+      "detector_ms_per_tile": 250.0,
+      "slowdown_vs_laptop": 6.48,
+      "E_proc_kJ_day": 158.35,
+      "processor_busy_fraction_of_day": 0.1222,
+      "by_P_tx_W": {
+        "8": {
+          "E_comm_kJ_day": 4.46,
+          "E_total_kJ_day": 162.81,
+          "proc_vs_comm_ratio": 35.53,
+          "ES_total_vs_bent_pipe": 0.8929
+        },
+        "15": {
+          "E_comm_kJ_day": 8.36,
+          "E_total_kJ_day": 166.71,
+          "proc_vs_comm_ratio": 18.95,
+          "ES_total_vs_bent_pipe": 0.9415
+        },
+        "30": {
+          "E_comm_kJ_day": 16.71,
+          "E_total_kJ_day": 175.07,
+          "proc_vs_comm_ratio": 9.47,
+          "ES_total_vs_bent_pipe": 0.9693
+        }
+      }
+    },
+    {
+      "P_proc_W": 30.0,
+      "power_class": "heterogeneous flight computer, high end (10-30 W, report 22)",
+      "detector_ms_per_tile": 250.0,
+      "slowdown_vs_laptop": 6.48,
+      "E_proc_kJ_day": 316.71,
+      "processor_busy_fraction_of_day": 0.1222,
+      "by_P_tx_W": {
+        "8": {
+          "E_comm_kJ_day": 4.46,
+          "E_total_kJ_day": 321.17,
+          "proc_vs_comm_ratio": 71.06,
+          "ES_total_vs_bent_pipe": 0.7888
+        },
+        "15": {
+          "E_comm_kJ_day": 8.36,
+          "E_total_kJ_day": 325.07,
+          "proc_vs_comm_ratio": 37.9,
+          "ES_total_vs_bent_pipe": 0.886
+        },
+        "30": {
+          "E_comm_kJ_day": 16.71,
+          "E_total_kJ_day": 333.42,
+          "proc_vs_comm_ratio": 18.95,
+          "ES_total_vs_bent_pipe": 0.9415
+        }
+      }
+    }
+  ]
+}

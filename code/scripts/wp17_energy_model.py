@@ -26,7 +26,8 @@ and the processing-vs-comms-vs-bent-pipe comparison.
 
     .venv/Scripts/python.exe scripts/wp17_energy_model.py
 
-Outputs: results/wp17_energy_model.json, results/wp17_energy_stages.csv
+Outputs: results/wp17_energy_model.json, results/wp17_energy_stages.csv, and
+results/wp17_energy_edge.json (the same model over edge-class processor powers; see edge_grid)
 """
 from __future__ import annotations
 
@@ -49,6 +50,23 @@ P_DEFAULT = {"cpu": 28.0, "gpu": 60.0, "tx": 15.0}
 P_SWEEP = {"cpu": (15.0, 45.0), "gpu": (35.0, 115.0), "tx": (8.0, 30.0)}  # (low, high)
 
 MB = 1e6
+
+# ------------------------------------------------------------------- edge-class grid (ASSUMPTION)
+# Not measurements and not a choice of hardware: round values spanning the power classes that
+# report 22 cites [LIT] plus the published power modes of Jetson-class modules. Each is the power
+# of the ONE processor that runs every onboard stage.
+EDGE_P_PROC_W = {
+    1.0: "VPU class, Myriad 2 / Myriad X (~1-2 W, report 22)",
+    2.0: "VPU class, Myriad 2 / Myriad X (~1-2 W, report 22)",
+    5.0: "Jetson class, low power mode (5-15 W modes)",
+    10.0: "Jetson class, mid power mode; low end of a heterogeneous flight computer (10-30 W, report 22)",
+    15.0: "Jetson class, high power mode",
+    30.0: "heterogeneous flight computer, high end (10-30 W, report 22)",
+}
+# The edge processor is also slower, by an unknown factor: no stage was ever timed on one. Report
+# 22's three detector latencies are used as the cases, as a UNIFORM slowdown of every stage.
+EDGE_DETECT_MS = (None, 100.0, 250.0)        # None = as measured on the laptop CPU
+EDGE_P_TX_W = (P_SWEEP["tx"][0], P_DEFAULT["tx"], P_SWEEP["tx"][1])
 
 
 def _load(path: Path):
@@ -208,6 +226,65 @@ def sahi_variant(proc: dict, results: Path, tiles_per_day: int, e_comm_J: float,
     }
 
 
+def edge_grid(T: dict, tiles_per_day: int, tx_s_sent: float, tx_s_raw: float, e_proc_default_kJ: float):
+    """The default all-on-one-processor build, re-priced over edge-class powers and slowdowns.
+
+    E_proc = P_proc * slowdown * sum(T_k) * tiles: the stage times stay the laptop's measured ones,
+    stretched by one factor. ES_proc is the ratio of two such sums, so P_proc AND the slowdown cancel:
+    it is the same in every cell, and is reported once. That holds only while every stage slows by
+    the same factor -- an accelerator that speeds up the networks but not the classic CV stage would
+    change it. Nothing here is a measurement on edge hardware.
+    """
+    t_lap = T["detect_cpu_onnx"]
+    cells, es_proc = [], None
+    for det_ms in EDGE_DETECT_MS:
+        slow = 1.0 if det_ms is None else det_ms / t_lap
+        Ts = {k: v * slow for k, v in T.items()}
+        busy_s = sum(Ts[k] for k in ("preprocess_decode_cpu", "gate_cpu", "detect_cpu_onnx",
+                                     "fuse_cpu", "semantic_cpu")) / 1000 * tiles_per_day
+        for p_proc, cls in EDGE_P_PROC_W.items():
+            pr = e_proc_per_tile("cpu_onnx", {"cpu": p_proc}, Ts)
+            es = 1 - pr["E_prop"] / pr["E_base"]
+            es_proc = es if es_proc is None else es_proc
+            if abs(es - es_proc) > 1e-9:
+                raise SystemExit("[edge grid] ES_proc moved with power or slowdown -- it must not")
+            e_proc = pr["E_prop"] * tiles_per_day
+            by_tx = {}
+            for p_tx in EDGE_P_TX_W:
+                e_comm, e_bent = p_tx * tx_s_sent, p_tx * tx_s_raw
+                by_tx[f"{p_tx:g}"] = {"E_comm_kJ_day": round(e_comm / 1000, 2),
+                                      "E_total_kJ_day": round((e_proc + e_comm) / 1000, 2),
+                                      "proc_vs_comm_ratio": round(e_proc / e_comm, 2),
+                                      "ES_total_vs_bent_pipe": round(1 - (e_proc + e_comm) / e_bent, 4)}
+            cells.append({"P_proc_W": p_proc, "power_class": cls,
+                          "detector_ms_per_tile": round(t_lap * slow, 1), "slowdown_vs_laptop": round(slow, 2),
+                          "E_proc_kJ_day": round(e_proc / 1000, 2),
+                          "processor_busy_fraction_of_day": round(busy_s / 86400, 4),
+                          "by_P_tx_W": by_tx})
+    # gate: the laptop's own power at no slowdown must give back the default block's E_proc
+    chk = e_proc_per_tile("cpu_onnx", {"cpu": P_DEFAULT["cpu"]}, T)["E_prop"] * tiles_per_day / 1000
+    if abs(chk - e_proc_default_kJ) > 1e-6:
+        raise SystemExit(f"[edge grid] does not reproduce the default E_proc: {chk} vs {e_proc_default_kJ}")
+    return {
+        "label": "ESTIMATE. Stage times REAL but measured on a laptop, stretched by an ASSUMED uniform "
+                 "slowdown (TARGET latencies of report 22); processor and transmitter powers ASSUMPTION "
+                 "(literature-typical classes, not measurements, not a hardware selection); transmit "
+                 "time SIM. No stage was timed and no power was measured on edge hardware.",
+        "config": "cpu_onnx: every onboard stage on one processor of power P_proc",
+        "tiles_per_day": tiles_per_day,
+        "ES_proc_power_free": round(es_proc, 4),
+        "ES_proc_note": "the same in every cell: P_proc and the uniform slowdown cancel in the ratio. "
+                        "It is a ratio of laptop stage times; it would change if the stages slowed by "
+                        "different factors on the target processor.",
+        "P_proc_W_ASSUMPTION": {f"{k:g}": v for k, v in EDGE_P_PROC_W.items()},
+        "detector_ms_per_tile_cases": {"laptop_measured": t_lap, "TARGET": [m for m in EDGE_DETECT_MS if m]},
+        "P_tx_W_ASSUMPTION": list(EDGE_P_TX_W),
+        "P_isl_note": "not in this grid: the relay's P_isl (12 W, ASSUMPTION) is swept in wp19 / wp27",
+        "laptop_default_reference": {"P_proc_W": P_DEFAULT["cpu"], "E_proc_kJ_day": round(chk, 2)},
+        "cells": cells,
+    }
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -353,6 +430,9 @@ def main() -> None:
         rep["sahi_variant"] = sahi
     (args.out / "wp17_energy_model.json").write_text(json.dumps(rep, indent=2))
 
+    edge = edge_grid(T, tpd, tx_time(d_sent), tx_time(d_raw), Eproc_prop_day / 1000)
+    (args.out / "wp17_energy_edge.json").write_text(json.dumps(edge, indent=2))
+
     # stage CSV (default config)
     rows = []
     for which in ("baseline", "proposed"):
@@ -387,7 +467,13 @@ def main() -> None:
         print(f"  E_proc {d['E_proc_proposed']} kJ/day (default {Eproc_prop_day / 1000:.2f}), ES_proc "
               f"{s['ES_proc']:+.1%} (default {es_proc['cpu_onnx']:+.1%}), proc:comm "
               f"{d['proc_vs_comm_ratio_proposed']}:1, ES_total {d['ES_total_vs_bent_pipe']:.1%}")
-    print(f"\nSaved wp17_energy_model.json, wp17_energy_stages.csv in {args.out}")
+    print(f"\nedge-class grid [ESTIMATE: ASSUMPTION powers, ASSUMED uniform slowdown] -- ES_proc "
+          f"{edge['ES_proc_power_free']:.1%} in every cell (power-free):")
+    print(f"  {'P_proc W':>8s} {'det ms':>7s} {'E_proc kJ/d':>12s} {'busy':>6s} {'proc:comm @P_tx 15':>19s}")
+    for c in edge["cells"]:
+        print(f"  {c['P_proc_W']:8g} {c['detector_ms_per_tile']:7g} {c['E_proc_kJ_day']:12.2f} "
+              f"{c['processor_busy_fraction_of_day']:6.1%} {c['by_P_tx_W']['15']['proc_vs_comm_ratio']:19.2f}")
+    print(f"\nSaved wp17_energy_model.json, wp17_energy_stages.csv, wp17_energy_edge.json in {args.out}")
 
 
 if __name__ == "__main__":

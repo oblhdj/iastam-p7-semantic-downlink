@@ -23,6 +23,7 @@ learned gate, SAHI with global-coordinate fusion, a confidence-aware level-of-de
 value-aware multi-pass scheduler — is **provably within 0.88 % of the optimal schedule** at
 operational scale [REAL]. The per-stage energy model shows the gating redesign saves **≥57.6 % of
 processing energy** and that, once pixels stop being sent, **compute dominates the radio 5.5 : 1**
+at laptop powers (28 W CPU, an assumption; on a 1–2 W edge processor the radio can dominate, §6b)
 [SIM]. An optional inter-satellite relay cuts **worst-case latency 35.2 h → 10.9 h** (per-item
 median 7.9 h → 3.4 h) without changing what is delivered [latency SIM, energy TARGET]. All timings are a laptop RTX 5060; onboard execution
 is argued as a **TARGET** against flown Myriad-class hardware (§10), not demonstrated on flight hardware.
@@ -211,9 +212,10 @@ divided by a rate in bit/s (`sat7/accounting.py`; checked against wp17 and wp19 
 * **ES_proc = 57.6 %** for the default all-CPU onboard build — a **power-free time ratio** (P_cpu
   cancels), so it holds on any processor; a lower bound, since the gate also drops empties the
   per-tile accounting doesn't credit.
-* **Once pixels stop being sent, compute dominates the radio 5.5 : 1** (45.6 kJ of processing
-  against 8.4 kJ of transmission per day) — so energy optimisation belongs on the detector/gate,
-  not the transmitter.
+* **Once pixels stop being sent, compute dominates the radio 5.5 : 1 at laptop powers (28 W CPU)**
+  (45.6 kJ of processing against 8.4 kJ of transmission per day) — so at those powers energy
+  optimisation belongs on the detector/gate, not the transmitter. The ratio follows the assumed
+  processor power: over edge-class powers it runs from 0.20 : 1 to 37.9 : 1 (§6b).
 * Versus a bent pipe **that sent every raw byte**, **ES_total ≈ 98.1 %** — ~54 kJ/day of
   compute+radio against ~2,851 kJ/day of raw transmission; ES_total stays 97–99 % across the power
   sweep. That bent pipe is hypothetical: it would need 92.6 days of contact per day of imaging. One
@@ -226,6 +228,49 @@ divided by a rate in bit/s (`sat7/accounting.py`; checked against wp17 and wp19 
   never been timed) gives **70.0 kJ/day** of processing instead of 45.6, compute : radio **8.4 : 1**,
   and **ES_proc 47.0 %** instead of 57.6 % [estimate — assumed powers]. Were the gate run once per
   window instead, ES_proc would be 46.6 %.
+
+## 6b. What is measured and what is assumed in every joule
+
+| quantity | source | label |
+|---|---|---|
+| stage times T_k (detector, gate, classic filter) | measured on a laptop, read live from `wp1`, `wp3`, `wp11` | REAL (laptop) |
+| decode time 0.71 ms, semantic stage 0.5 ms, fusion 0 ms | not in any results file / invented / never timed | ASSUMPTION |
+| transmit time D_tx · 8 / R_tx | orbit and link simulation (`passes.csv`) | SIM |
+| P_cpu, P_gpu, P_tx, P_isl | never measured | ASSUMPTION |
+| **ES_proc = 57.6 %** | ratio of stage times; the power cancels | **REAL (laptop), power-free** |
+| every figure in kJ, every proc : comm ratio, ES_total | assumed power × measured or simulated time | ESTIMATE |
+
+**ES_proc is the one energy figure here that needs no power.** It is a ratio of laptop stage times.
+It carries to another processor only if every stage slows by the same factor; an accelerator that
+speeds up the networks but not the classic CV stage would change it.
+
+**Edge-class sensitivity** (`wp17_energy_edge.json`) [ESTIMATE]. The same model with every onboard
+stage on one processor of power P_proc. The powers are literature-typical classes — a 1–2 W VPU
+(Myriad 2 / Myriad X), 5–15 W Jetson-class modules, a 10–30 W heterogeneous flight computer
+(report 22) — and are **ASSUMPTIONS**, not measurements and not a hardware selection. An edge
+processor is also slower by an unknown factor, so each power is paired with report 22's three
+detector latencies, applied to every stage alike [TARGET]. P_tx = 15 W [ASSUMPTION], E_comm 8.4 kJ/day.
+
+Processing energy, kJ/day (compute : radio in brackets):
+
+| P_proc | 38.6 ms/tile (laptop, measured) | 100 ms/tile [TARGET] | 250 ms/tile [TARGET] |
+|---|---|---|---|
+| 1 W | 1.6 (0.20 : 1) | 4.2 (0.51 : 1) | 10.6 (1.26 : 1) |
+| 2 W | 3.3 (0.39 : 1) | 8.4 (1.01 : 1) | 21.1 (2.53 : 1) |
+| 5 W | 8.2 (0.98 : 1) | 21.1 (2.53 : 1) | 52.8 (6.32 : 1) |
+| 10 W | 16.3 (1.95 : 1) | 42.2 (5.05 : 1) | 105.6 (12.6 : 1) |
+| 15 W | 24.5 (2.93 : 1) | 63.3 (7.58 : 1) | 158.4 (19.0 : 1) |
+| 30 W | 48.9 (5.85 : 1) | 126.7 (15.2 : 1) | 316.7 (37.9 : 1) |
+| processor busy, share of the day | 1.9 % | 4.9 % | 12.2 % |
+
+* **ES_proc is 57.6 % in every cell.**
+* **"Compute dominates the radio 5.5 : 1" (§6) is a laptop-power statement.** Over this grid the
+  ratio runs from 0.20 : 1 to 37.9 : 1; on a 1–2 W processor at laptop speed the radio dominates.
+  Which side to optimise depends on the processor that is flown.
+* **ES_total against the hypothetical bent pipe** runs from 0.79 (30 W, 250 ms, P_tx 8 W) to 0.997
+  (1 W, laptop speed, P_tx 30 W) with P_tx swept over 8–30 W, wider than the 97–99 % of the
+  laptop-class sweep in §6.
+* P_isl (12 W, ASSUMPTION) is not in this grid; it is swept in `wp19` and `wp27`.
 
 ## 7. Latency & the relay (paper §V-D, §VII, eqs 25–29)
 
