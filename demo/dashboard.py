@@ -391,7 +391,8 @@ def section_overview():
                      f"{band[0]:.2f}–{band[1]:.2f}. Never quoted without the cloud assumption.")
     if "B1" in det:
         c[2].metric("B1 → B2 recall", f"{det['B1']['recall']:.3f} → {det['B2']['recall']:.3f}")
-        c[2].caption(f"REAL: plain YOLO on a whole scene, then SAHI, on the same {det['B1']['scope']}. "
+        c[2].caption(f"REAL: plain YOLO on a whole scene (B1) against SAHI + YOLO (B2), on the same "
+                     f"{det['B1']['scope']}. "
                      f"Other recall figures in the repo belong to other configurations: see section C.")
     if ss:
         ours = ss["runs"]["share_0.25_Value-greedy (ours)"]["per_day"]

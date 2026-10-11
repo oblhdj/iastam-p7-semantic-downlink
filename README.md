@@ -4,10 +4,10 @@
 *what it learned about ships* instead of the pictures it took.
 
 A satellite images far more ocean than it can ever transmit. The usual answer is to compress the
-pictures harder. Ours is to stop sending pictures: detect ships onboard (**YOLO**, then **SAHI**
-with global-coordinate fusion so ships that straddle a tile seam are recovered), then spend the
-scarce downlink on **information about them**, graded by how sure the detector is and scheduled by
-how much each item is worth per byte.
+pictures harder. Ours is to stop sending pictures: detect ships onboard (**SAHI** slices the
+scene, **YOLO** runs on each slice, and global-coordinate fusion recovers ships that straddle a
+tile seam), then spend the scarce downlink on **information about them**, graded by how sure the
+detector is and scheduled by how much each item is worth per byte.
 
 That is the paper's B0→B4 chain. Three pieces of the onboard stack:
 
@@ -89,9 +89,9 @@ times a measured or simulated time.
 ## How the pipeline fits together
 
 ```
-   scene ──► gate ──► YOLO ──► SAHI + fusion ──► level-of-detail ──► scheduler ──► ground
-             47k CNN   768px    global coords      encoder            value-greedy
-             0.15 ms   11 ms    1.56× vs tiling    40 B / chip / tile
+   scene ──► gate ──► SAHI slices ──► YOLO ──► fusion ──► level-of-detail ──► scheduler ──► ground
+             47k CNN  768px windows   768px    global     encoder             value-greedy
+             0.15 ms  1.56× vs tiling 11 ms    coords     40 B / chip / tile
 ```
 
 B1 is YOLO on the original image — one call on the whole scene, no slicing; **B2 is SAHI + YOLO +
@@ -129,8 +129,8 @@ python -m pip install -r demo/quickstart/requirements.txt
 python demo/quickstart/run_demo.py
 ```
 
-This runs the real `sat7` chain (pre-filter → YOLO ONNX → SAHI + fusion → P0–P3 packet →
-scheduler) on 9 synthetic stand-in tiles and ends on the measured headline read from
+This runs the real `sat7` chain (pre-filter → SAHI slicing → YOLO ONNX per slice → fusion → P0–P3
+packet → scheduler) on 9 synthetic stand-in tiles and ends on the measured headline read from
 `code/results/`. See [`demo/quickstart/README.md`](demo/quickstart/README.md) for why the tiles
 are synthetic and how to run it on the real ones.
 
