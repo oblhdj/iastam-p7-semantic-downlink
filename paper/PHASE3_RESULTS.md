@@ -123,6 +123,51 @@ Reproduce: `python scripts/wp6_simulate_real.py --semantic priority --tag paper`
 `python scripts/wp18_campaign_runner.py --semantic priority --tag paper`. Both refuse to run P0–P3
 without a tag, so the canonical files cannot be overwritten.
 
+## 2c. B1 and B2 at the paper's representative SAHI setting (512 px windows, 20 % overlap)
+
+The B1 and B2 rows of §2 use a 768 px window, the detector's native input. The paper names
+512×512 with about 20 % overlap as "a representative initial configuration" to be tuned. This is
+that setting on the **same 150 scenes** — the scene, pixel, ground-truth, model and matching
+fingerprints of `wp26_b0_b4_paper.json` equal those of `wp26_b0_b4.json` — at the same 0.25 cut and
+IoU 0.5. Everything here is **REAL** (trained detector, real tiles, real labels); the scenes are
+still stitched from independent 768 px tiles. The detector input stays 768 px, so a 512 px window is
+enlarged 1.5× before detection. The 768 px column is the committed result, unchanged.
+
+| same 150 scenes, 1,164 ships [REAL] | 768 px (headline, §2) | 512 px (paper setting) |
+|---|---|---|
+| **B1** — one call on the whole 3072 px scene | recall **0.339**, precision 0.681 | the same run: no window is involved |
+| **B2** — SAHI + fusion, 20 % overlap: recall | **0.717** | **0.718** |
+| B2 precision / F1 | 0.696 / 0.707 | 0.625 / 0.669 |
+| B2 recall, small / medium / large ships | 0.505 / 0.924 / 0.990 | 0.518 / 0.913 / 0.975 |
+| B2 detections sent, of which false | 1,199, 364 | 1,337, 501 |
+| B2 detector calls per scene | 25 = 1.56× a 16-tile pass | 64 = **4.00×** a 16-tile pass |
+| **Plain tiling, no overlap, no fusion**: recall | **0.730** (16 windows = the source tiles) | **0.684** (36 windows) |
+| plain tiling precision / F1 | 0.719 / 0.725 | 0.655 / 0.669 |
+| plain tiling recall, small / medium / large | 0.523 / 0.935 / 0.990 | 0.487 / 0.902 / 0.891 |
+
+How to read it:
+
+* **The paper's setting does not change B2's recall** (0.718 against 0.717) and costs more: 2.56×
+  the detector calls of the 768 px window, 137 more false detections, precision down 7 points.
+  Small ships gain 1.3 points from the enlargement; large ships lose 1.5 because a 512 px window
+  cuts more of them.
+* **The negative result of §10 item 3 holds at 512 px, and the cost side is worse.** Blanket SAHI
+  at the paper's setting (recall 0.718, precision 0.625, 64 calls) still does not beat a plain
+  tile-by-tile pass over the 768 px tiles (0.730, 0.719, 16 calls).
+* **What is new at 512 px:** against plain tiling *at the same window size*, overlap and fusion do
+  recover recall — 0.684 → 0.718, mostly large ships (0.891 → 0.975) — for 1.78× the calls and 3
+  points of precision; F1 is level (0.669 both). The reason is geometry: a 512 px grid does not
+  line up with the 768 px tiles the scenes are stitched from, so its window edges cut real ships
+  inside a tile, and overlap repairs those cuts. A 768 px grid coincides with the seams, where no
+  ship crosses, so there overlap has nothing to repair.
+* So on these scenes the gain of B2 is still the step from B1 (one call on a scene shrunk 4×), at
+  either window. Whether overlap beats a well-aligned plain tiling needs real large scenes.
+
+Reproduce: `python scripts/wp26_b0_b4.py --model runs/ships/weights/best.pt --modes B1,B2 --window
+512 --overlap 0.20 --tag paper`. The script refuses a window or overlap other than 768 / 0.20
+without a tag, so `wp26_b0_b4.json` cannot be overwritten. The same run on the ONNX export on CPU
+gives B2 0.719 / 0.626 and plain tiling 0.684 / 0.654: the same reading.
+
 ## 3. Detection quality (paper §VIII-E.2)
 
 mAP50 **0.804**, precision 0.817, recall 0.729 [REAL]. By object size, recall is **small 0.739 /

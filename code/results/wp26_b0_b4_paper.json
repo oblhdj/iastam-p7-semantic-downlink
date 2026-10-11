@@ -1,0 +1,223 @@
+{
+  "label": "detection metrics REAL; bytes REAL (measured serializations); delivered recall and latency SIM-over-REAL; B4 links SIM (rates and powers ASSUMPTION)",
+  "inputs": {
+    "scenes": 150,
+    "per_side": 4,
+    "scene_px": 3072,
+    "ships": 1164,
+    "unique_tiles": 1211,
+    "context_tiles": {
+      "cloud": 383,
+      "ships": 443,
+      "coast": 125,
+      "empty": 1449
+    },
+    "sahi_window_px": 512,
+    "sahi_overlap": 0.2,
+    "static_stage_s": 236.8
+  },
+  "detection_quality_same_scenes": {
+    "B1": {
+      "images": 150,
+      "n_gt": 1164,
+      "n_detections_supplied": 579,
+      "conf_thr": 0.25,
+      "iou_thr": 0.5,
+      "TP": 394,
+      "FP": 185,
+      "FN": 770,
+      "precision": 0.6805,
+      "recall": 0.3385,
+      "F1": 0.4521,
+      "recall_by_size": {
+        "small_<32": {
+          "n_gt": 606,
+          "recall": 0.0462
+        },
+        "medium_32-96": {
+          "n_gt": 356,
+          "recall": 0.5421
+        },
+        "large_>96": {
+          "n_gt": 202,
+          "recall": 0.8564
+        }
+      },
+      "AP50": 0.5394,
+      "AP50-95": 0.3639,
+      "detections_transmitted": 579
+    },
+    "B2": {
+      "images": 150,
+      "n_gt": 1164,
+      "n_detections_supplied": 1337,
+      "conf_thr": 0.25,
+      "iou_thr": 0.5,
+      "TP": 836,
+      "FP": 501,
+      "FN": 328,
+      "precision": 0.6253,
+      "recall": 0.7182,
+      "F1": 0.6685,
+      "recall_by_size": {
+        "small_<32": {
+          "n_gt": 606,
+          "recall": 0.5182
+        },
+        "medium_32-96": {
+          "n_gt": 356,
+          "recall": 0.9129
+        },
+        "large_>96": {
+          "n_gt": 202,
+          "recall": 0.9752
+        }
+      },
+      "AP50": 0.7249,
+      "AP50-95": 0.5133,
+      "detections_transmitted": 1337
+    },
+    "B1_per_tile_reference": {
+      "images": 150,
+      "n_gt": 1164,
+      "n_detections_supplied": 1182,
+      "conf_thr": 0.25,
+      "iou_thr": 0.5,
+      "TP": 850,
+      "FP": 332,
+      "FN": 314,
+      "precision": 0.7191,
+      "recall": 0.7302,
+      "F1": 0.7246,
+      "recall_by_size": {
+        "small_<32": {
+          "n_gt": 606,
+          "recall": 0.5231
+        },
+        "medium_32-96": {
+          "n_gt": 356,
+          "recall": 0.9354
+        },
+        "large_>96": {
+          "n_gt": 202,
+          "recall": 0.9901
+        }
+      },
+      "AP50": 0.7861,
+      "AP50-95": 0.5816,
+      "note": "one detector call per 768 px source tile = what wp18 called B1; on a scene it is a 16-window tiling (a slicing stage), so it is NOT the paper's B1"
+    },
+    "plain_tiling_no_overlap": {
+      "images": 150,
+      "n_gt": 1164,
+      "n_detections_supplied": 1216,
+      "conf_thr": 0.25,
+      "iou_thr": 0.5,
+      "TP": 796,
+      "FP": 420,
+      "FN": 368,
+      "precision": 0.6546,
+      "recall": 0.6838,
+      "F1": 0.6689,
+      "recall_by_size": {
+        "small_<32": {
+          "n_gt": 606,
+          "recall": 0.4868
+        },
+        "medium_32-96": {
+          "n_gt": 356,
+          "recall": 0.9017
+        },
+        "large_>96": {
+          "n_gt": 202,
+          "recall": 0.8911
+        }
+      },
+      "AP50": 0.726,
+      "AP50-95": 0.4791,
+      "window_px": 512,
+      "windows_per_scene": 36,
+      "note": "abutting windows of the SAHI window size, no overlap, no fusion"
+    }
+  },
+  "mean_bytes_per_scene": {
+    "B1": 131.24,
+    "B2": 303.05333333333334
+  },
+  "day": {
+    "tiles": 40000,
+    "scene_instances": 2500,
+    "ships": 19267,
+    "passes": 6,
+    "link_share": 0.25,
+    "results": {
+      "B1": {
+        "ship_recall": 0.3373,
+        "dark_recall": 0.3429,
+        "latency_med_h": 4.3326,
+        "latency_p90_h": 9.33,
+        "MB_sent": 0.3256,
+        "MB_offered": 0.3256,
+        "MB_capacity": 209.9013,
+        "dropped_storage": 0
+      },
+      "B2": {
+        "ship_recall": 0.7157,
+        "dark_recall": 0.7306,
+        "latency_med_h": 4.3256,
+        "latency_p90_h": 9.4212,
+        "MB_sent": 0.7503,
+        "MB_offered": 0.7503,
+        "MB_capacity": 209.9013,
+        "dropped_storage": 0
+      }
+    }
+  },
+  "checks": {
+    "2_B1_no_slicing": {
+      "passed": true,
+      "detector_calls_per_scene": 1.0,
+      "frame_px": 3072,
+      "letterbox_gain": 0.25
+    },
+    "3_B2_sahi_fusion": {
+      "passed": true,
+      "windows_per_scene": 64.0,
+      "fused_pairs_overlapping_iou_ge_0.5": 0,
+      "boxes_before_fusion": 6041,
+      "boxes_after_fusion": 2842,
+      "global_coords_exact_vs_per_tile": true,
+      "boxes_compared": 2714,
+      "detector_batched_vs_single_call": {
+        "tiles": 2400,
+        "tiles_with_different_box_count": 3,
+        "boxes": 2714,
+        "boxes_not_bit_identical": 2714,
+        "max_box_diff_px": 3.21252,
+        "max_conf_diff": 0.11824,
+        "note": "a property of the inference backend, not of the pipeline: bit-identical on ONNX CPU; a GPU returns slightly different floats for a 16-crop batch than for single calls, and occasionally one box more or fewer (report 12). The coordinate gate above is computed on identical per-crop detections, so it is exact on any backend"
+      }
+    },
+    "5_same_inputs": {
+      "passed": true,
+      "fingerprint": {
+        "scenes": "bcaf9ec9630d69e3",
+        "pixels": "88d724d227caa2b8",
+        "ground_truth": "d7102218d339d9c8",
+        "model": "4680d0092ffbfccb",
+        "det_thr": 0.25,
+        "matching": "threshold-then-match IoU 0.5",
+        "encoder": "a2034cee529b3c6e",
+        "day": "0073f34dc5d9da9f",
+        "passes": "2536625b546981a2",
+        "scheduler": "ValueGreedy",
+        "storage_gb": 8.0
+      },
+      "modes": [
+        "B1",
+        "B2"
+      ]
+    }
+  },
+  "elapsed_s": 239.6
+}
