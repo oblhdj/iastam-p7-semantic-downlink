@@ -37,6 +37,7 @@ run $PY312 -W ignore scripts/wp18_campaign_runner.py --semantic priority --tag p
 run $PY scripts/wp24_detection_eval.py --live-b1  # needs onnxruntime (not in .venv)
 run $PY scripts/wp25_semantic_packets.py
 run $PY scripts/wp27_comms_direct_vs_relay.py
+run $PY scripts/wp30_paper_ablations.py               # six paper ablations + curves; --rerun-detection re-measures wp26 / wp24
 run $PY scripts/wp29_validation.py                    # checks all of the above; regenerates none of it
 
 echo ""

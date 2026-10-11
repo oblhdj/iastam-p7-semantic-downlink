@@ -39,6 +39,7 @@ run scripts/wp23_semantic_compare.py                  # P0-P3 against the level-
 run scripts/wp17_energy_model.py                      # energy, default and the SAHI variant
 run scripts/wp19_relay_energy.py
 run scripts/wp20_relay_path_choice.py
+run scripts/wp30_paper_ablations.py                   # six paper ablations + three trade-off curves (pure P0-P3)
 run scripts/wp29_validation.py                        # checks all of the above; regenerates none of it
 
 echo ""
