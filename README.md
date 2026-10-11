@@ -117,7 +117,7 @@ catalogue-driven simulation to four decimal places — see
 | [`demo/quickstart/`](demo/quickstart/) | the chain live on a laptop CPU in ~2 s: no GPU, no torch, no dataset (synthetic stand-in tiles) |
 | `code/sat7/` | the package: perception (YOLO / SAHI), encoder, scheduler, exact optimum, orbit, pre-filter, dedup |
 | `code/scripts/` | one script per work package, each with a docstring saying *why* it exists |
-| `code/tests/` | 254 tests (5 skip in `.venv`: 2 need torch, 3 need onnxruntime) — 14 fault-injection, exact-solver checks, and the gate's claims pinned |
+| `code/tests/` | 294 tests (16 skip in `.venv`: 2 need torch, 14 need onnxruntime) — 14 fault-injection, exact-solver checks, and the gate's claims pinned |
 | `code/results/` | generated artefacts — CSV, PNG, JSON, logs. Machine-written, not prose |
 
 ## Running it
@@ -138,7 +138,7 @@ are synthetic and how to run it on the real ones.
 
 ```bash
 cd code
-.venv/Scripts/python.exe    -m pytest tests -q        # 249 pass, 5 skip (need torch / onnxruntime)
+.venv/Scripts/python.exe    -m pytest tests -q        # 278 pass, 16 skip (need torch / onnxruntime)
 .venv312/Scripts/python.exe scripts/wp11_integration_demo.py --tiles 400
 ```
 
