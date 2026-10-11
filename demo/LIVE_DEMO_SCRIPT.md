@@ -25,7 +25,7 @@ measured results after it.
 | 1 | Title | what the project is | 0:20 |
 | 2 | A satellite sees far more than it can send | the link, not the camera, is the limit | 0:40 |
 | 3 | Send the packet, not the picture | detect onboard, send information graded by confidence | 0:40 |
-| 4 | Everything runs onboard, before the radio | the chain: pre-filter, detector, SAHI, policy, encoder, scheduler | 0:40 |
+| 4 | Everything runs onboard, before the radio | the chain: pre-filter, SAHI slicing, detector, fusion, policy, encoder, scheduler | 0:40 |
 | — | **Live demo** (part 2) | the chain running, then the committed results | 5:00 |
 | 5 | All five configurations ran | B0 to B4; B1 and B2 on the same scenes | 0:40 |
 | 6 | Less data, more mission | 341×, with what is measured and what is modeled | 0:40 |

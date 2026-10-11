@@ -9,7 +9,8 @@ skyfield (see requirements.txt; the last two only because sat7.scheduler imports
 What runs LIVE, in order, on a 3x3 swath of 768 px tiles (2304 x 2304 px):
   1. classic pre-filter per tile (sat7.prefilter)                -> cloud / coast / sea context
   2. B1: trained YOLOv8n per tile, ONNX FP32 on CPU                -> whole-tile detections
-  3. B2: SAHI over the swath + global-coordinate fusion (sat7.perception, the same code as wp16/wp18)
+  3. B2: SAHI slices the swath, the same YOLOv8n runs on each window, then global-coordinate fusion
+     (sat7.perception, the same code as wp16/wp18)
   4. paper Table I P0-P3 decision per detection (sat7.priority.classify)
   5. the semantic packet (sat7.priority.encode_priority) vs raw bytes (B0 definition)
   6. the value-greedy downlink order over that packet (sat7.scheduler.ValueGreedy)
@@ -277,7 +278,7 @@ def main() -> int:
     print("\n" + RULE)
     print("  IASTAM 6.0 - Problem 7 - QUICKSTART: onboard semantic downlink, live on CPU")
     src = "9 SYNTHETIC stand-in tiles (no Airbus pixels)" if synthetic else "9 REAL Airbus test tiles"
-    print(f"  {src} -> pre-filter -> YOLO+SAHI -> P0-P3 packet -> scheduler")
+    print(f"  {src} -> pre-filter -> SAHI+YOLO -> P0-P3 packet -> scheduler")
     print(RULE)
     print("  LABELS  REAL / SIM / SIM-over-REAL / ASSUMPTION exactly as in the repo README, plus")
     if synthetic:
