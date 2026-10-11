@@ -16,28 +16,30 @@ synthetic swath, at the default settings.
 
 ## Part 1 — presentation outline
 
-The slide deck is `paper/slides/index.html` (nine slides). The live demo replaces nothing; it goes
-between slide 4 and slide 5, so the audience has seen the idea before the page and sees the
+The slide deck is `paper/slides/index.html` (twelve slides). The live demo has its own slide, 5,
+which shows the launch command, so the audience has seen the idea before the page and sees the
 measured results after it.
 
 | # | Slide (as in the deck) | Point to make | Time |
 |---|---|---|---|
-| 1 | Title | what the project is | 0:20 |
+| 1 | Send information, not raw data (title) | what the project is | 0:20 |
 | 2 | A satellite sees far more than it can send | the link, not the camera, is the limit | 0:40 |
 | 3 | Send the packet, not the picture | detect onboard, send information graded by confidence | 0:40 |
 | 4 | Everything runs onboard, before the radio | the chain: pre-filter, SAHI slicing, detector, fusion, policy, encoder, scheduler | 0:40 |
-| — | **Live demo** (part 2) | the chain running, then the committed results | 5:00 |
-| 5 | All five configurations ran | B0 to B4; B1 and B2 on the same scenes | 0:40 |
-| 6 | Less data, more mission | 341×, with what is measured and what is modeled | 0:40 |
-| 7 | Compute, not the radio, is the cost | energy: estimates, no power measured | 0:30 |
-| 8 | Honesty & limitations | the negative results and the stated gaps | 0:50 |
-| 9 | Run it yourself | one command | 0:20 |
+| 5 | **Live demo** — The chain, running (part 2) | the chain running, then the committed results | 5:00 |
+| 6 | B1 against B2 (the two pictures) | one call against SAHI on the same scenes | 0:20 |
+| 7 | Slicing finds the small ships | recall by ship size; SAHI does not beat plain tiling | 0:30 |
+| 8 | All five configurations ran | B0 to B4; B1 and B2 on the same scenes | 0:30 |
+| 9 | 341× (headline) | 341×, with what is measured and what is modeled | 0:40 |
+| 10 | Compute, not the radio, is the cost | energy: estimates, no power measured | 0:30 |
+| 11 | What we do not claim | the negative results and the stated gaps | 0:50 |
+| 12 | Run it yourself | one command | 0:20 |
 
 A little over ten minutes. If the slot is five minutes, give part 2 alone; its first beat is slide
 2's point. Questions: `demo/QA_CARD.md` stays on the podium.
 
-Slide 9 of the deck predates the dashboard: it shows `demo/summary.py` and `bash demo/run_demo.sh`.
-Say the command aloud instead: `python demo/launch.py`.
+Slides 5 and 12 show the launch command, `python demo/launch.py`. `index.html#7` opens the deck on
+slide 7; the pictures in the deck are the bundled synthetic swath (`paper/slides/img/`).
 
 ---
 

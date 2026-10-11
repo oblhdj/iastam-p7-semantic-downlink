@@ -4,181 +4,371 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>IASTAM P7 — Semantic Downlink (judge deck)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
+  /* Layout: a fixed 1600x900 stage scaled to the window. Sea slides carry imagery, paper slides carry
+     numbers and charts. One accent (signal orange) marks the single figure each slide is about. */
   :root{
-    --bg:#0b1020; --panel:#121a33; --ink:#eaf0ff; --dim:#9fb0d6; --line:#2a3860;
-    --accent:#4fd1c5; --warn:#ffcc66; --real:#7ee787; --sim:#79c0ff; --target:#ffa657; --assume:#d2a8ff;
-  }
-  @media (prefers-color-scheme: light):root:not([data-theme="dark"]){
-    --bg:#f6f8ff; --panel:#ffffff; --ink:#10172a; --dim:#51607f; --line:#d5def2;
-    --accent:#0d9488; --warn:#9a6700; --real:#1a7f37; --sim:#0969da; --target:#bc4c00; --assume:#8250df;
+    --sea:#0b2530; --sea-2:#13394a; --sea-line:#2a5263; --foam:#e4eeef; --foam-dim:#9db7bf;
+    --paper:#eef1ee; --paper-2:#e2e7e3; --ink:#0b2530; --ink-dim:#4d6670; --rule:#c3cdc8;
+    --signal:#e8590c; --signal-on-sea:#ff7a3d;
+    --b1:#1f86b3; --b2:#e8590c;
+    --p0:#8a9aa0; --p1:#3ecf4a; --p2:#f2d024; --p3:#f2622e;
+    --display:"Barlow Condensed","Arial Narrow","Roboto Condensed",Impact,sans-serif;
+    --body:"IBM Plex Sans","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+    color-scheme:dark;
   }
   *{box-sizing:border-box}
-  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);
-    font:18px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
-  #deck{height:100%;display:flex;align-items:center;justify-content:center}
-  .slide{display:none;width:min(1100px,94vw);max-height:94vh;overflow:auto;
-    background:var(--panel);border:1px solid var(--line);border-radius:16px;
-    padding:40px 48px;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+  html,body{margin:0;height:100%;background:#061920;overflow:hidden}
+  body{font-family:var(--body);color:var(--foam)}
+  #stage{position:absolute;left:50%;top:50%;width:1600px;height:900px;transform-origin:0 0;overflow:hidden;background:var(--sea)}
+  .slide{position:absolute;inset:0;display:none;padding:76px 96px 84px;font-size:27px;line-height:1.42}
   .slide.active{display:block}
-  h1{font-size:40px;line-height:1.15;margin:0 0 8px}
-  h2{font-size:30px;margin:0 0 18px;color:var(--accent)}
-  .kicker{letter-spacing:.14em;text-transform:uppercase;color:var(--dim);font-size:13px;margin-bottom:14px}
-  p{margin:10px 0}
-  ul{margin:8px 0 8px 2px;padding-left:22px}
-  li{margin:7px 0}
-  .big{font-size:64px;font-weight:800;letter-spacing:-.02em;line-height:1}
-  .huge{font-size:88px;font-weight:800;letter-spacing:-.03em;line-height:1}
-  .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:8px}
-  .card{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
-  .card .n{font-size:40px;font-weight:800;line-height:1}
-  .card .l{color:var(--dim);font-size:14px;margin-top:4px}
-  table{width:100%;border-collapse:collapse;margin-top:6px;font-size:16px}
-  th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
-  th{color:var(--dim);font-weight:600;font-size:13px;text-transform:uppercase;letter-spacing:.06em}
-  code{background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:1px 6px;font-size:.92em}
-  .tag{font-size:11px;font-weight:700;letter-spacing:.04em;padding:2px 7px;border-radius:999px;border:1px solid}
-  .REAL{color:var(--real);border-color:var(--real)} .SIM{color:var(--sim);border-color:var(--sim)}
-  .TARGET{color:var(--target);border-color:var(--target)} .ASSUME{color:var(--assume);border-color:var(--assume)}
-  .LIT{color:var(--dim);border-color:var(--dim)}
-  .src{color:var(--dim);font-size:12.5px;margin-top:14px;font-family:ui-monospace,Menlo,Consolas,monospace}
-  .flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:14px 0;font-size:15px}
-  .step{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;text-align:center}
-  .step b{display:block;font-size:16px} .step span{color:var(--dim);font-size:12px}
-  .arrow{color:var(--accent);font-weight:800}
-  .warn{color:var(--warn)}
-  footer{position:fixed;left:0;right:0;bottom:0;display:flex;justify-content:space-between;
-    padding:8px 18px;color:var(--dim);font-size:12.5px;background:transparent}
-  .dots{display:flex;gap:6px} .dot{width:8px;height:8px;border-radius:50%;background:var(--line)}
-  .dot.on{background:var(--accent)}
-  #notes{position:fixed;left:0;right:0;bottom:0;max-height:42vh;overflow:auto;display:none;
-    background:var(--panel);border-top:2px solid var(--accent);padding:16px 22px;font-size:16px}
-  #notes.show{display:block} #notes h3{margin:0 0 8px;color:var(--accent);font-size:15px}
-  .hint{position:fixed;top:10px;right:14px;color:var(--dim);font-size:12px}
+  .sea{background:var(--sea);color:var(--foam)}
+  .paper{background:var(--paper);color:var(--ink)}
+
+  .kicker{font-family:var(--mono);font-size:17px;letter-spacing:.16em;text-transform:uppercase;color:var(--foam-dim);margin:0 0 22px}
+  .paper .kicker{color:var(--ink-dim)}
+  h1,h2{font-family:var(--display);font-weight:700;text-transform:uppercase;margin:0;text-wrap:balance;letter-spacing:.005em}
+  h1{font-size:112px;line-height:.92}
+  h2{font-size:76px;line-height:.98;margin-bottom:34px}
+  h1 em,h2 em{font-style:normal;color:var(--signal-on-sea)}
+  .paper h2 em{color:var(--signal)}
+  p{margin:0 0 16px;max-width:38em}
+  b,strong{font-weight:600}
+  code{font-family:var(--mono);font-size:.9em}
+  .lede{font-size:31px;line-height:1.36}
+  .dim{color:var(--foam-dim)} .paper .dim{color:var(--ink-dim)}
+  .src{position:absolute;left:96px;right:96px;bottom:44px;font-family:var(--mono);font-size:15px;color:var(--foam-dim);margin:0;max-width:none}
+  .paper .src{color:var(--ink-dim)}
+  .tag{display:inline-block;font-family:var(--mono);font-size:13px;letter-spacing:.08em;padding:2px 8px;border:1px solid currentColor;
+       border-radius:3px;vertical-align:.18em;color:var(--foam-dim);white-space:nowrap}
+  .paper .tag{color:var(--ink-dim)}
+  .num{font-family:var(--display);font-weight:700;line-height:.9;font-variant-numeric:tabular-nums}
+  .hot{color:var(--signal-on-sea)} .paper .hot{color:var(--signal)}
+
+  /* full-bleed imagery */
+  .bleed{position:absolute;top:0;bottom:0;right:0;width:900px;object-fit:cover;object-position:left;height:900px}
+  .bleed.left{left:0;right:auto}
+  .cols{display:grid;gap:56px;align-items:start}
+  figure{margin:0}
+  figure img{display:block;width:100%;aspect-ratio:1;object-fit:cover;border:1px solid var(--sea-line)}
+  figcaption{font-family:var(--mono);font-size:16px;letter-spacing:.06em;text-transform:uppercase;color:var(--foam-dim);margin-bottom:12px}
+  figcaption b{color:var(--foam);font-weight:500}
+
+  /* slide 2: capacity bar */
+  .cap{margin:26px 0 10px}
+  .cap .bar{position:relative;height:120px;background:var(--sea-2)}
+  .cap .sliver{position:absolute;left:0;top:0;bottom:0;background:var(--signal)}
+  .cap .ticks{display:flex;justify-content:space-between;font-family:var(--mono);font-size:16px;color:var(--ink-dim);margin-top:10px}
+  .pair{display:grid;grid-template-columns:1fr 1fr;gap:56px;margin-top:8px}
+  .pair .num{font-size:118px}
+  .pair .l{font-size:23px;color:var(--ink-dim);margin-top:8px}
+
+  /* slide 3: priority ladder */
+  .ladder{display:grid;gap:0;margin:8px 0 24px}
+  .rung{display:grid;grid-template-columns:86px 1fr;gap:22px;align-items:center;padding:17px 0;border-top:1px solid var(--sea-line)}
+  .rung:last-child{border-bottom:1px solid var(--sea-line)}
+  .rung .lvl{font-family:var(--display);font-weight:700;font-size:50px;line-height:1}
+  .rung .what{font-size:27px;font-weight:500}
+  .rung .when{font-size:20px;color:var(--foam-dim)}
+
+  /* slide 4: the chain */
+  .chain{display:grid;grid-template-columns:repeat(7,1fr);gap:0;margin:14px 0 40px;border-top:3px solid var(--ink)}
+  .link{padding:18px 18px 0 0;position:relative}
+  .link .n{font-family:var(--mono);font-size:15px;color:var(--ink-dim)}
+  .link .t{font-family:var(--display);font-weight:700;text-transform:uppercase;font-size:36px;line-height:1;margin:10px 0 10px}
+  .link .d{font-family:var(--mono);font-size:15px;color:var(--ink-dim);line-height:1.4}
+  .link.key .t{color:var(--signal)}
+  .link::before{content:"";position:absolute;left:0;top:-9px;width:15px;height:15px;border-radius:50%;background:var(--ink)}
+  .link.key::before{background:var(--signal)}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:56px}
+  .two h3{font-family:var(--mono);font-size:16px;letter-spacing:.14em;text-transform:uppercase;font-weight:500;color:var(--ink-dim);margin:0 0 8px}
+  .sea .two h3{color:var(--foam-dim)}
+  .two p{font-size:25px}
+
+  /* slide 7: grouped bars, one scale: 1.0 recall = 380px */
+  .chart{display:grid;grid-template-columns:repeat(3,1fr);gap:40px;height:440px;align-items:end;border-bottom:2px solid var(--ink);padding:0 10px}
+  .grp{display:flex;gap:2px;align-items:flex-end;justify-content:center;height:100%}
+  .barv{width:96px;border-radius:4px 4px 0 0;position:relative}
+  .barv span{position:absolute;left:0;right:0;top:-34px;text-align:center;font-family:var(--mono);font-size:21px;color:var(--ink);font-variant-numeric:tabular-nums}
+  .barv.b1{background:var(--b1)} .barv.b2{background:var(--b2)}
+  .xlab{display:grid;grid-template-columns:repeat(3,1fr);gap:40px;padding:12px 10px 0;text-align:center;font-size:21px}
+  .xlab small{display:block;font-family:var(--mono);font-size:15px;color:var(--ink-dim)}
+  .legend{display:flex;gap:28px;font-size:20px;margin:0 0 44px}
+  .legend i{display:inline-block;width:16px;height:16px;border-radius:3px;margin-right:9px;vertical-align:-2px}
+  .callout{border-left:5px solid var(--signal);padding:4px 0 4px 22px;margin-top:26px}
+  .callout p{font-size:24px}
+
+  /* tables */
+  table{width:100%;border-collapse:collapse;font-size:23px}
+  th,td{text-align:left;padding:13px 16px 13px 0;border-bottom:1px solid var(--rule);vertical-align:top}
+  th{font-family:var(--mono);font-weight:500;font-size:14px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-dim);border-bottom:2px solid var(--ink)}
+  td.cfg{font-family:var(--display);font-weight:700;font-size:38px;line-height:1;width:92px}
+  td.r{font-family:var(--display);font-weight:700;font-size:38px;line-height:1;font-variant-numeric:tabular-nums;white-space:nowrap}
+  td small{font-size:17px;color:var(--ink-dim);font-family:var(--body);font-weight:400;letter-spacing:0}
+
+  /* stat rows */
+  .stats{display:grid;gap:44px 56px}
+  .stat .num{font-size:92px}
+  .stat .l{font-size:21px;line-height:1.38;color:var(--foam-dim);margin-top:10px}
+  .paper .stat .l{color:var(--ink-dim)}
+  .stat .l b{color:var(--foam)} .paper .stat .l b{color:var(--ink)}
+  .giant{font-size:330px;letter-spacing:-.01em}
+
+  /* slide 10: latency bars, one scale: 35.2 h = 500px */
+  .lat{display:grid;gap:10px;margin-top:6px}
+  .lat .row{display:grid;grid-template-columns:96px 1fr;gap:16px;align-items:center;font-size:19px}
+  .lat .b{height:30px;border-radius:0 4px 4px 0;background:var(--b1);position:relative}
+  .lat .b.rel{background:var(--b2)}
+  .lat .b span{position:absolute;left:100%;margin-left:12px;top:1px;font-family:var(--mono);font-size:19px;white-space:nowrap;color:var(--ink)}
+
+  /* limitations */
+  .limits{display:grid;grid-template-columns:1fr 1fr;gap:20px 64px;font-size:21px;line-height:1.4}
+  .limits div{border-top:1px solid var(--rule);padding-top:14px}
+  .limits b{display:block;font-family:var(--display);text-transform:uppercase;font-size:29px;font-weight:700;line-height:1.05;margin-bottom:5px}
+
+  .cmd{font-family:var(--mono);font-size:34px;background:var(--sea-2);border:1px solid var(--sea-line);padding:18px 26px;display:inline-block;margin:6px 0 18px;color:var(--foam)}
+  .shade::after{content:"";position:absolute;inset:0;background:rgba(6,25,32,.74)}
+  .over{position:relative;z-index:2}
+
+  footer{position:absolute;right:28px;bottom:16px;font-family:var(--mono);font-size:13px;letter-spacing:.1em;color:var(--foam);
+         background:rgba(6,25,32,.72);padding:3px 9px;border-radius:3px;z-index:5;pointer-events:none}
+  #notes{position:fixed;left:0;right:0;bottom:0;max-height:40vh;overflow:auto;display:none;background:#061920;color:var(--foam);
+         border-top:3px solid var(--signal-on-sea);padding:18px 26px;font:18px/1.5 var(--body);z-index:20}
+  #notes.show{display:block}
+  #notes h3{margin:0 0 6px;font:500 13px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--signal-on-sea)}
+  .hint{position:fixed;top:8px;right:14px;font:12px var(--mono);color:#6f8b95;z-index:20}
+  @media print{
+    html,body{overflow:visible;height:auto;background:#fff}
+    #stage{position:static;transform:none!important;height:auto;overflow:visible}
+    .slide{display:block;position:relative;height:900px;page-break-after:always}
+    .hint,#notes,footer{display:none}
+    @page{size:1600px 900px;margin:0}
+  }
 </style>
 </head>
 <body>
+<div id="stage">
 <div id="deck"></div>
+<footer><span id="where"></span></footer>
+</div>
 <div id="notes"></div>
-<div class="hint">← → navigate · <b>N</b> speaker notes · <b>F</b> full screen</div>
-<footer><span id="where">IASTAM 6.0 · Track 4 · Problem 7</span><span class="dots" id="dots"></span></footer>
+<div class="hint">← → navigate · N speaker notes · F full screen</div>
 
 <script>
-// Each slide: {html, notes}. Numbers cite their results file in .src. Notes = the 90s talk track.
+// Each slide: {cls, html, notes}. Every number cites its results file in .src; the notes are the talk track.
+// The pictures are the bundled synthetic stand-in swath (demo/fallback_assets/swath): no Airbus pixels.
 const S = [
-{html:`<div class="kicker">IASTAM 6.0 · Track 4 · Problem 7 · ENIS, Sfax</div>
-  <h1>Transmitting <em>information</em>, not raw data</h1>
-  <p style="font-size:22px">Energy-Aware Semantic Downlink for Maritime Object Detection,<br>with an Optional Inter-Satellite Relay.</p>
-  <p class="src">Makni · Ben Saad · Ketata · Megdiche — accepted Phase-2, measured in Phase-3.
-  Repo: github.com/oblhdj/iastam-p7-semantic-downlink</p>`,
+{cls:'sea', html:`
+  <img class="bleed" src="img/semantic_levels.jpg" alt="A synthetic sea scene with ships boxed and labelled P1, P2 and P3">
+  <div style="width:572px">
+    <p class="kicker">IASTAM 6.0 · Track 4 · Problem 7<br>ENIS, Sfax</p>
+    <h1>Send <em>information</em>, not raw data</h1>
+    <p class="lede" style="margin-top:34px">Energy-aware semantic downlink for maritime object detection, with an optional inter-satellite relay.</p>
+    <p class="dim" style="font-size:22px;margin-top:26px">Makni · Ben Saad · Ketata · Megdiche<br>Accepted in Phase 2, measured in Phase 3.</p>
+  </div>`,
  notes:`This is a demo of an idea, measured end-to-end on real data — not a flown prototype. Paper reported no numbers by design; Phase 3 is the measurement.`},
 
-{html:`<div class="kicker">The problem</div><h2>A satellite sees far more than it can send</h2>
-  <div class="grid">
-    <div class="card"><div class="n">60,124 MB</div><div class="l">imaged per day <span class="tag SIM">SIM</span></div></div>
-    <div class="card"><div class="n">~210 MB</div><div class="l">link capacity per day <span class="tag SIM">SIM</span></div></div>
+{cls:'paper', html:`
+  <p class="kicker">The problem</p>
+  <h2>A satellite sees far more than it can <em>send</em></h2>
+  <div class="cap">
+    <div class="bar" title="60,124 MB imaged per day"><div class="sliver" style="width:.35%" title="about 210 MB of link capacity per day"></div></div>
+    <div class="ticks"><span>▲ what the link carries: the orange sliver, drawn to scale</span><span>everything imaged in one day</span></div>
   </div>
-  <p style="margin-top:18px">So <b>~99.7% of what it sees is thrown away.</b> The usual answer: compress the pictures harder.</p>
-  <p>Ours: <b>stop sending pictures.</b></p>
+  <div class="pair">
+    <div><div class="num">60,124 MB</div><div class="l">imaged per day <span class="tag">SIM</span></div></div>
+    <div><div class="num hot">~210 MB</div><div class="l">link capacity per day <span class="tag">SIM</span></div></div>
+  </div>
+  <p class="lede" style="margin-top:30px">About <b>99.7%</b> of what it sees is thrown away. The usual answer is to compress the pictures harder. Ours is to <b>stop sending pictures.</b></p>
   <p class="src">source: code/results/wp18_campaign.json (B0) · code/results/passes.csv</p>`,
  notes:`A small satellite images sixty gigabytes of ocean a day and can only send down about two hundred megabytes. Ninety-nine-point-seven percent is thrown away.`},
 
-{html:`<div class="kicker">The idea</div><h2>Send the packet, not the picture</h2>
-  <p>Detect ships onboard, then spend the scarce link on <b>information about them</b>, graded by priority (paper Table I):</p>
-  <table>
-    <tr><th>level</th><th>what is sent</th><th>when</th></tr>
-    <tr><td><b>P0</b></td><td>nothing — discard</td><td>empty / below detector threshold</td></tr>
-    <tr><td><b>P1</b></td><td>structured metadata (~40 B)</td><td>confident detection</td></tr>
-    <tr><td><b>P2</b></td><td>metadata + compressed ROI</td><td>uncertain — let the ground verify</td></tr>
-    <tr><td><b>P3</b></td><td>metadata + ROI + context</td><td>uncertain on a coast (miss most likely)</td></tr>
-  </table>
-  <p style="margin-top:14px">The optional relay forwards <b>packets</b> — it never carries the image.</p>
-  <p class="src">P0–P3: sat7/priority.py · the deployed ladder: sat7/scheduler.py (LoD), reports 05–06</p>`,
+{cls:'sea', html:`
+  <img class="bleed left" src="img/semantic_levels.jpg" alt="The same scene: confident ships in green (P1), uncertain ones in yellow (P2), coastal ones in orange (P3)" style="width:800px">
+  <div style="margin-left:780px">
+    <p class="kicker">The idea</p>
+    <h2>Send the packet, not the picture</h2>
+    <div class="ladder">
+      <div class="rung"><div class="lvl" style="color:var(--p0)">P0</div><div><div class="what">Nothing. Discard.</div><div class="when">empty, or below the detector threshold</div></div></div>
+      <div class="rung"><div class="lvl" style="color:var(--p1)">P1</div><div><div class="what">Structured metadata, about 40 B</div><div class="when">a confident detection</div></div></div>
+      <div class="rung"><div class="lvl" style="color:var(--p2)">P2</div><div><div class="what">Metadata + a compressed crop</div><div class="when">uncertain: let the ground verify</div></div></div>
+      <div class="rung"><div class="lvl" style="color:var(--p3)">P3</div><div><div class="what">Metadata + crop + context</div><div class="when">uncertain on a coast, where a miss is most likely</div></div></div>
+    </div>
+    <p style="font-size:23px">The optional relay forwards <b>packets</b>. It never carries the image.</p>
+  </div>
+  <p class="src" style="left:876px">P0–P3: sat7/priority.py (paper Table I) · deployed ladder: sat7/scheduler.py, reports 05–06</p>`,
  notes:`We stopped sending pictures. The satellite finds the ships itself. A ship it is sure about costs forty bytes; an uncertain one earns a picture; a coastal tile it may have misread earns context. The relay only ever forwards the packet, never the image.`},
 
-{html:`<div class="kicker">The pipeline</div><h2>Everything runs onboard, before the radio</h2>
-  <div class="flow">
-    <div class="step"><b>tile</b><span>768×768</span></div><span class="arrow">→</span>
-    <div class="step"><b>gate</b><span>47k-CNN · 0.15 ms</span></div><span class="arrow">→</span>
-    <div class="step"><b>SAHI slicing</b><span>overlapping windows</span></div><span class="arrow">→</span>
-    <div class="step"><b>detector + fusion</b><span>YOLOv8n · 11 ms</span></div><span class="arrow">→</span>
-    <div class="step"><b>semantic</b><span>P0–P3 / LoD</span></div><span class="arrow">→</span>
-    <div class="step"><b>scheduler</b><span>value-per-byte</span></div><span class="arrow">→</span>
-    <div class="step"><b>ground</b><span>or via relay</span></div>
+{cls:'paper', html:`
+  <p class="kicker">The pipeline</p>
+  <h2>Everything runs onboard, before the radio</h2>
+  <div class="chain">
+    <div class="link"><div class="n">1</div><div class="t">Tile</div><div class="d">768 × 768</div></div>
+    <div class="link"><div class="n">2</div><div class="t">Gate</div><div class="d">47k-CNN<br>0.15 ms</div></div>
+    <div class="link key"><div class="n">3</div><div class="t">SAHI slicing</div><div class="d">overlapping<br>windows</div></div>
+    <div class="link key"><div class="n">4</div><div class="t">Detector + fusion</div><div class="d">YOLOv8n · 11 ms<br>global coords</div></div>
+    <div class="link"><div class="n">5</div><div class="t">Semantic</div><div class="d">P0–P3 / LoD</div></div>
+    <div class="link"><div class="n">6</div><div class="t">Scheduler</div><div class="d">value per byte</div></div>
+    <div class="link"><div class="n">7</div><div class="t">Ground</div><div class="d">or via relay</div></div>
   </div>
-  <p>Two feedback loops make it more than a pipeline: the cheap classic stage disagreeing with the
-  detector spends more bytes on a probable miss; buffer pressure sets how much detail to encode.</p>
+  <div class="two">
+    <div><h3>Cross-check loop</h3><p>When the cheap classic stage disagrees with the detector, the tile probably hides a miss, so it gets more bytes.</p></div>
+    <div><h3>Pressure loop</h3><p>Buffer pressure sets how much detail the encoder may spend.</p></div>
+  </div>
   <p class="src">real-chain check: code/results/wp11_integration.json (reproduces the sim to 4 dp)</p>`,
  notes:`Gate, SAHI slicing, the detector on each slice with global-coordinate fusion, the semantic encoder, then a value-per-byte scheduler. The whole chain has been run on real JPEGs and reproduces our simulation to four decimals.`},
 
-{html:`<div class="kicker">B0 → B4 — the progression the paper promised (Table II)</div><h2>All five configurations ran</h2>
+{cls:'sea shade', html:`
+  <img class="bleed" src="img/original.jpg" alt="" style="width:1600px;left:0">
+  <div class="over" style="padding-top:150px">
+    <p class="kicker">Live demo</p>
+    <h1>The chain, <em>running</em></h1>
+    <div class="cmd" style="margin-top:44px">python demo/launch.py</div>
+    <p class="lede">A laptop CPU, no GPU, no dataset download. Then the measured results.</p>
+  </div>`,
+ notes:`Switch to the dashboard here. Five minutes: the image, plain YOLO against SAHI, the semantic packet, the downlink order. The script is demo/LIVE_DEMO_SCRIPT.md, part 2. On-screen numbers are labelled SYNTH; the numbers to leave the room with come after this slide.`},
+
+{cls:'sea', html:`
+  <p class="kicker">B1 against B2 · same scenes</p>
+  <div class="cols" style="grid-template-columns:480px 480px minmax(0,1fr);gap:40px">
+    <figure><figcaption><b>B1</b> · one call, whole scene</figcaption><img src="img/detections_plain_yolo.jpg" alt="Plain YOLO on the whole synthetic scene"></figure>
+    <figure><figcaption><b>B2</b> · SAHI slices, YOLO per slice, fusion</figcaption><img src="img/detections_sahi.jpg" alt="SAHI windows over the same scene with fused detections"></figure>
+    <div>
+      <div class="num" style="font-size:112px">0.339</div>
+      <div class="num hot" style="font-size:160px;margin-top:6px">0.717</div>
+      <p style="font-size:23px;margin-top:18px"><b>Ship recall</b>, one call against SAHI, on 150 scenes with 1,164 ships <span class="tag">REAL</span></p>
+      <p class="dim" style="font-size:20px">At 1.56× the detector calls of a plain tiling.</p>
+      <p class="dim" style="font-size:18px">Pictured: the bundled synthetic swath, 12 boxes from 1 call and 14 from 16 calls <span class="tag">SYNTH</span></p>
+    </div>
+  </div>
+  <p class="src">source: code/results/wp26_b0_b4.json · pictures: demo/fallback_assets/swath/</p>`,
+ notes:`One detector call on the whole scene shrinks it until the small ships disappear. SAHI cuts the scene into overlapping windows, runs the same detector on each, and fuses the boxes. On a hundred and fifty scenes stitched from real tiles, one call finds 0.339 of the ships and SAHI finds 0.717.`},
+
+{cls:'paper', html:`
+  <p class="kicker">Recall by ship size · B1 against B2</p>
+  <div class="cols" style="grid-template-columns:860px 1fr">
+    <div>
+      <h2 style="font-size:64px">Slicing finds the <em>small</em> ships</h2>
+      <div class="legend"><span><i style="background:var(--b1)"></i>B1, one call on the whole scene</span><span><i style="background:var(--b2)"></i>B2, SAHI + YOLO + fusion</span></div>
+      <div class="chart" role="img" aria-label="Recall by ship size. Small: B1 0.05, B2 0.51. Medium: B1 0.54, B2 0.92. Large: B1 0.86, B2 0.99.">
+        <div class="grp"><div class="barv b1" style="height:17.6px" title="B1, small ships: recall 0.046"><span>0.05</span></div><div class="barv b2" style="height:191.9px" title="B2, small ships: recall 0.505"><span>0.51</span></div></div>
+        <div class="grp"><div class="barv b1" style="height:206px" title="B1, medium ships: recall 0.542"><span>0.54</span></div><div class="barv b2" style="height:351.2px" title="B2, medium ships: recall 0.924"><span>0.92</span></div></div>
+        <div class="grp"><div class="barv b1" style="height:325.4px" title="B1, large ships: recall 0.856"><span>0.86</span></div><div class="barv b2" style="height:376.2px" title="B2, large ships: recall 0.990"><span>0.99</span></div></div>
+      </div>
+      <div class="xlab"><div>Small<small>&lt; 32 px · 606 ships</small></div><div>Medium<small>32–96 px · 356 ships</small></div><div>Large<small>&gt; 96 px · 202 ships</small></div></div>
+    </div>
+    <div style="padding-top:8px">
+      <p class="lede">Shrinking a 3072 px scene to one detector input erases ships under 32 px. Slicing keeps them at native resolution.</p>
+      <div class="callout">
+        <p><b>The result we did not want.</b> Against a plain tile-by-tile pass, SAHI does not win: 0.717 against 0.730, at 1.56× the calls.</p>
+        <p class="dim" style="font-size:20px">Our scenes are stitched from independent tiles, so no ship crosses a seam and the overlap has nothing to recover.</p>
+      </div>
+    </div>
+  </div>
+  <p class="src">source: code/results/wp26_b0_b4.json (150 scenes, 1,164 ships, conf 0.25, IoU 0.5) <span class="tag">REAL</span></p>`,
+ notes:`Where the gain comes from: small ships. One call finds five percent of them, SAHI finds half. And here is a result we did not want: against a plain tile-by-tile pass SAHI does not win on these scenes, because they are stitched from independent tiles and no ship crosses a seam.`},
+
+{cls:'paper', html:`
+  <p class="kicker">B0 → B4 · the progression the paper promised (Table II)</p>
+  <h2 style="margin-bottom:22px">All five configurations ran</h2>
   <table>
     <tr><th>cfg</th><th>onboard</th><th>recall</th><th>key number</th><th>label</th></tr>
-    <tr><td><b>B0</b></td><td>none (raw image)</td><td>—</td><td>60,124 MB/day reference</td><td><span class="tag SIM">SIM</span></td></tr>
-    <tr><td><b>B1</b></td><td>YOLO, one call per scene</td><td><b>0.339</b></td><td>no slicing — small 0.05 / med 0.54 / large 0.86</td><td><span class="tag REAL">REAL</span></td></tr>
-    <tr><td><b>B2</b></td><td>+ SAHI + fusion, same scenes</td><td><b>0.717</b></td><td>small 0.51 · 1.56× compute vs tiling</td><td><span class="tag REAL">REAL</span></td></tr>
-    <tr><td><b>B3</b></td><td>+ semantic + scheduler</td><td><b>0.685</b> <span class="warn">@15% cloud</span></td><td><b>341×</b>, 176 MB/day <span class="warn">coastal tiles measured; thumbnails &amp; crops modeled</span></td><td><span class="tag SIM">SIM/REAL</span></td></tr>
-    <tr><td><b>B4</b></td><td>+ optional relay</td><td>= B3</td><td>worst latency 35.2→10.9 h</td><td><span class="tag SIM">SIM</span>·<span class="tag TARGET">TARGET</span></td></tr>
+    <tr><td class="cfg">B0</td><td>none: the raw image</td><td class="r">—</td><td>60,124 MB/day reference</td><td><span class="tag">SIM</span></td></tr>
+    <tr><td class="cfg">B1</td><td>YOLO, one call per scene</td><td class="r">0.339</td><td>no slicing<br><small>small 0.05 · medium 0.54 · large 0.86</small></td><td><span class="tag">REAL</span></td></tr>
+    <tr><td class="cfg">B2</td><td>SAHI + YOLO + fusion, same scenes</td><td class="r">0.717</td><td>small 0.51<br><small>1.56× compute against tiling</small></td><td><span class="tag">REAL</span></td></tr>
+    <tr><td class="cfg hot">B3</td><td>+ semantic policy + scheduler</td><td class="r hot">0.685 <small>@15% cloud</small></td><td><b>341×</b>, 176 MB/day<br><small>coastal tiles measured; thumbnails and crops modeled</small></td><td><span class="tag">SIM/REAL</span></td></tr>
+    <tr><td class="cfg">B4</td><td>+ optional relay</td><td class="r">= B3</td><td>worst latency 35.2 → 10.9 h</td><td><span class="tag">SIM</span> <span class="tag">TARGET</span></td></tr>
   </table>
-  <p style="margin-top:12px">B1/B2: the same 150 scenes, 1,164 ships. B3/B4: a simulated 40,000-tile day — a different input. B4 is a <b>reroute</b>, not extra capacity — recall & bytes are B3's verbatim; sanity-gated.</p>
+  <p style="font-size:21px;margin-top:20px;max-width:none" class="dim">B1 and B2: the same 150 scenes, 1,164 ships. B3 and B4: a simulated 40,000-tile day, a different input. B4 is a <b>reroute</b>, not extra capacity: recall and bytes are B3's verbatim, sanity-gated.</p>
   <p class="src">source: code/results/wp26_b0_b4.json (B1, B2) · wp18_campaign.json · traced to wp6_real_table.csv</p>`,
  notes:`This is the B0 to B4 progression the paper promised. Raw image, one detector call on the whole scene, SAHI on the same scenes, our full semantic pipeline, then an inter-satellite relay. Slicing takes recall from about a third to over seventy percent. B1 and B2 share one set of scenes; B3 and B4 are a simulated day. B4 only changes latency and energy, never what's delivered.`},
 
-{html:`<div class="kicker">Headlines (verify against the CSVs)</div><h2>Less data, more mission</h2>
-  <div class="grid">
-    <div class="card"><div class="huge">341×</div><div class="l">less data — 60,124 MB → 176 MB/day <span class="tag SIM">SIM/REAL</span><br><span class="warn">coastal tiles measured; thumbnails &amp; crops still modeled</span> (earlier all-modeled estimate: 557×)</div></div>
-    <div class="card"><div class="n">0.685 <span class="warn" style="font-size:18px">@15% cloud</span></div><div class="l">ships delivered — band <b>0.40–0.82</b> over 0–50% cloud. Never quote bare.</div></div>
-    <div class="card"><div class="n">100%</div><div class="l">of what the satellite still knew (downlink eff = 1.0); the detector is the bottleneck, not the link</div></div>
-    <div class="card"><div class="n">+6.3 pts</div><div class="l">vs a <i>fair</i> Φ-sat-2 baseline, for ~11× the bytes (our old "+16.7" used an unfair baseline)</div></div>
+{cls:'sea', html:`
+  <p class="kicker">Headline · verify against the CSVs</p>
+  <div class="cols" style="grid-template-columns:760px 1fr;gap:72px">
+    <div>
+      <div class="num giant hot">341×</div>
+      <p class="lede" style="margin-top:8px"><b>less data.</b> 60,124 MB → 176 MB per day <span class="tag">SIM/REAL</span></p>
+      <p class="dim" style="font-size:21px">Coastal tiles are measured JPEG sizes; thumbnails and crops are still modeled. The earlier all-modeled estimate was 557×.</p>
+    </div>
+    <div class="stats" style="padding-top:26px">
+      <div class="stat"><div class="num">0.685 <span style="font-size:36px;color:var(--foam-dim)">@15% cloud</span></div><div class="l"><b>of the ships delivered.</b> The band is 0.40–0.82 over 0–50% cloud. Never quoted bare.</div></div>
+      <div class="stat"><div class="num">100%</div><div class="l"><b>of what the satellite still knew</b> (downlink efficiency 1.0). The detector is the bottleneck, not the link.</div></div>
+      <div class="stat"><div class="num">+6.3 pts</div><div class="l"><b>against a fair Φ-sat-2 baseline</b>, for ~11× the bytes. Our old "+16.7" used an unfair baseline.</div></div>
+    </div>
   </div>
-  <p class="src">source: code/results/wp6_real_table.csv (row “Ours: LoD + value-greedy” vs “…fair (+coastal)”) · wp28_coast_tile_model.json</p>`,
+  <p class="src">source: code/results/wp6_real_table.csv (“Ours: LoD + value-greedy” vs “…fair (+coastal)”) · wp28_coast_tile_model.json</p>`,
  notes:`Three hundred forty-one times less data, and we still recover sixty-eight-point-five percent of the ships — at an assumed fifteen percent cloud. The coastal tiles in that figure are measured JPEG sizes; thumbnails and crops are still modeled. That is a hundred percent of what the satellite still knew, and six-point-three points better than a fair Phi-sat-2 baseline.`},
 
-{html:`<div class="kicker">Energy & the relay</div><h2>Compute, not the radio, is the cost</h2>
-  <div class="grid">
-    <div class="card"><div class="n">57.6%</div><div class="l">processing energy saved by the gate (ES_proc) — a ratio of measured stage times, no power needed <span class="tag REAL">REAL</span></div></div>
-    <div class="card"><div class="n">5.5 : 1</div><div class="l">once you stop sending pixels, <b>compute dominates the radio</b> <span class="warn">estimate — assumed powers</span></div></div>
-    <div class="card"><div class="n">≈ 98%</div><div class="l">ES_total vs a bent pipe sending <i>every</i> raw byte (~54 vs ~2,851 kJ/day) — a hypothetical baseline <span class="warn">estimate — assumed powers</span></div></div>
-    <div class="card"><div class="n">35.2 → 10.9 h</div><div class="l">relay cuts worst-case latency (per-item median 7.9 → 3.4 h) <span class="tag SIM">SIM</span>; costs ~+52% comm energy <span class="tag TARGET">TARGET</span></div></div>
+{cls:'paper', html:`
+  <p class="kicker">Energy and the relay</p>
+  <h2>Compute, not the radio, is the <em>cost</em></h2>
+  <div class="stats" style="grid-template-columns:1fr 1fr 1fr">
+    <div class="stat"><div class="num">57.6%</div><div class="l"><b>processing energy saved by the gate</b> (ES_proc): a ratio of measured stage times, no power needed <span class="tag">REAL</span></div></div>
+    <div class="stat"><div class="num">5.5 : 1</div><div class="l"><b>compute to radio</b>, once pixels stop flowing. An estimate from assumed powers.</div></div>
+    <div class="stat"><div class="num">≈ 98%</div><div class="l"><b>ES_total against a bent pipe</b> sending every raw byte (about 54 against 2,851 kJ/day), a hypothetical baseline. An estimate from assumed powers.</div></div>
   </div>
-  <p style="margin-top:12px">The relay is a <b>latency buy, not an energy win</b> (~1.8× comm energy per relayed item). <b>No power was measured:</b> every joule here is an estimate from assumed powers and measured or simulated times.</p>
+  <div class="cols" style="grid-template-columns:1fr 1fr;margin-top:38px">
+    <div>
+      <p class="kicker" style="margin-bottom:12px">Worst-case latency · hours</p>
+      <div class="lat">
+        <div class="row"><span>Direct</span><div class="b" style="width:500px" title="direct: worst-case latency 35.2 h"><span>35.2 h</span></div></div>
+        <div class="row"><span>Relay</span><div class="b rel" style="width:155px" title="with the relay: worst-case latency 10.9 h"><span>10.9 h <span class="tag">SIM</span></span></div></div>
+      </div>
+      <p class="dim" style="font-size:19px;margin-top:12px">Per-item median 7.9 → 3.4 h.</p>
+    </div>
+    <div class="callout" style="margin-top:0">
+      <p>The relay is a <b>latency buy, not an energy win</b>: about +52% comm energy, 1.8× per relayed item <span class="tag">TARGET</span></p>
+      <p><b>No power was measured.</b> Every joule here is an estimate from assumed powers and measured or simulated times.</p>
+    </div>
+  </div>
   <p class="src">source: code/results/wp17_energy_model.json · wp18_campaign.json (B4)</p>`,
  notes:`Energy optimisation belongs on the detector and gate, not the transmitter — once pixels stop flowing, compute outweighs the radio more than five to one. The relay is a latency buy: it cuts worst-case latency from thirty-five hours to eleven but costs more energy, so we call it that.`},
 
-{html:`<div class="kicker">How to read the numbers — the part that wins</div><h2>Honesty & limitations</h2>
-  <ul>
-    <li><b>Onboard = TARGET.</b> Every timing is a laptop RTX 5060; "runs onboard" is mapped onto flown Myriad-class hardware <span class="tag LIT">LIT</span>, not demonstrated.</li>
-    <li><b>Recall is a band.</b> 0.685 @15% cloud; 0.40–0.82 over 0–50%. Cloud moves it more than anything else, and Airbus (0.4% cloud) can't settle it.</li>
-    <li><b>We broke our own results.</b> Unfair baseline (+16.7 → +6.3); a coastal setting we called "free" actually costs 4.0 pts on small ships; INT8 rejected (slower, −2.2 pts).</li>
-    <li><b>SAHI is a selective trade, not a free win</b> — a seam-cut ship is usually still detected (1.56× compute, window 768 not 512). <b>Negative result:</b> on our stitched scenes SAHI (0.717) does not beat a plain tile-by-tile pass (0.730) — no ship crosses a seam between independent tiles, so overlap has nothing to recover.</li>
-    <li><b>Sizes are partly modeled.</b> Coastal tiles are measured JPEGs; thumbnails and crops are model sizes. Measuring the coastal tile alone moved the headline 557× → 341×.</li>
-    <li><b>Our lead over the fair baseline is a nominal-load claim.</b> Swept over 80 settings: we beat FIFO in all 80, the fair baseline in 74. All six failures are at 160k tiles/day, where the lead is 1.3 pts (6.3 at 40k).</li>
-    <li><b>Dataset:</b> optical Airbus (not DOTA) on synthetic scenes stitched from tiles, because a tile is already 768².</li>
-  </ul>
+{cls:'paper', html:`
+  <p class="kicker">How to read the numbers</p>
+  <h2 style="margin-bottom:24px">What we do <em>not</em> claim</h2>
+  <div class="limits">
+    <div><b>Onboard is a target</b>Every timing is a laptop RTX 5060. "Runs onboard" is mapped onto flown Myriad-class hardware <span class="tag">LIT</span>, not demonstrated.</div>
+    <div><b>Recall is a band</b>0.685 at 15% cloud; 0.40–0.82 over 0–50%. Cloud moves it more than anything else, and Airbus (0.4% cloud) cannot settle it.</div>
+    <div><b>We broke our own results</b>Unfair baseline (+16.7 → +6.3). A coastal setting we called "free" costs 4.0 pts on small ships. INT8 rejected: slower, −2.2 pts.</div>
+    <div><b>SAHI is a selective trade</b>A seam-cut ship is usually still detected. 1.56× compute, window 768 not 512. On our stitched scenes it does not beat plain tiling (0.717 against 0.730).</div>
+    <div><b>Sizes are partly modeled</b>Coastal tiles are measured JPEGs; thumbnails and crops are model sizes. Measuring the coastal tile alone moved the headline 557× → 341×.</div>
+    <div><b>The lead is a nominal-load claim</b>Over 80 swept settings we beat FIFO in all 80 and the fair baseline in 74. All six failures are at 160k tiles/day, where the lead is 1.3 pts (6.3 at 40k).</div>
+    <div style="grid-column:1/-1"><b>Dataset</b>Optical Airbus, not DOTA, on synthetic scenes stitched from tiles, because a tile is already 768².</div>
+  </div>
   <p class="src">labels: REAL / SIM / LIT / TARGET / ASSUMPTION — see demo/PAPER_COVERAGE.md</p>`,
  notes:`Everything you saw ran on real data. The one thing we don't claim is flight hardware. And we broke our own results on purpose — the unfair baseline, the coastal setting that wasn't free, INT8. The self-correction is the most distinctive thing here.`},
 
-{html:`<div class="kicker">Live demo & repo</div><h2>Run it yourself — no GPU, no dataset</h2>
-  <p style="font-size:22px"><code>python demo/summary.py</code></p>
-  <p>Prints the problem → headline → B0→B4 → integrity check → honesty labels, all read live from
-  the committed <code>code/results/*.csv|json</code> — nothing hard-coded. 1 second, any Python.</p>
-  <p>Full live pipeline (GPU): <code>bash demo/run_demo.sh</code> — falls back to the summary if the GPU/data are missing.</p>
-  <p style="margin-top:16px"><b>github.com/oblhdj/iastam-p7-semantic-downlink</b></p>
-  <p class="src">137 tests pass · reports/01–23 narrate every number · demo/DEMO.md is the runbook</p>`,
- notes:`The whole story runs from committed results in one second with no dataset. Open the repo: every figure is labelled, every number traces to a CSV. It's all open.`},
+{cls:'sea', html:`
+  <img class="bleed" src="img/detections_sahi.jpg" alt="The synthetic scene with SAHI windows and fused detections" style="width:760px">
+  <div style="width:700px">
+    <p class="kicker">Repo</p>
+    <h2>Run it yourself.<br><em>No GPU, no dataset.</em></h2>
+    <div class="cmd">python demo/launch.py</div>
+    <p style="font-size:23px">The dashboard, live on a CPU. <code>--quickstart</code> runs the chain in the terminal in about 2 s; <code>--summary</code> prints the committed results on one screen.</p>
+    <p style="font-size:26px;margin-top:30px"><b>github.com/oblhdj/iastam-p7-semantic-downlink</b></p>
+    <p class="dim" style="font-size:20px">reports/01–23 narrate every number · demo/DEMO.md is the runbook</p>
+  </div>`,
+ notes:`The whole story runs from committed results with no dataset. Open the repo: every figure is labelled, every number traces to a results file. It's all open.`},
 ];
 
-const deck=document.getElementById('deck'), notes=document.getElementById('notes'),
-      dots=document.getElementById('dots'), where=document.getElementById('where');
+const stage=document.getElementById('stage'), deck=document.getElementById('deck'),
+      notes=document.getElementById('notes'), where=document.getElementById('where');
 let i=0;
-S.forEach((s,k)=>{const d=document.createElement('section');d.className='slide'+(k===0?' active':'');
-  d.innerHTML=s.html;deck.appendChild(d);
-  const dot=document.createElement('span');dot.className='dot'+(k===0?' on':'');dots.appendChild(dot);});
-const slides=[...document.querySelectorAll('.slide')], dotEls=[...document.querySelectorAll('.dot')];
+S.forEach((s,k)=>{const d=document.createElement('section');d.className='slide '+s.cls+(k===0?' active':'');
+  d.innerHTML=s.html;deck.appendChild(d);});
+const slides=[...document.querySelectorAll('.slide')];
+function fit(){const k=Math.min(innerWidth/1600,innerHeight/900);
+  stage.style.transform=`scale(${k}) translate(-50%,-50%)`;}
 function show(n){i=Math.max(0,Math.min(S.length-1,n));
   slides.forEach((s,k)=>s.classList.toggle('active',k===i));
-  dotEls.forEach((d,k)=>d.classList.toggle('on',k===i));
-  where.textContent=`IASTAM 6.0 · P7 · slide ${i+1} / ${S.length}`;
+  where.textContent=`${i+1} / ${S.length}`;
   notes.innerHTML='<h3>Speaker notes</h3>'+S[i].notes;}
 document.addEventListener('keydown',e=>{
   if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){show(i+1);e.preventDefault();}
@@ -187,8 +377,9 @@ document.addEventListener('keydown',e=>{
   else if(e.key.toLowerCase()==='n'){notes.classList.toggle('show');}
   else if(e.key.toLowerCase()==='f'){if(!document.fullscreenElement)document.documentElement.requestFullscreen();else document.exitFullscreen();}
 });
-deck.addEventListener('click',e=>{if(e.clientX>window.innerWidth*0.5)show(i+1);else show(i-1);});
-show(0);
+stage.addEventListener('click',e=>{if(e.clientX>window.innerWidth*0.5)show(i+1);else show(i-1);});
+addEventListener('resize',fit);
+fit();show((parseInt(location.hash.slice(1),10)||1)-1);   // index.html#7 opens on slide 7
 </script>
 </body>
 </html>
