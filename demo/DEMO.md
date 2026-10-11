@@ -17,10 +17,10 @@ runs end-to-end on a laptop; "runs onboard" is presented as a TARGET, not a flow
 python -m pip install -r demo/quickstart/requirements.txt   # once: numpy, opencv, onnxruntime, sgp4, skyfield
 python demo/quickstart/run_demo.py
 ```
-The real `sat7` chain runs **live**: pre-filter → trained YOLOv8n (ONNX, CPU) → SAHI + fusion on a
-3×3 swath → P0–P3 decision per detection → semantic packet vs raw bytes → value-greedy downlink
-order. It ends on the measured canon read from `code/results/`. The tiles are **synthetic
-stand-ins**, because the Airbus rules forbid redistributing the real ones. Everything computed on
+The real `sat7` chain runs **live**: pre-filter → SAHI slicing of a 3×3 swath → trained
+YOLOv8n (ONNX, CPU) on each slice → fusion → P0–P3 decision per detection → semantic packet vs raw
+bytes → value-greedy downlink order. It ends on the measured canon read from `code/results/`. The
+tiles are **synthetic stand-ins**, because the Airbus rules forbid redistributing the real ones. Everything computed on
 them is labelled **SYNTH** (it shows the chain runs; it is not a measurement). Open
 `demo/quickstart/_out/swath_annotated.jpg` to show the boxes coloured by P-level. Details and the
 licence reasoning: [`quickstart/README.md`](quickstart/README.md).
